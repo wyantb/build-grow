@@ -9,11 +9,27 @@ before modifying the systems it describes:
 |------|-----|----------------|
 | Buildings | `game_design/buildings.md` | Building catalog, costs, job slots, scaling |
 | Jobs | `game_design/jobs.md` | Job types, production rates, capacity, defaults |
+| Market | `game_design/market.md` | Tick-based orders, merchant slots, prices, rates |
 
 When implementing or refactoring features that touch buildings or jobs, read
 the matching doc first and keep the implementation consistent with it. If the
 doc and code drift, fix the doc or the code — but do not change both in
 uncoordinated commits.
+
+## Resource Rates
+
+- **Rates are derived, never measured.** A resource's rate is the net
+  per-tick change summed over staffed jobs (and market orders), multiplied by
+  the tick frequency (5). Never compute a rate from a before/after snapshot of
+  the resource amounts: that lags a tick behind, folds one-off events such as
+  building costs into the rate, and drifts in floating point.
+- **Market rates show what actually settles.** The engine plans the tick's
+  trades from the current state and applies that same plan, so a buy that
+  cannot be paid for never appears as realized flow. The gold figure in the
+  market panel and the gold rate in the resources panel must agree.
+- **The engine is the single source for rates.** `GameEngine.getTickRates()`
+  and `getResourceRates()` are authoritative. The store mirrors them; it never
+  recomputes them from mirrored state.
 
 ## UI Design Principles
 
