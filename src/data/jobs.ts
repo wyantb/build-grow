@@ -6,26 +6,27 @@ import type { Job, Resource } from '../types/worldState.js';
 // Quarrier: 4 stone/s → 0.8/tick
 
 const ZERO: Resource = { wood: 0, stone: 0, food: 0, gold: 0 };
+const DEFAULT_CONSUMPTION = { wood: 0, stone: 0, food: 0.025, gold: 0 };
 
 export const JOBS: Record<string, Omit<Job, 'workers'>> = {
   unemployed: {
     id: 'unemployed',
     name: 'Unemployed',
-    description: 'Workers with no specialized role. They consume food but produce nothing.',
+    description: 'Workers with no role yet. From harvesting, they\'ll just manage to feed themselves.',
     capacity: 0, // uncapped
     canDefault: true,
-    production: ZERO,
-    consumption: { wood: 0, stone: 0, food: 0.05, gold: 0 }
+    production: { wood: 0, stone: 0, food: 0.025, gold: 0 },
+    consumption: DEFAULT_CONSUMPTION,
   },
   settler: {
     id: 'settler',
     name: 'Settler',
     description: 'Generalist workers who gather basic resources. Outcompeted by specialized roles.',
     capacity: 0, // uncapped
-    canDefault: false,
+    canDefault: true,
     // Per tick (5 ticks/sec): 0.5/5=0.1 wood, 0.2/5=0.04 stone, 0.1/5=0.02 food
-    production: { wood: 0.1, stone: 0.04, food: 0.02, gold: 0 },
-    consumption: ZERO
+    production: { wood: 0.1, stone: 0.04, food: 0.01, gold: 0 },
+    consumption: DEFAULT_CONSUMPTION,
   },
   lumberjack: {
     id: 'lumberjack',
@@ -35,7 +36,7 @@ export const JOBS: Record<string, Omit<Job, 'workers'>> = {
     canDefault: false,
     // 5 wood/s → 1.0/tick
     production: { wood: 1.0, stone: 0, food: 0, gold: 0 },
-    consumption: ZERO
+    consumption: DEFAULT_CONSUMPTION,
   },
   quarrier: {
     id: 'quarrier',
@@ -45,7 +46,7 @@ export const JOBS: Record<string, Omit<Job, 'workers'>> = {
     canDefault: false,
     // 4 stone/s → 0.8/tick
     production: { wood: 0, stone: 0.8, food: 0, gold: 0 },
-    consumption: ZERO
+    consumption: DEFAULT_CONSUMPTION,
   },
   merchant: {
     id: 'merchant',
@@ -54,7 +55,7 @@ export const JOBS: Record<string, Omit<Job, 'workers'>> = {
     capacity: 0, // set dynamically from buildings
     canDefault: false,
     production: ZERO,
-    consumption: ZERO
+    consumption: DEFAULT_CONSUMPTION,
   }
 };
 
