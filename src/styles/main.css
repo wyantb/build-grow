@@ -1,0 +1,172 @@
+/* Basic reset and typography */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+  color: #fff;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.game-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.subtitle {
+  font-size: 1.2rem;
+  opacity: 0.8;
+}
+
+.game-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.panel {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 10px;
+  padding: 20px;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.panel h2 {
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.resource-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.resource-name {
+  font-weight: bold;
+}
+
+.resource-value {
+  color: #4dffb8;
+}
+
+.building-item, .job-item {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 5px;
+  padding: 15px;
+  margin-bottom: 15px;
+}
+
+.building-header, .job-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.building-name, .job-name {
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.building-progress {
+  background: #007acc;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.building-description, .job-description {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin-top: 5px;
+}
+
+.completed {
+  border-left: 3px solid #4dffb8;
+}
+
+.constructing {
+  border-left: 3px solid #007acc;
+}
+
+.progress-bar {
+  height: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #007acc, #00c3ff);
+  border-radius: 5px;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.action-button {
+  background: linear-gradient(90deg, #007acc, #00c3ff);
+  color: white;
+  border: none;
+  padding: 12px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.action-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.action-button:active {
+  transform: translateY(0);
+}
+
+.job-workers {
+  background: rgba(0, 122, 204, 0.3);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .game-content {
+    grid-template-columns: 1fr;
+  }
+  
+  header h1 {
+    font-size: 2rem;
+  }
+}

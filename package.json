@@ -1,0 +1,21 @@
+{
+  "name": "typescript-evolve-fork",
+  "version": "1.0.0",
+  "description": "A fantasy civilization building game inspired by Evolve",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "keywords": ["game", "typescript", "civilization", "incremental"],
+  "type": "module",
+  "dependencies": {
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8"
+  }
+}
