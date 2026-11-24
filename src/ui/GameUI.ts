@@ -260,30 +260,45 @@ class GameUI {
     // Count how many of this building type exist
     const buildingCount = existingBuilding && existingBuilding.built ? 1 : 0;
     
-    let tileHTML = `
-      <div class="building-tile ${!canAfford ? 'cannot-afford' : ''}">
-        <div class="building-name">${buildingType.name}</div>
-        ${buildingCount > 0 ? `<div class="building-count">${buildingCount}</div>` : ''}
-    `;
-    
-    if (existingBuilding && !existingBuilding.built) {
-      const progressPercent = existingBuilding.constructionProgress;
-      tileHTML += `
-        <div class="building-progress-container">
-          <div class="building-progress-bar">
-            <div class="building-progress-fill" style="width: ${progressPercent}%"></div>
-          </div>
-          <div class="building-progress-text">${progressPercent.toFixed(0)}%</div>
+    // If building is already built, show a disabled button with "Built" text
+    if (existingBuilding && existingBuilding.built) {
+      return `
+        <div class="building-tile">
+          <button class="build-button built" disabled id="build-${buildingType.id}">
+            <span class="building-name">${buildingType.name}</span>
+            ${buildingCount > 0 ? `<span class="building-count">${buildingCount}</span>` : ''}
+          </button>
         </div>
       `;
-    } else if (!existingBuilding) {
-      tileHTML += `<button class="build-button" id="build-${buildingType.id}">Build</button>`;
-    } else {
-      tileHTML += `<div class="building-built">Built</div>`;
     }
     
-    tileHTML += `</div>`;
-    return tileHTML;
+    // If building is under construction, show progress in the button
+    if (existingBuilding && !existingBuilding.built) {
+      const progressPercent = existingBuilding.constructionProgress;
+      return `
+        <div class="building-tile">
+          <button class="build-button constructing" disabled id="build-${buildingType.id}">
+            <span class="building-name">${buildingType.name}</span>
+            ${buildingCount > 0 ? `<span class="building-count">${buildingCount}</span>` : ''}
+            <div class="building-progress-container">
+              <div class="building-progress-bar">
+                <div class="building-progress-fill" style="width: ${progressPercent}%"></div>
+              </div>
+              <div class="building-progress-text">${progressPercent.toFixed(0)}%</div>
+            </div>
+          </button>
+        </div>
+      `;
+    }
+    
+    // Otherwise, show a build button
+    return `
+      <div class="building-tile">
+        <button class="build-button ${!canAfford ? 'cannot-afford' : ''}" id="build-${buildingType.id}" ${!canAfford ? 'disabled' : ''}>
+          <span class="building-name">${buildingType.name}</span>
+        </button>
+      </div>
+    `;
   }
 
   private updateJobs(state: WorldState): void {
