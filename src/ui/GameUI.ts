@@ -39,6 +39,7 @@ class GameUI {
             <div class="tabs">
               <button class="tab active" data-tab="buildings">Buildings</button>
               <button class="tab" data-tab="jobs">Jobs</button>
+              <button class="tab" data-tab="market" id="market-tab-button" style="display: none;">Market</button>
             </div>
             
             <div class="tab-content">
@@ -50,6 +51,11 @@ class GameUI {
               <div id="jobs-tab" class="tab-pane">
                 <h2>Jobs</h2>
                 <div id="jobs-list"></div>
+              </div>
+              
+              <div id="market-tab" class="tab-pane">
+                <h2>Market</h2>
+                <div id="market-content"></div>
               </div>
             </div>
           </div>
@@ -122,6 +128,9 @@ class GameUI {
     
     // Update jobs display
     this.updateJobs(state);
+    
+    // Update market display
+    this.updateMarket(state);
     
     // Update available actions
     this.updateAvailableActions(state);
@@ -308,18 +317,139 @@ class GameUI {
       
       Object.values(state.jobs).forEach((job: any) => {
         jobsHTML += `
-          <div class="job-item">
-            <div class="job-header">
-              <span class="job-name">${job.name}</span>
-              <span class="job-workers">Workers: ${job.workers}</span>
+          <div class="job-row">
+            <span class="job-name">${job.name}</span>
+            <div class="job-controls">
+              <button class="job-btn job-decrease-large" data-job="${job.id}" data-amount="-5"><<</button>
+              <button class="job-btn job-decrease" data-job="${job.id}" data-amount="-1"><</button>
+              <span class="job-worker-count">${job.workers}</span>
+              <button class="job-btn job-increase" data-job="${job.id}" data-amount="1">></button>
+              <button class="job-btn job-increase-large" data-job="${job.id}" data-amount="5">>></button>
             </div>
-            <div class="job-description">${job.description}</div>
           </div>
         `;
       });
       
       jobsList.innerHTML = jobsHTML;
+      
+      // Add event listeners to job buttons
+      this.setupJobButtons();
     }
+  }
+  
+  private setupJobButtons(): void {
+    const jobButtons = document.querySelectorAll('.job-btn');
+    jobButtons.forEach(button => {
+      button.addEventListener('click', (e) => {
+        const target = e.target as HTMLButtonElement;
+        const jobId = target.getAttribute('data-job');
+        const amount = parseInt(target.getAttribute('data-amount') || '0');
+        
+        if (jobId) {
+          this.engine.assignWorkers(jobId, amount);
+        }
+      });
+    });
+  }
+
+  private updateMarket(state: WorldState): void {
+    // Check if market building is built
+    const marketBuilding = state.buildings['market'];
+    const marketTabButton = document.getElementById('market-tab-button');
+    const marketContent = document.getElementById('market-content');
+    
+    if (marketTabButton && marketContent) {
+      if (marketBuilding && marketBuilding.built) {
+        // Show market tab
+        marketTabButton.style.display = 'block';
+        
+        // Update market content
+        marketContent.innerHTML = `
+          <div class="market-info">
+            <p>You have 1 merchant available for trading.</p>
+            <p>Trades are processed once per second.</p>
+          </div>
+          <div class="market-rates">
+            <h3>Current Market Rates</h3>
+            <div class="rate-item">
+              <span class="resource-name">Wood</span>
+              <span class="rate-values">Buy: 1 Gold | Sell: 0.5 Gold</span>
+            </div>
+            <div class="rate-item">
+              <span class="resource-name">Stone</span>
+              <span class="rate-values">Buy: 1.2 Gold | Sell: 0.6 Gold</span>
+            </div>
+            <div class="rate-item">
+              <span class="resource-name">Food</span>
+              <span class="rate-values">Buy: 0.8 Gold | Sell: 0.4 Gold</span>
+            </div>
+          </div>
+          <div class="market-trading">
+            <h3>Trade Resources</h3>
+            <div class="trade-controls">
+              <div class="trade-row">
+                <span class="resource-name">Wood</span>
+                <div class="trade-buttons">
+                  <button class="trade-btn buy-btn" data-resource="wood" data-action="buy">Buy</button>
+                  <button class="trade-btn sell-btn" data-resource="wood" data-action="sell">Sell</button>
+                  <input type="number" class="trade-amount" id="wood-amount" value="1" min="1">
+                </div>
+              </div>
+              <div class="trade-row">
+                <span class="resource-name">Stone</span>
+                <div class="trade-buttons">
+                  <button class="trade-btn buy-btn" data-resource="stone" data-action="buy">Buy</button>
+                  <button class="trade-btn sell-btn" data-resource="stone" data-action="sell">Sell</button>
+                  <input type="number" class="trade-amount" id="stone-amount" value="1" min="1">
+                </div>
+              </div>
+              <div class="trade-row">
+                <span class="resource-name">Food</span>
+                <div class="trade-buttons">
+                  <button class="trade-btn buy-btn" data-resource="food" data-action="buy">Buy</button>
+                  <button class="trade-btn sell-btn" data-resource="food" data-action="sell">Sell</button>
+                  <input type="number" class="trade-amount" id="food-amount" value="1" min="1">
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        // Add event listeners for trade buttons
+        this.setupTradeButtons();
+      } else {
+        // Hide market tab
+        marketTabButton.style.display = 'none';
+        
+        // If market tab was active, switch to buildings tab
+        const activeTab = document.querySelector('.tab.active');
+        if (activeTab && activeTab.getAttribute('data-tab') === 'market') {
+          this.switchTab('buildings');
+        }
+      }
+    }
+  }
+  
+  private setupTradeButtons(): void {
+    const tradeButtons = document.querySelectorAll('.trade-btn');
+    tradeButtons.forEach(button => {
+      button.addEventListener('click', (e) => {
+        const target = e.target as HTMLButtonElement;
+        const resource = target.getAttribute('data-resource') as keyof Resource;
+        const action = target.getAttribute('data-action');
+        const amountInput = document.getElementById(`${resource}-amount`) as HTMLInputElement;
+        
+        if (resource && action && amountInput) {
+          const amount = parseInt(amountInput.value) || 1;
+          
+          // For now, we'll just log the trade action
+          console.log(`Attempting to ${action} ${amount} ${resource}`);
+          
+          // In a real implementation, this would call the market system
+          // this.engine.tradeResource(resource, amount, action);
+        }
+      });
+    });
   }
 
   private updateAvailableActions(_state: WorldState): void {

@@ -394,3 +394,156 @@ body.light-mode .resource-value {
     background-color: #007acc;
   }
 }
+
+/* Job UI Styles */
+.job-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #444;
+}
+
+body.light-mode .job-row {
+  border-bottom: 1px solid #ccc;
+}
+
+.job-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.job-btn {
+  background-color: #444;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-weight: bold;
+  min-width: 30px;
+}
+
+body.light-mode .job-btn {
+  background-color: #ccc;
+  color: #333;
+}
+
+.job-btn:hover {
+  background-color: #555;
+}
+
+body.light-mode .job-btn:hover {
+  background-color: #bbb;
+}
+
+.job-worker-count {
+  min-width: 30px;
+  text-align: center;
+  font-weight: bold;
+}
+
+/* Market UI Styles */
+.market-info {
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #333;
+  border-radius: 5px;
+}
+
+body.light-mode .market-info {
+  background-color: #ddd;
+}
+
+.rate-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #444;
+}
+
+body.light-mode .rate-item {
+  border-bottom: 1px solid #ccc;
+}
+
+.rate-values {
+  color: #4dffb8;
+}
+
+body.light-mode .rate-values {
+  color: #008000;
+}
+
+.trade-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #444;
+}
+
+body.light-mode .trade-row {
+  border-bottom: 1px solid #ccc;
+}
+
+.trade-buttons {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.trade-btn {
+  background-color: #444;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+body.light-mode .trade-btn {
+  background-color: #ccc;
+  color: #333;
+}
+
+.trade-btn:hover {
+  background-color: #555;
+}
+
+body.light-mode .trade-btn:hover {
+  background-color: #bbb;
+}
+
+.buy-btn {
+  background-color: #007acc;
+}
+
+body.light-mode .buy-btn {
+  background-color: #3498db;
+}
+
+.sell-btn {
+  background-color: #e74c3c;
+}
+
+body.light-mode .sell-btn {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.trade-amount {
+  width: 60px;
+  padding: 5px;
+  border-radius: 3px;
+  border: 1px solid #555;
+  background-color: #333;
+  color: white;
+}
+
+body.light-mode .trade-amount {
+  border: 1px solid #999;
+  background-color: #eee;
+  color: #333;
+}

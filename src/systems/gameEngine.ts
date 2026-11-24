@@ -1,13 +1,16 @@
 import { createInitialState } from '../types/worldState.js';
 import type { WorldState, Resource } from '../types/worldState.js';
+import MarketSystem from './marketSystem.js';
 
 class GameEngine {
   private state: WorldState;
   private intervalId: number | null = null;
   private tickRate: number = 1000; // 1 second per tick
+  private marketSystem: MarketSystem;
 
   constructor() {
     this.state = createInitialState();
+    this.marketSystem = new MarketSystem(this.state);
   }
 
   // Get current game state
@@ -42,6 +45,9 @@ class GameEngine {
     
     // Process building construction
     this.processBuildingConstruction();
+    
+    // Process market trades
+    this.marketSystem.processTrades();
   }
 
   // Process resource generation from jobs
@@ -154,8 +160,12 @@ class GameEngine {
   // Assign workers to jobs
   assignWorkers(jobId: string, count: number): boolean {
     // For simplicity, we'll just adjust the settler job for now
-    if (jobId === 'settler' && count <= this.state.population && this.state.jobs[jobId]) {
-      this.state.jobs[jobId].workers = count;
+    if (jobId === 'settler' && this.state.jobs[jobId]) {
+      // Handle relative assignments (positive or negative)
+      const currentWorkers = this.state.jobs[jobId].workers;
+      const newWorkers = Math.max(0, Math.min(this.state.population, currentWorkers + count));
+      
+      this.state.jobs[jobId].workers = newWorkers;
       return true;
     }
     return false;
