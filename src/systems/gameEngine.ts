@@ -4,19 +4,20 @@ import { getBuildingType, getScaledCost, getScaledBuildTime } from '../data/buil
 import { BUILDING_JOB_MAP } from '../data/jobs.js';
 import MarketSystem from './marketSystem.js';
 
+/** Resource keys the engine tracks. */
+const RESOURCE_KEYS = ['wood', 'stone', 'food', 'gold'] as const;
+
 class GameEngine {
   private state: WorldState;
   private intervalId: number | null = null;
   private tickRate: number = 200; // 5 ticks per second
   private marketSystem: MarketSystem;
-  private previousResources: Resource;
   private listeners = new Set<() => void>();
   private buildingInstanceCounter: Record<string, number> = {};
 
-  constructor() {
-    this.state = createInitialState();
+  constructor(initialState?: WorldState) {
+    this.state = initialState ?? createInitialState();
     this.marketSystem = new MarketSystem(this.state);
-    this.previousResources = { ...this.state.resources };
 
     // Recalculate job capacities from existing completed buildings
     this.recalculateJobCapacities();
@@ -80,13 +81,10 @@ class GameEngine {
     }
   }
 
-  // Main game tick function
-  private tick(): void {
+  // Advance the world by one tick without notifying subscribers.
+  private stepTick(): void {
     this.state.tick++;
     this.state.gameTime += this.tickRate / 1000; // Convert ms to seconds
-
-    // Store previous resource amounts
-    this.previousResources = { ...this.state.resources };
 
     // Process resource generation
     this.processResourceGeneration();
@@ -96,6 +94,29 @@ class GameEngine {
 
     // Process market trades
     this.marketSystem.processTrades();
+  }
+
+  // Main game tick function
+  private tick(): void {
+    this.stepTick();
+    this.notify();
+  }
+
+  /**
+   * Advance the world by `ticks` ticks without notifying between them.
+   *
+   * The UI drives the engine one tick at a time through `start()`, which
+   * notifies subscribers after every tick. Batching runs the same simulation
+   * but pays the notification cost once, so a backlog of ticks (a backgrounded
+   * tab, a slow frame) can be caught up in a single pass.
+   */
+  runTicks(ticks: number): void {
+    if (!Number.isFinite(ticks) || ticks <= 0) {return;}
+
+    const count = Math.floor(ticks);
+    for (let i = 0; i < count; i++) {
+      this.stepTick();
+    }
 
     this.notify();
   }
@@ -281,17 +302,43 @@ class GameEngine {
     return this.marketSystem.getMerchantCount();
   }
 
-  // Get resource production rates (per second)
+  /**
+   * Net resource change per tick, derived from the staffed jobs.
+   *
+   * This is the authoritative source for the rates shown in the UI. It is
+   * computed from the job table rather than from a before/after snapshot of
+   * the resource amounts, so one-off events (building costs, market trades)
+   * cannot leak into the rate.
+   */
+  getTickRates(): Resource {
+    const rates: Resource = { wood: 0, stone: 0, food: 0, gold: 0 };
+
+    for (const job of Object.values(this.state.jobs)) {
+      if (job.workers <= 0) {continue;}
+
+      for (const key of RESOURCE_KEYS) {
+        rates[key] += (job.production[key] - job.consumption[key]) * job.workers;
+      }
+    }
+
+    return rates;
+  }
+
+  /**
+   * Net resource change per second, derived from the per-tick rate.
+   *
+   * The engine runs at a fixed 5 ticks per second, so the per-second rate is
+   * the per-tick rate multiplied by the tick frequency.
+   */
   getResourceRates(): Resource {
-    // Calculate the difference between current and previous resource amounts
-    // Adjust for the actual tick rate (200ms = 0.2 seconds per tick)
+    const tickRates = this.getTickRates();
     const ticksPerSecond = 1000 / this.tickRate; // 5 ticks per second
 
     return {
-      wood: (this.state.resources.wood - this.previousResources.wood) * ticksPerSecond,
-      stone: (this.state.resources.stone - this.previousResources.stone) * ticksPerSecond,
-      food: (this.state.resources.food - this.previousResources.food) * ticksPerSecond,
-      gold: (this.state.resources.gold - this.previousResources.gold) * ticksPerSecond,
+      wood: tickRates.wood * ticksPerSecond,
+      stone: tickRates.stone * ticksPerSecond,
+      food: tickRates.food * ticksPerSecond,
+      gold: tickRates.gold * ticksPerSecond,
     };
   }
 

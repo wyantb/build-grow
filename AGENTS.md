@@ -75,10 +75,11 @@ with a failing check; fix the cause instead.
 ```bash
 npm run lint        # ESLint: style + Solid reactivity rules
 npm run typecheck   # tsc --noEmit: type errors
+npm run test        # vitest: engine test suite
 npm run build       # production bundle must succeed
 ```
 
-`npm run check` runs all three in sequence and is the single command to use.
+`npm run check` runs all four in sequence and is the single command to use.
 `npm run lint` is the required pre-push lint gate: **a push that skips it is a
 defect**, because the rules it enforces (semicolons, explicit braces, no trailing
 whitespace, Solid 2 API usage) are exactly the ones that drift silently in a
@@ -162,7 +163,28 @@ ESLint 10 with a flat config in `eslint.config.js`. Run it with `npm run lint`;
 | `npm run lint` | Report problems. This is the pre-push gate. |
 | `npm run lint:fix` | Apply autofixable fixes (semicolons, whitespace, braces, quotes). |
 | `npm run typecheck` | `tsc --noEmit`. |
-| `npm run check` | `lint` + `typecheck` + `build`. The full local gate. |
+| `npm run test` | `vitest run`. The engine test suite. |
+| `npm run test:watch` | `vitest` in watch mode. |
+| `npm run check` | `lint` + `typecheck` + `test` + `build`. The full local gate. |
+
+### Testing
+
+Vitest runs the engine tests. The suite lives next to the code it covers, in
+`src/systems/__tests__/`.
+
+- The engine takes an optional `WorldState` in its constructor, so a test
+  can start from an exact world. `createTestWorld` in
+  `src/systems/__tests__/testWorld.ts` builds one from a small set of
+  overrides (population, resources, workers per job, completed buildings).
+- Tests assert against the job table's numbers, not against values copied
+  from the implementation. If a job's rates change, the test should fail.
+- `engine.runTicks(n)` advances the world by `n` ticks and notifies
+  subscribers once. Use it instead of a loop of `update()` calls: it is the
+  same simulation and it is the path the game will use to catch up on a
+  backlog of ticks.
+- Use `toBeCloseTo` for resource amounts. Accumulating a per-tick delta
+  over many ticks drifts in floating point (3.75 arrives as
+  3.750000000000006).
 
 ### Rule Severity Policy
 Every rule is either **off** or **error**. Warnings are not used in this

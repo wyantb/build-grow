@@ -18,6 +18,11 @@ per worker, a capacity (often tied to buildings), and optional default status.
   space for layout consistency.
 - **Food consumption.** Each population point (life) consumes 0.05 food per
   second (0.01 per tick at 5 ticks/sec). This applies regardless of job.
+- **Rates are derived, not measured.** The rate shown for a resource is the
+  net per-tick rate summed over staffed jobs, multiplied by the tick
+  frequency (5). The engine must not derive rates from a before/after
+  snapshot of the resource amounts: that lags a tick behind and folds
+  one-off events such as building costs into the rate.
 
 ## Job Catalog
 
