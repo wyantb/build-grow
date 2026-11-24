@@ -47,20 +47,34 @@ src/
 
 ## Development Workflow
 
-### Build Process
-- `npm run dev`: Start development server
-- `npm run build`: Create production build
-- `npm run clean`: Remove build artifacts
-- `npm run clean-all`: Full clean including node_modules
+### Typical UI Development Cycle
+1. **Start development server**: Run `npm run dev` to start the development server with hot reloading
+2. **Make UI changes**: Edit HTML/templates, CSS, or TypeScript files as needed
+3. **Test iteratively**: Check changes in the browser (http://localhost:3000) as you work
+4. **Verify build**: Run `npm run build` to ensure production build works correctly
+5. **Commit changes**: Add and commit source files only (not generated files)
 
-### Debugging Build Issues
-When encountering build errors like "[UNRESOLVED_ENTRY] Cannot resolve entry module public/index.html":
-1. Run `npm run clean` to remove build artifacts
-2. Delete generated files: `find src -name "*.js" -delete && find src -name "*.d.ts" -delete && find src -name "*.map" -delete`
-3. Rebuild with `npm run build`
-4. If issues persist, check import paths and ensure they match the module resolution requirements (.js extensions)
+### Adding New Features
+1. **Plan the feature**: Determine what components/UI elements are needed
+2. **Create branch**: Work on a feature branch for larger changes
+3. **Implement incrementally**: 
+   - Add new UI elements to templates/HTML
+   - Style with CSS following design principles
+   - Add interactivity with TypeScript
+4. **Test functionality**: Use `npm run dev` to test as you go
+5. **Validate build**: Run `npm run build` to ensure production build works
+6. **Update documentation**: Add notes to AGENTS.md if introducing new patterns
 
-For TypeScript compilation errors:
-1. Run `npx tsc --noEmit` to check for type errors
-2. Fix import paths (ensure .js extensions for ESM)
-3. Clean and rebuild
+### Troubleshooting Process
+When encountering unexpected issues:
+1. **Check console/network tabs** in browser dev tools for errors
+2. **Verify TypeScript compilation**: Run `npx tsc --noEmit` to check for type errors
+3. **Clean and restart**: 
+   - Stop dev server
+   - Run `npm run clean`
+   - Restart with `npm run dev`
+4. **Full refresh**: If issues persist:
+   - Stop dev server
+   - Run `npm run clean-all`
+   - Run `npm install`
+   - Restart with `npm run dev`
