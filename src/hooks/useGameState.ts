@@ -141,8 +141,9 @@ export const useGameState = () => {
   };
 
   const getAvailableWorkers = (): number => {
+    const defaultJobId = state.defaultJob;
     const totalAssigned = Object.values(state.jobs)
-      .filter((j) => j.id !== 'settler')
+      .filter((j) => j.id !== defaultJobId)
       .reduce((sum, j) => sum + j.workers, 0);
 
     return Math.max(0, state.population - totalAssigned);

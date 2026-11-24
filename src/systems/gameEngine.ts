@@ -1,7 +1,7 @@
 import { createInitialState } from '../types/worldState.js';
 import type { WorldState, Resource } from '../types/worldState.js';
 import { getBuildingType, getScaledCost, getScaledBuildTime } from '../data/buildings.js';
-import { BUILDING_JOB_MAP, FOOD_CONSUMPTION_PER_TICK } from '../data/jobs.js';
+import { BUILDING_JOB_MAP } from '../data/jobs.js';
 import MarketSystem from './marketSystem.js';
 
 class GameEngine {
@@ -104,25 +104,7 @@ class GameEngine {
   private processResourceGeneration(): void {
     const jobs = this.state.jobs;
 
-    // Calculate total assigned workers (all jobs except settler)
-    let totalAssigned = 0;
-    for (const [jobId, job] of Object.entries(jobs)) {
-      if (jobId !== 'settler') {
-        totalAssigned += job.workers;
-      }
-    }
-
-    // Settler workers = population - total assigned
-    // (settle automatically fills remaining population)
-    const settlerJob = jobs['settler'];
-    if (settlerJob) {
-      settlerJob.workers = Math.max(0, this.state.population - totalAssigned);
-    }
-
-    // Food consumption: every population point consumes 0.01 food/tick
-    this.state.resources.food -= this.state.population * FOOD_CONSUMPTION_PER_TICK;
-
-    // Production from each job
+    // Production and consumption from each job
     for (const job of Object.values(jobs)) {
       if (job.workers <= 0) {continue;}
 
@@ -230,13 +212,41 @@ class GameEngine {
       .reduce((sum, j) => sum + j.workers, 0);
     const available = Math.max(0, this.state.population - totalAssigned);
 
-    // When adding workers: can't exceed capacity or available population
     if (count > 0) {
-      const room = job.capacity > 0
-        ? Math.min(available, job.capacity - job.workers)
-        : available;
-      const actual = Math.min(count, room);
-      job.workers = Math.min(job.workers + actual, this.state.population);
+      // Determine how many workers can be moved
+      let canMove = available;
+
+      // If capacity-constrained, cap the room
+      if (job.capacity > 0) {
+        const roomInJob = Math.max(0, job.capacity - job.workers);
+        canMove = Math.min(canMove, roomInJob);
+      }
+
+      // If no available population, try to pull from the default job
+      if (canMove <= 0) {
+        const defaultJob = this.state.jobs[this.state.defaultJob];
+        if (defaultJob) {
+          canMove = Math.min(defaultJob.workers, count);
+        }
+      } else {
+        canMove = Math.min(canMove, count);
+      }
+
+      // If still no available workers, nothing to do
+      if (canMove <= 0) {return true;}
+
+      // Pull from default job first if needed
+      if (canMove > available) {
+        const fromDefault = canMove - available;
+        const defaultJob = this.state.jobs[this.state.defaultJob];
+        if (defaultJob) {
+          defaultJob.workers = Math.max(0, defaultJob.workers - fromDefault);
+        }
+        job.workers += available;
+        job.workers += fromDefault;
+      } else {
+        job.workers += canMove;
+      }
     } else {
       // When removing: can't go below 0
       job.workers = Math.max(0, job.workers + count);

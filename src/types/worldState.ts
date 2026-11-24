@@ -101,13 +101,23 @@ export const createInitialState = (): WorldState => ({
   },
   population: 5,
   jobs: {
-    settler: {
-      id: 'settler',
-      name: 'Settler',
-      description: 'Unemployed workers gathering basic resources.',
+    unemployed: {
+      id: 'unemployed',
+      name: 'Unemployed',
+      description: 'Workers with no specialized role. They consume food but produce nothing.',
       workers: 5,
       capacity: 0,
       canDefault: true,
+      production: { wood: 0, stone: 0, food: 0, gold: 0 },
+      consumption: { wood: 0, stone: 0, food: 0.05, gold: 0 }
+    },
+    settler: {
+      id: 'settler',
+      name: 'Settler',
+      description: 'Generalist workers who gather basic resources. Outcompeted by specialized roles.',
+      workers: 0,
+      capacity: 0,
+      canDefault: false,
       production: { wood: 0.1, stone: 0.04, food: 0.02, gold: 0 },
       consumption: { wood: 0, stone: 0, food: 0, gold: 0 }
     },
@@ -160,5 +170,5 @@ export const createInitialState = (): WorldState => ({
   unlockedBuildings: ['hut', 'market', 'lumberjack', 'quarry', 'builder'],
   unlockedJobs: ['settler'],
   gameTime: 0,
-  defaultJob: 'settler'
+  defaultJob: 'unemployed'
 });

@@ -8,12 +8,21 @@ import type { Job, Resource } from '../types/worldState.js';
 const ZERO: Resource = { wood: 0, stone: 0, food: 0, gold: 0 };
 
 export const JOBS: Record<string, Omit<Job, 'workers'>> = {
+  unemployed: {
+    id: 'unemployed',
+    name: 'Unemployed',
+    description: 'Workers with no specialized role. They consume food but produce nothing.',
+    capacity: 0, // uncapped
+    canDefault: true,
+    production: ZERO,
+    consumption: { wood: 0, stone: 0, food: 0.05, gold: 0 }
+  },
   settler: {
     id: 'settler',
     name: 'Settler',
-    description: 'Unemployed workers gathering basic resources.',
+    description: 'Generalist workers who gather basic resources. Outcompeted by specialized roles.',
     capacity: 0, // uncapped
-    canDefault: true,
+    canDefault: false,
     // Per tick (5 ticks/sec): 0.5/5=0.1 wood, 0.2/5=0.04 stone, 0.1/5=0.02 food
     production: { wood: 0.1, stone: 0.04, food: 0.02, gold: 0 },
     consumption: ZERO
