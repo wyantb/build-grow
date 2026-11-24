@@ -75,14 +75,33 @@ uncoordinated commits.
   write state from a component, hook, or store. If a new piece of data is needed,
   add it to the engine and mirror it out.
 
-### Typical UI Development Cycle
-1. **Start development server**: Run `npm run dev` to start the development server with hot reloading
-2. **Make UI changes**: Edit HTML/templates, CSS, or TypeScript files as needed
-3. **Test iteratively**: Check changes in the browser (http://localhost:3000) as you work
-4. **Lint the change**: Run `npm run lint` (or `npm run lint:fix` to apply autofixes).
-   The lint must pass before the change is committed.
-5. **Verify build**: Run `npm run build` to ensure production build works correctly
-6. **Commit changes**: Add and commit source files only (not generated files)
+### Commands
+| Command | Purpose |
+| --- | --- |
+| `npm run lint` | Report problems. This is the pre-push gate. |
+| `npm run lint:fix` | Apply autofixable fixes (semicolons, whitespace, braces, quotes). |
+| `npm run typecheck` | `tsc --noEmit`. |
+| `npm run test` | `vitest run`. The engine test suite. |
+| `npm run test:watch` | `vitest` in watch mode. |
+| `npm run check` | `lint` + `typecheck` + `test` + `build`. The full local gate. |
+
+### Development Cycle
+1. **Make the change**: Edit the source files the task touches, and add or
+   update engine tests alongside the behavior you changed.
+2. **Run the automated checks**: `npm run check` runs lint, typecheck, tests,
+   and the build in one command. This is the fast feedback loop, and it
+   catches nearly everything.
+3. **Verify in the browser, once, and only if the change is visible or
+   interactive**: run `npm run dev` and look at http://localhost:3000. Confirm
+   the element appears, is reachable, and is laid out correctly. Do not verify
+   arithmetic here; that belongs in Vitest.
+4. **Commit**: source files only, not generated files.
+
+The browser check is deliberately the **last** step. It is the most expensive
+step per unit of information, so run it after the cheap automated checks have
+narrowed the problem down to layout and wiring. A CSS tweak may need a look
+while iterating; anything else should get one look at the end. See
+`## Testing` for how far a browser check should go.
 
 ### Pre-Push Check (required)
 Before pushing to `main`, the working tree must pass the full gate. Do not push
@@ -110,6 +129,48 @@ Rules of the gate:
   Solid 2 defects. Fix the code; do not turn the rule off.
 - Do not commit generated output (`dist/`, `node_modules/`).
 
+## Testing
+
+### Strategy
+**Engine behavior is covered by Vitest. That is the primary strategy.**
+Anything with a rule, a rate, a capacity, or a settlement order belongs in
+`src/systems/__tests__/`, asserted against the engine rather than the UI.
+
+- **Do not test math by clicking.** Resource rates, market settlement, and
+  capacity limits are engine rules; assert them in Vitest. Reading a
+  computed number off the screen is not a test.
+- **Reach a game state through the engine, not through clicks.** Build a
+  market, assign merchants, or set up any other world through
+  `createTestWorld` overrides rather than clicking through the tabs.
+- **UI checks are optional and should be brief.** Check visibility at most:
+  that a tab or pane appears when its condition is met, and that a control is
+  present.
+- **If a UI check takes more than about a minute, stop.** It usually means
+  the state is hard to reach by hand, which is a signal to build in-repo
+  tooling (a test world helper, a seed or debug hook) instead of clicking
+  through the game.
+- **One exception: Solid reactivity needs a browser.** Node resolves
+  `solid-js` to its server build, where `createEffect` never runs, so
+  reactivity bugs do not reproduce under Vitest. See
+  `### SolidJS / TypeScript Conventions`.
+
+### Writing Engine Tests
+Vitest runs the engine tests. The suite lives next to the code it covers, in
+`src/systems/__tests__/`.
+
+- The engine takes an optional `WorldState` in its constructor, so a test
+  can start from an exact world. `createTestWorld` in
+  `src/systems/__tests__/testWorld.ts` builds one from a small set of
+  overrides (population, resources, workers per job, completed buildings).
+- Tests assert against the job table's numbers, not against values copied
+  from the implementation. If a job's rates change, the test should fail.
+- `engine.runTicks(n)` advances the world by `n` ticks and notifies
+  subscribers once. Use it instead of a loop of `update()` calls: it is the
+  same simulation and it is the path the game will use to catch up on a
+  backlog of ticks.
+- Use `toBeCloseTo` for resource amounts. Accumulating a per-tick delta
+  over many ticks drifts in floating point (3.75 arrives as
+  3.750000000000006).
 
 ## Code Organization
 
@@ -173,56 +234,6 @@ src/
 ESLint 10 with a flat config in `eslint.config.js`. Run it with `npm run lint`;
 `npm run lint:fix` applies every autofixable fix.
 
-### Commands
-| Command | Purpose |
-| --- | --- |
-| `npm run lint` | Report problems. This is the pre-push gate. |
-| `npm run lint:fix` | Apply autofixable fixes (semicolons, whitespace, braces, quotes). |
-| `npm run typecheck` | `tsc --noEmit`. |
-| `npm run test` | `vitest run`. The engine test suite. |
-| `npm run test:watch` | `vitest` in watch mode. |
-| `npm run check` | `lint` + `typecheck` + `test` + `build`. The full local gate. |
-
-### Testing
-
-Vitest runs the engine tests. The suite lives next to the code it covers, in
-`src/systems/__tests__/`.
-
-- The engine takes an optional `WorldState` in its constructor, so a test
-  can start from an exact world. `createTestWorld` in
-  `src/systems/__tests__/testWorld.ts` builds one from a small set of
-  overrides (population, resources, workers per job, completed buildings).
-- Tests assert against the job table's numbers, not against values copied
-  from the implementation. If a job's rates change, the test should fail.
-- `engine.runTicks(n)` advances the world by `n` ticks and notifies
-  subscribers once. Use it instead of a loop of `update()` calls: it is the
-  same simulation and it is the path the game will use to catch up on a
-  backlog of ticks.
-- Use `toBeCloseTo` for resource amounts. Accumulating a per-tick delta
-  over many ticks drifts in floating point (3.75 arrives as
-  3.750000000000006).
-
-### Testing Strategy
-
-**Engine behavior is covered by Vitest. That is the primary strategy.**
-Anything with a rule, a rate, a capacity, or a settlement order belongs in
-`src/systems/__tests__/`, asserted against the engine rather than the UI.
-
-- **Do not test math by clicking.** Resource rates, market settlement, and
-  capacity limits are engine rules; assert them in Vitest. Reading a
-  computed number off the screen is not a test.
-- **UI checks are optional and should be brief.** Check visibility at most:
-  that a tab or pane appears when its condition is met, and that a control
-  is present. Do not verify arithmetic through the UI, and do not drive long
-  click sequences to reach a game state.
-- **If a UI check is taking more than about a minute, stop.** It usually
-  means the state is hard to reach by hand, which is a signal to build
-  in-repo tooling (a test world helper, a seed or debug hook) instead of
-  clicking through the game.
-- **Reach a game state through the engine, not through clicks.** For example,
-  build a market and assign merchants through `createTestWorld` overrides
-  rather than clicking through the Buildings and Jobs tabs.
-
 ### Rule Severity Policy
 Every rule is either **off** or **error**. Warnings are not used in this
 project, so `npm run lint` reports a non-zero exit code for anything that
@@ -278,7 +289,8 @@ it (`typescript-eslint does not support TS 7.0`). Running both side by side is t
 officially documented arrangement. Do not "fix" the peer-dependency conflict by
 downgrading `typescript` to a single version.
 
-### Troubleshooting Process
+## Troubleshooting
+
 When encountering unexpected issues:
 1. **Check console/network tabs** in browser dev tools for errors
 2. **Verify lint**: Run `npm run lint` to catch style and Solid rule violations
