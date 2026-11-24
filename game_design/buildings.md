@@ -14,17 +14,4 @@ provides job capacity, production bonuses, and unlocks new capabilities.
 
 ## Building Catalog
 
-| Building | Category | Base Cost | Base Build Time | Job Provided |
-|----------|----------|-----------|-----------------|-------------|
-| Hut | Residential | 10 wood | 5s | — (unlocks Settler) |
-| Lumberjack Camp | Industrial | 15 wood, 5 stone | 10s | Lumberjack (1 slot) |
-| Quarry | Industrial | 10 wood, 15 stone | 12s | Quarrier (1 slot) |
-| Market | Commercial | 20 wood, 10 stone, 5 gold | 15s | Merchant (1 slot) |
-| Builder's Lodge | Industrial | 25 wood, 15 stone | 20s | Builder (1 slot) |
-
-## Design Philosophy
-
-- Early game focuses on resource-gathering buildings (Lumberjack, Quarry).
-- Mid game introduces trade and specialization (Market, Builder's Lodge).
-- Late game will add military, research, and civic buildings.
-- Buildings form the backbone of economic production and job capacity.
+See src/data/buildings.ts
