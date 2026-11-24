@@ -1,5 +1,6 @@
 import { Component, For, createMemo } from 'solid-js'
 import { getGameState } from '../../hooks/useGameState'
+import { formatNumber } from '../../utils/formatNumber'
 import type { Building } from '../../types/worldState'
 
 const BuildingGrid: Component = () => {
@@ -11,11 +12,27 @@ const BuildingGrid: Component = () => {
   // Format cost for display
   const formatCost = (cost: Building['cost']): string => {
     const costs = []
-    if (cost.wood > 0) costs.push(`${cost.wood} Wood`)
-    if (cost.stone > 0) costs.push(`${cost.stone} Stone`)
-    if (cost.food > 0) costs.push(`${cost.food} Food`)
-    if (cost.gold > 0) costs.push(`${cost.gold} Gold`)
+    if (cost.wood > 0) costs.push(`${formatNumber(cost.wood)} Wood`)
+    if (cost.stone > 0) costs.push(`${formatNumber(cost.stone)} Stone`)
+    if (cost.food > 0) costs.push(`${formatNumber(cost.food)} Food`)
+    if (cost.gold > 0) costs.push(`${formatNumber(cost.gold)} Gold`)
     return costs.join(', ')
+  }
+  
+  // Check if player can afford a building
+  const canAffordBuilding = (building: Building): boolean => {
+    const resources = gameState.getResources()
+    return (
+      resources.wood >= building.cost.wood &&
+      resources.stone >= building.cost.stone &&
+      resources.food >= building.cost.food &&
+      resources.gold >= building.cost.gold
+    )
+  }
+  
+  // Build a building
+  const buildBuilding = (buildingId: string) => {
+    gameState.buildBuilding(buildingId)
   }
 
   return (
@@ -36,7 +53,11 @@ const BuildingGrid: Component = () => {
                 Progress: {building.constructionProgress}%
               </div>
             )}
-            <button class="build-button" disabled={building.built}>
+            <button 
+              class="build-button" 
+              disabled={building.built || !canAffordBuilding(building)}
+              onClick={() => buildBuilding(building.id)}
+            >
               {building.built ? 'Built' : 'Build'}
             </button>
           </div>

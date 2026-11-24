@@ -1,12 +1,16 @@
-import { Component } from 'solid-js'
+import { Component, createSignal } from 'solid-js'
 import { useGameLoop } from './hooks/useGameLoop'
 import ResourcePanel from './components/game/ResourcePanel'
 import BuildingGrid from './components/game/BuildingGrid'
 import JobPanel from './components/game/JobPanel'
+import MarketPanel from './components/game/MarketPanel'
 
 const App: Component = () => {
   // Initialize game state and loop
   const { gameEngine, gameState } = useGameLoop()
+  
+  // Tab management
+  const [activeTab, setActiveTab] = createSignal<'buildings' | 'jobs' | 'market'>('buildings')
   
   // For debugging purposes
   ;(window as any).gameEngine = gameEngine
@@ -31,30 +35,45 @@ const App: Component = () => {
         
         <div class="panel main-panel">
           <div class="tabs">
-            <button class="tab active" data-tab="buildings">Buildings</button>
-            <button class="tab" data-tab="jobs">Jobs</button>
-            <button class="tab" data-tab="market" id="market-tab-button" style="display: none;">Market</button>
+            <button 
+              class={`tab ${activeTab() === 'buildings' ? 'active' : ''}`} 
+              onClick={() => setActiveTab('buildings')}
+            >
+              Buildings
+            </button>
+            <button 
+              class={`tab ${activeTab() === 'jobs' ? 'active' : ''}`} 
+              onClick={() => setActiveTab('jobs')}
+            >
+              Jobs
+            </button>
+            <button 
+              class={`tab ${activeTab() === 'market' ? 'active' : ''}`} 
+              onClick={() => setActiveTab('market')}
+            >
+              Market
+            </button>
           </div>
           
           <div class="tab-content">
-            <div id="buildings-tab" class="tab-pane active">
+            <div id="buildings-tab" class={`tab-pane ${activeTab() === 'buildings' ? 'active' : ''}`}>
               <h2>Buildings</h2>
               <div id="buildings-list">
                 <BuildingGrid />
               </div>
             </div>
             
-            <div id="jobs-tab" class="tab-pane">
+            <div id="jobs-tab" class={`tab-pane ${activeTab() === 'jobs' ? 'active' : ''}`}>
               <h2>Jobs</h2>
               <div id="jobs-list">
                 <JobPanel />
               </div>
             </div>
             
-            <div id="market-tab" class="tab-pane">
+            <div id="market-tab" class={`tab-pane ${activeTab() === 'market' ? 'active' : ''}`}>
               <h2>Market</h2>
               <div id="market-content">
-                {/* Market content will go here */}
+                <MarketPanel />
               </div>
             </div>
           </div>
