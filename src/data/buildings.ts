@@ -51,6 +51,15 @@ export const BUILDING_TYPES: BuildingType[] = [
     category: 'Industrial Park',
   },
   {
+    id: 'farm',
+    name: 'Farm',
+    description: 'Grows food to feed your population.',
+    cost: { wood: 35, stone: 0, food: 0, gold: 0 },
+    buildTime: 30,
+    effect: 'Provides work for a farmer and increases food production.',
+    category: 'Industrial Park',
+  },
+  {
     id: 'builder',
     name: 'Builder Workshop',
     description: 'Allows construction of more advanced buildings.',

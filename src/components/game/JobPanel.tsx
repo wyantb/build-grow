@@ -21,6 +21,7 @@ const JobPanel: Component = () => {
     const visible = raw.filter((job) => {
       const buildingId = jobToBuilding[job.id];
       if (!buildingId) {return true;}
+
       return (buildingCounts[buildingId] ?? 0) > 0;
     });
 

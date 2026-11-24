@@ -48,6 +48,16 @@ export const JOBS: Record<string, Omit<Job, 'workers'>> = {
     production: { wood: 0, stone: 0.8, food: 0, gold: 0 },
     consumption: DEFAULT_CONSUMPTION,
   },
+  farmer: {
+    id: 'farmer',
+    name: 'Farmer',
+    description: 'Grows food on farmland to feed the population.',
+    capacity: 0, // set dynamically from buildings
+    canDefault: false,
+    // 2.5 × DEFAULT_CONSUMPTION (0.025) = 0.0625 food/tick
+    production: { wood: 0, stone: 0, food: 0.0625, gold: 0 },
+    consumption: DEFAULT_CONSUMPTION,
+  },
   merchant: {
     id: 'merchant',
     name: 'Merchant',
@@ -64,6 +74,7 @@ export const JOBS: Record<string, Omit<Job, 'workers'>> = {
 export const BUILDING_JOB_MAP: Record<string, string> = {
   lumberjack: 'lumberjack',
   quarry: 'quarrier',
+  farm: 'farmer',
   market: 'merchant',
 };
 
