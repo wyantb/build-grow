@@ -95,6 +95,8 @@ Rules of the gate:
    the element appears, is reachable, and is laid out correctly. Do not verify
    arithmetic here; that belongs in Vitest.
 4. **Commit**: source files only, not generated files.
+5. **Offer followup ideas** that violated 80/20 rules from earlier, only as final
+   output offered to the human reviewer.
 
 The browser check is deliberately last: it is the most expensive step per unit
 of information, so run it after the cheap automated checks have narrowed the
