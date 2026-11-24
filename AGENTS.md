@@ -104,7 +104,7 @@ while iterating; anything else should get one look at the end. See
 `## Testing` for how far a browser check should go.
 
 ### Pre-Push Check (required)
-Before pushing to `main`, the working tree must pass the full gate. Do not push
+Before pushing to `main`, the working tree must pass the full gate of `npm run check`. Do not push
 with a failing check; fix the cause instead.
 
 ```bash
@@ -113,12 +113,6 @@ npm run typecheck   # tsc --noEmit: type errors
 npm run test        # vitest: engine test suite
 npm run build       # production bundle must succeed
 ```
-
-`npm run check` runs all four in sequence and is the single command to use.
-`npm run lint` is the required pre-push lint gate: **a push that skips it is a
-defect**, because the rules it enforces (semicolons, explicit braces, no trailing
-whitespace, Solid 2 API usage) are exactly the ones that drift silently in a
-codebase without automation.
 
 Rules of the gate:
 - Lint failures are never silenced with inline disables unless the rule is
@@ -229,27 +223,7 @@ src/
   Read the stored setting inside JSX, not in the component body, to avoid
   `STRICT_READ_UNTRACKED`.
 
-## Linting
-
-ESLint 10 with a flat config in `eslint.config.js`. Run it with `npm run lint`;
-`npm run lint:fix` applies every autofixable fix.
-
-### Rule Severity Policy
-Every rule is either **off** or **error**. Warnings are not used in this
-project, so `npm run lint` reports a non-zero exit code for anything that
-needs attention and the output has no severity to interpret.
-
-This means the warn-level rules inherited from `solid.configs.recommended`
-(`solid/components-return-once`, `solid/event-handlers`, `solid/imports`,
-`solid/no-react-deps`, `solid/no-react-specific-props`, `solid/self-closing-comp`,
-`solid/style-prop`) are explicitly promoted to `error` in `eslint.config.js`.
-If you add a plugin or extend a shared config, promote or disable its
-warnings rather than letting them through.
-
-`scripts/check-rule-severity.mjs` enforces this. It walks the effective
-config of every linted file and fails if any rule resolves to `warn`. It runs
-as part of `npm run lint` and `npm run lint:fix`, so a plugin upgrade cannot
-silently reintroduce a warning-level rule.
+## Coding Conventions
 
 ### Style Rules (all autofixable)
 - Semicolons are required. The codebase is 100% semicolon-terminated.
@@ -260,34 +234,6 @@ silently reintroduce a warning-level rule.
 - `const` over `let`; `let` over `var`. `prefer-const` is on.
 - `no-console` allows `console.info`, `console.warn`, and `console.error`. Use
   `console.info` for intentional game-event logging; `console.log` is rejected.
-
-### Solid Rules
-`eslint-plugin-solid` is enabled with the reactivity-sensitive rules, so Solid 1
-habits fail the lint instead of failing at runtime:
-- `solid/removed-api` — flags Solid 1 APIs removed in Solid 2.
-- `solid/no-single-arg-create-effect` — Solid 2 requires `createEffect(compute, effect)`.
-- `solid/reactivity`, `solid/no-destructure` — props and signals must be read through
-  accessors, never destructured.
-- `solid/no-store-mutation-outside-setter`, `solid/no-write-in-pure-computation` —
-  the engine owns the state; write through the setter, never inside `createMemo`.
-- `solid/prefer-for`, `solid/validate-jsx-nesting`, `solid/no-unused-signal`.
-
-### Vite Rules
-`@typpi/eslint-plugin-vite` is enabled. It is the maintained successor to the
-unpublished `eslint-plugin-vite` package.
-
-### TypeScript Compiler Versions
-`typescript` is aliased to `npm:@typescript/typescript6@^6.0.2` and
-`@typescript/native` is aliased to `npm:typescript@^7.0.2`. This is deliberate:
-- `npx tsc` runs **TypeScript 7** (the native compiler), which is what
-  `npm run typecheck` and `npm run build` use.
-- `require('typescript')` resolves to the **TypeScript 6** JavaScript API, which is
-  what `typescript-eslint` needs to parse and analyze files.
-
-TypeScript 7 ships no JavaScript API, and `typescript-eslint` refuses to run against
-it (`typescript-eslint does not support TS 7.0`). Running both side by side is the
-officially documented arrangement. Do not "fix" the peer-dependency conflict by
-downgrading `typescript` to a single version.
 
 ## Troubleshooting
 
