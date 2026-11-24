@@ -2,7 +2,9 @@
 
 ## Overview
 
-This document outlines a plan to refactor the current TypeScript game implementation to use React with modern UI components (Radix UI, Tailwind CSS, and shadcn-inspired components). This will improve maintainability, developer experience, and enable more sophisticated UI features.
+This document outlines a plan to refactor the current TypeScript game implementation to use React with modern UI components. This will improve maintainability, developer experience, and enable more sophisticated UI features.
+
+Note: React dependencies have already been added to the project but implementation hasn't started yet.
 
 ## Why Refactor?
 
@@ -27,7 +29,7 @@ This document outlines a plan to refactor the current TypeScript game implementa
 
 One concern with React is how it integrates with a continuous tick-based game loop. Here's how we can make it work:
 
-#### Option 1: State Batching (Recommended)
+#### Option 1: State Batching (Previously Recommended)
 - Use React's `useState` for game state
 - Batch updates from the game engine and trigger React renders at intervals (e.g., 30fps)
 - Use `useEffect` to subscribe to game engine events
@@ -38,18 +40,22 @@ One concern with React is how it integrates with a continuous tick-based game lo
 - Use React only for UI overlays, menus, and non-critical interfaces
 - Direct DOM manipulation for core gameplay elements that update frequently
 
-#### Option 3: React with requestAnimationFrame
-- Use React's concurrent mode features
-- Sync game engine ticks with React's rendering cycle
-- More complex but provides the smoothest integration
+#### Option 3: React with requestAnimationFrame and useRef (Current Recommendation)
+- Use `useRef` for game state instead of `useState` to avoid unnecessary re-renders
+- Implement `useAnimationFrameLoop` from `react-timing-hooks` for efficient rendering
+- Decouple game engine ticks from UI updates for better performance
+- Use selective rendering strategies to only update components when relevant data changes
+- Leverage React's component model with memoization for optimal performance
 
+This approach provides the best balance of React's benefits with game-specific performance requirements.
 ## Implementation Strategy
 
 ### Phase 1: Foundation Setup
-1. Install React, React DOM, and Vite React plugin
+1. Install React, React DOM, Vite React plugin, and react-timing-hooks
 2. Set up Tailwind CSS for styling
 3. Configure build process to support both existing code and new React components
 4. Create a simple React wrapper component for the existing game
+5. Implement useGameLoop hook with requestAnimationFrame for efficient rendering
 
 ### Phase 2: Core UI Migration
 1. Migrate resource display to React component
@@ -67,8 +73,9 @@ One concern with React is how it integrates with a continuous tick-based game lo
 ### Phase 4: Game Engine Integration
 1. Wrap game engine in React context/provider pattern
 2. Create hooks for accessing game state and actions
-3. Implement proper state synchronization between engine and UI
-4. Optimize rendering performance for frequent updates
+3. Implement proper state synchronization between engine and UI using useRef
+4. Optimize rendering performance using requestAnimationFrame and selective updates
+5. Implement delta tracking to only re-render components when relevant data changes
 
 ## Technical Details
 
@@ -76,14 +83,15 @@ One concern with React is how it integrates with a continuous tick-based game lo
 ```json
 {
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "zod": "^3.21.4"
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "zod": "^4.6.7",
+    "react-timing-hooks": "^5.2.0"
   },
   "devDependencies": {
-    "@types/react": "^18.0.28",
-    "@types/react-dom": "^18.0.11",
-    "@vitejs/plugin-react": "^4.0.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
     "tailwindcss": "^3.3.0",
     "autoprefixer": "^10.4.14",
     "postcss": "^8.4.24",
@@ -94,28 +102,38 @@ One concern with React is how it integrates with a continuous tick-based game lo
 }
 ```
 
+Note: React and related dependencies have already been added to the project. TailwindCSS, Radix UI, and react-timing-hooks dependencies still need to be installed.
+
 ### File Structure Changes
 ```
 src/
-├── components/           # React components
-│   ├── ui/             # Generic UI components (buttons, cards, etc.)
-│   ├── game/           # Game-specific components (resources, buildings, etc.)
-│   └── layout/         # Layout components
-├── hooks/              # Custom React hooks
-│   └── useGameState.ts # Hook for game state integration
-├── lib/                # Utility functions
-│   └── gameEngine.ts   # Game engine wrapper
-├── styles/             # CSS/Tailwind configuration
-└── App.tsx             # Main React application component
+├── components/              # React components
+│   ├── ui/                  # Generic UI components (buttons, cards, etc.)
+│   ├── game/                # Game-specific components (resources, buildings, etc.)
+│   │   ├── ResourcePanel.tsx # Resource display component
+│   │   ├── BuildingGrid.tsx # Building grid component
+│   │   └── JobPanel.tsx     # Job assignment component
+│   └── layout/              # Layout components
+├── hooks/                   # Custom React hooks
+│   ├── useGameState.ts      # Hook for game state integration
+│   └── useGameLoop.ts       # Hook for game loop with requestAnimationFrame
+├── lib/                     # Utility functions
+│   └── gameEngine.ts        # Game engine wrapper
+├── styles/                  # CSS/Tailwind configuration
+└── App.tsx                  # Main React application component
 ```
+
+Note: The current file structure doesn't include React components yet as the implementation hasn't started. The existing files (main.ts, systems/, types/, ui/) contain the original non-React implementation.
 
 ### Performance Optimization Strategies
 
-1. **Memoization**: Use `React.memo` for components that render frequently
-2. **Selective Rendering**: Only render UI elements that are visible/active
-3. **Virtualization**: For large lists of buildings/jobs
-4. **State Batching**: Group multiple state updates to reduce render frequency
+1. **useRef for Game State**: Store game state in `useRef` instead of `useState` to prevent unnecessary re-renders
+2. **Selective Rendering**: Only render UI elements that are visible/active or have changed data
+3. **React.memo**: Use `React.memo` for components that render frequently but rarely change
+4. **Virtualization**: For large lists of buildings/jobs
 5. **Context Selectors**: Use libraries like `use-context-selector` to prevent unnecessary re-renders
+6. **requestAnimationFrame**: Use `useAnimationFrameLoop` for smooth UI updates synchronized with browser refresh rate
+7. **Delta Updates**: Only update UI components when relevant game state changes occur
 
 ## Migration Path
 
@@ -124,6 +142,8 @@ src/
 2. Migrate one component at a time
 3. Use feature flags to switch between implementations
 4. Test thoroughly at each step
+
+Note: The current implementation is still using the original non-React approach with manual DOM manipulation.
 
 ### Approach 2: Big Bang Migration
 1. Complete rewrite in React
@@ -144,7 +164,7 @@ src/
 
 ### Performance Concerns
 - **Risk**: Frequent game ticks causing React rendering overhead
-- **Mitigation**: Implement state batching and selective rendering strategies
+- **Mitigation**: Use useRef for game state and requestAnimationFrame for rendering to decouple game logic from UI updates
 
 ### Learning Curve
 - **Risk**: Team unfamiliarity with React patterns
@@ -153,6 +173,20 @@ src/
 ### Compatibility Issues
 - **Risk**: Existing game logic doesn't integrate smoothly with React
 - **Mitigation**: Maintain hybrid approach initially, refactor incrementally
+
+## Working with React's Component Model
+
+To effectively work with React's component model for this game:
+
+1. **Component Structure**: Organize components hierarchically (ResourcePanel, BuildingGrid, JobPanel) to match game UI sections
+2. **Props-Driven Updates**: Pass only necessary data as props to minimize re-render scope
+3. **React.memo**: Apply to components that receive frequent updates but rarely change visibly
+4. **Key-based Lists**: Use stable keys for building/job lists to optimize React's reconciliation
+5. **Context Selectors**: Use `use-context-selector` to prevent unnecessary re-renders from context changes
+6. **Delta Tracking**: Compare previous and current game states to determine which components need updates
+7. **Conditional Rendering**: Only render components when relevant data exists or is visible
+
+This approach ensures efficient rendering while maintaining React's declarative benefits without forcing constant re-renders.
 
 ## Success Metrics
 
@@ -166,6 +200,9 @@ src/
 
 1. Review this plan with stakeholders
 2. Decide on migration approach (gradual vs. big bang)
-3. Set up development environment for React
-4. Begin Phase 1 implementation
-5. Create prototype demonstrating React integration with game engine
+3. Install remaining dependencies (TailwindCSS, Radix UI, react-timing-hooks)
+4. Set up development environment for React
+5. Begin Phase 1 implementation
+6. Create prototype demonstrating React integration with game engine using requestAnimationFrame
+
+Note: React dependencies are already installed but implementation hasn't started yet.
