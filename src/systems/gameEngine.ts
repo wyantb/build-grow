@@ -248,8 +248,17 @@ class GameEngine {
         job.workers += canMove;
       }
     } else {
-      // When removing: can't go below 0
-      job.workers = Math.max(0, job.workers + count);
+      // When removing: move workers to default job instead of the void
+      const removing = Math.min(job.workers, Math.abs(count));
+      job.workers -= removing;
+
+      // Add to default job (unless removing from default job itself)
+      if (jobId !== this.state.defaultJob) {
+        const defaultJob = this.state.jobs[this.state.defaultJob];
+        if (defaultJob) {
+          defaultJob.workers += removing;
+        }
+      }
     }
 
     this.notify();

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { JOBS } from '../data/jobs.js';
 
 // Define the basic resource schema
 export const ResourceSchema = z.object({
@@ -90,85 +91,46 @@ export const WorldStateSchema = z.object({
 export type WorldState = z.infer<typeof WorldStateSchema>;
 
 // Create initial state
-export const createInitialState = (): WorldState => ({
-  version: '1.0.0',
-  tick: 0,
-  resources: {
-    wood: 250,
-    stone: 250,
-    food: 500,
-    gold: 0
-  },
-  population: 5,
-  jobs: {
-    unemployed: {
-      id: 'unemployed',
-      name: 'Unemployed',
-      description: 'Workers with no specialized role. They consume food but produce nothing.',
-      workers: 5,
-      capacity: 0,
-      canDefault: true,
-      production: { wood: 0, stone: 0, food: 0, gold: 0 },
-      consumption: { wood: 0, stone: 0, food: 0.05, gold: 0 }
+export const createInitialState = (): WorldState => {
+  const initialState: WorldState = {
+    version: '1.0.0',
+    tick: 0,
+    resources: {
+      wood: 250,
+      stone: 250,
+      food: 500,
+      gold: 0
     },
-    settler: {
-      id: 'settler',
-      name: 'Settler',
-      description: 'Generalist workers who gather basic resources. Outcompeted by specialized roles.',
-      workers: 0,
-      capacity: 0,
-      canDefault: false,
-      production: { wood: 0.1, stone: 0.04, food: 0.02, gold: 0 },
-      consumption: { wood: 0, stone: 0, food: 0, gold: 0 }
+    population: 5,
+    jobs: Object.fromEntries(
+      Object.entries(JOBS).map(([id, job]) => [id, { ...job, workers: 0 }])
+    ),
+    buildings: {},
+    buildingCounts: {},
+    species: {
+      id: 'human',
+      name: 'Human',
+      description: 'Recently arrived from another universe through time travel and cloning technology',
+      baseStats: {
+        strength: 5,
+        intelligence: 5,
+        agility: 5,
+        magic: 2
+      },
+      growthRate: 1.0,
+      resourceConsumption: 1.0
     },
-    lumberjack: {
-      id: 'lumberjack',
-      name: 'Lumberjack',
-      description: 'Cuts wood from nearby forests.',
-      workers: 0,
-      capacity: 0,
-      canDefault: false,
-      production: { wood: 1.0, stone: 0, food: 0, gold: 0 },
-      consumption: { wood: 0, stone: 0, food: 0, gold: 0 }
-    },
-    quarrier: {
-      id: 'quarrier',
-      name: 'Quarrier',
-      description: 'Mines stone from quarries.',
-      workers: 0,
-      capacity: 0,
-      canDefault: false,
-      production: { wood: 0, stone: 0.8, food: 0, gold: 0 },
-      consumption: { wood: 0, stone: 0, food: 0, gold: 0 }
-    },
-    merchant: {
-      id: 'merchant',
-      name: 'Merchant',
-      description: 'Trades goods at the market (production TBD).',
-      workers: 0,
-      capacity: 0,
-      canDefault: false,
-      production: { wood: 0, stone: 0, food: 0, gold: 0 },
-      consumption: { wood: 0, stone: 0, food: 0, gold: 0 }
-    }
-  },
-  buildings: {},
-  buildingCounts: {},
-  species: {
-    id: 'human',
-    name: 'Human',
-    description: 'Recently arrived from another universe through time travel and cloning technology',
-    baseStats: {
-      strength: 5,
-      intelligence: 5,
-      agility: 5,
-      magic: 2
-    },
-    growthRate: 1.0,
-    resourceConsumption: 1.0
-  },
-  unlockedBuildings: ['hut', 'market', 'lumberjack', 'quarry', 'builder'],
-  unlockedJobs: ['settler'],
-  gameTime: 0,
-  defaultJob: 'unemployed'
-});
+    unlockedBuildings: ['hut', 'market', 'lumberjack', 'quarry', 'builder'],
+    unlockedJobs: ['settler'],
+    gameTime: 0,
+    defaultJob: 'unemployed'
+  };
+
+  // Put initial population in the default job
+  const defaultJobRef = initialState.jobs[initialState.defaultJob];
+  if (defaultJobRef) {
+    defaultJobRef.workers = initialState.population;
+  }
+
+  return initialState;
+};
