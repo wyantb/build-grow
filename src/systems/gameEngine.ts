@@ -213,20 +213,19 @@ class GameEngine {
     const available = Math.max(0, this.state.population - totalAssigned);
 
     if (count > 0) {
-      // Determine how many workers can be moved
-      let canMove = available;
+      // Room in job (0 capacity = unlimited)
+      const roomInJob = job.capacity > 0
+        ? Math.max(0, job.capacity - job.workers)
+        : Infinity;
 
-      // If capacity-constrained, cap the room
-      if (job.capacity > 0) {
-        const roomInJob = Math.max(0, job.capacity - job.workers);
-        canMove = Math.min(canMove, roomInJob);
-      }
+      // Determine how many workers can be moved
+      let canMove = Math.min(available, roomInJob);
 
       // If no available population, try to pull from the default job
       if (canMove <= 0) {
         const defaultJob = this.state.jobs[this.state.defaultJob];
         if (defaultJob) {
-          canMove = Math.min(defaultJob.workers, count);
+          canMove = Math.min(defaultJob.workers, roomInJob, count);
         }
       } else {
         canMove = Math.min(canMove, count);
