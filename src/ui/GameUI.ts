@@ -162,12 +162,6 @@ class GameUI {
   private updateBuildings(state: WorldState): void {
     const buildingsList = document.getElementById('buildings-list');
     if (buildingsList) {
-      // Group buildings by type
-      const housingBuildings = [];
-      const resourceBuildings = [];
-      const commercialBuildings = [];
-      const scienceBuildings = [];
-      
       // Collect existing buildings
       const existingBuildings = Object.values(state.buildings);
       
@@ -219,36 +213,36 @@ class GameUI {
       let buildingsHTML = '';
       
       // Housing section
-      buildingsHTML += '<div class="building-section"><h3>Housing</h3>';
+      buildingsHTML += '<div class="building-section"><h3 class="section-header">Residential Block</h3><div class="building-grid">';
       buildingTypes.filter(b => b.type === 'housing').forEach(buildingType => {
         const existingBuilding = existingBuildings.find((b: any) => b.id === buildingType.id);
-        buildingsHTML += this.createBuildingCard(buildingType, existingBuilding, state.resources);
+        buildingsHTML += this.createBuildingTile(buildingType, existingBuilding, state.resources);
       });
-      buildingsHTML += '</div>';
+      buildingsHTML += '</div></div>';
       
       // Resource section
-      buildingsHTML += '<div class="building-section"><h3>Resource Production</h3>';
+      buildingsHTML += '<div class="building-section"><h3 class="section-header">Outskirts</h3><div class="building-grid">';
       buildingTypes.filter(b => b.type === 'resource').forEach(buildingType => {
         const existingBuilding = existingBuildings.find((b: any) => b.id === buildingType.id);
-        buildingsHTML += this.createBuildingCard(buildingType, existingBuilding, state.resources);
+        buildingsHTML += this.createBuildingTile(buildingType, existingBuilding, state.resources);
       });
-      buildingsHTML += '</div>';
+      buildingsHTML += '</div></div>';
       
       // Commercial section
-      buildingsHTML += '<div class="building-section"><h3>Commercial</h3>';
+      buildingsHTML += '<div class="building-section"><h3 class="section-header">Commercial District</h3><div class="building-grid">';
       buildingTypes.filter(b => b.type === 'commercial').forEach(buildingType => {
         const existingBuilding = existingBuildings.find((b: any) => b.id === buildingType.id);
-        buildingsHTML += this.createBuildingCard(buildingType, existingBuilding, state.resources);
+        buildingsHTML += this.createBuildingTile(buildingType, existingBuilding, state.resources);
       });
-      buildingsHTML += '</div>';
+      buildingsHTML += '</div></div>';
       
       // Science section
-      buildingsHTML += '<div class="building-section"><h3>Science</h3>';
+      buildingsHTML += '<div class="building-section"><h3 class="section-header">Science Sector</h3><div class="building-grid">';
       buildingTypes.filter(b => b.type === 'science').forEach(buildingType => {
         const existingBuilding = existingBuildings.find((b: any) => b.id === buildingType.id);
-        buildingsHTML += this.createBuildingCard(buildingType, existingBuilding, state.resources);
+        buildingsHTML += this.createBuildingTile(buildingType, existingBuilding, state.resources);
       });
-      buildingsHTML += '</div>';
+      buildingsHTML += '</div></div>';
       
       buildingsList.innerHTML = buildingsHTML;
       
@@ -257,44 +251,39 @@ class GameUI {
     }
   }
   
-  private createBuildingCard(buildingType: any, existingBuilding: any, resources: any): string {
+  private createBuildingTile(buildingType: any, existingBuilding: any, resources: any): string {
     const canAfford = resources.wood >= buildingType.cost.wood && 
                       resources.stone >= buildingType.cost.stone && 
                       resources.food >= buildingType.cost.food && 
                       resources.gold >= buildingType.cost.gold;
     
-    let cardHTML = `
-      <div class="building-card">
-        <div class="building-header">
-          <span class="building-name">${buildingType.name}</span>
-        </div>
-        <div class="building-description">${buildingType.description}</div>
-        <div class="building-cost">
-          Cost: ${buildingType.cost.wood > 0 ? `Wood: ${buildingType.cost.wood} ` : ''}
-                ${buildingType.cost.stone > 0 ? `Stone: ${buildingType.cost.stone} ` : ''}
-                ${buildingType.cost.food > 0 ? `Food: ${buildingType.cost.food} ` : ''}
-                ${buildingType.cost.gold > 0 ? `Gold: ${buildingType.cost.gold} ` : ''}
-        </div>
+    // Count how many of this building type exist
+    const buildingCount = existingBuilding && existingBuilding.built ? 1 : 0;
+    
+    let tileHTML = `
+      <div class="building-tile ${!canAfford ? 'cannot-afford' : ''}">
+        <div class="building-name">${buildingType.name}</div>
+        ${buildingCount > 0 ? `<div class="building-count">${buildingCount}</div>` : ''}
     `;
     
-    if (existingBuilding) {
-      if (existingBuilding.built) {
-        cardHTML += `<button class="build-button completed" disabled>Built</button>`;
-      } else {
-        const progressPercent = existingBuilding.constructionProgress;
-        cardHTML += `
-          <button class="build-button constructing" disabled style="position: relative;">
-            Building... ${progressPercent.toFixed(0)}%
-            <div class="progress-overlay" style="position: absolute; top: 0; left: 0; height: 100%; background: rgba(0, 122, 204, 0.3); width: ${progressPercent}%;"></div>
-          </button>
-        `;
-      }
+    if (existingBuilding && !existingBuilding.built) {
+      const progressPercent = existingBuilding.constructionProgress;
+      tileHTML += `
+        <div class="building-progress-container">
+          <div class="building-progress-bar">
+            <div class="building-progress-fill" style="width: ${progressPercent}%"></div>
+          </div>
+          <div class="building-progress-text">${progressPercent.toFixed(0)}%</div>
+        </div>
+      `;
+    } else if (!existingBuilding) {
+      tileHTML += `<button class="build-button" id="build-${buildingType.id}">Build</button>`;
     } else {
-      cardHTML += `<button class="build-button" id="build-${buildingType.id}" ${!canAfford ? 'disabled' : ''}>Build</button>`;
+      tileHTML += `<div class="building-built">Built</div>`;
     }
     
-    cardHTML += `</div>`;
-    return cardHTML;
+    tileHTML += `</div>`;
+    return tileHTML;
   }
 
   private updateJobs(state: WorldState): void {

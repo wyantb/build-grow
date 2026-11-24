@@ -125,70 +125,74 @@ body.light-mode .main-panel {
   margin-bottom: 20px;
 }
 
-.building-section h3 {
+.section-header {
   font-size: 1rem;
   margin-bottom: 10px;
-  color: #aaa;
+  color: #ffd700;
   border-bottom: 1px solid #444;
   padding-bottom: 5px;
 }
 
-body.light-mode .building-section h3 {
-  color: #666;
+body.light-mode .section-header {
+  color: #b8860b;
   border-bottom: 1px solid #ccc;
 }
 
-.building-card {
-  background-color: #333333;
-  border-radius: 5px;
-  padding: 10px;
-  margin-bottom: 10px;
+.building-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
 }
 
-body.light-mode .building-card {
+.building-tile {
+  background-color: #333333;
+  border-radius: 5px;
+  padding: 10px 8px;
+  position: relative;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+body.light-mode .building-tile {
   background-color: #d0d0d0;
 }
 
-.building-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 5px;
+.building-tile.cannot-afford {
+  opacity: 0.6;
 }
 
 .building-name {
   font-weight: bold;
-  font-size: 1rem;
+  font-size: 0.9rem;
+  text-align: center;
 }
 
-.building-description {
-  font-size: 0.85rem;
-  opacity: 0.8;
-  margin: 5px 0;
-}
-
-.building-cost {
-  font-size: 0.8rem;
-  color: #888;
-  margin: 5px 0;
-}
-
-body.light-mode .building-cost {
-  color: #666;
+.building-count {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: #222;
+  color: white;
+  border-radius: 3px;
+  padding: 2px 5px;
+  font-size: 0.7rem;
+  min-width: 15px;
+  text-align: center;
 }
 
 .build-button {
   background-color: #007acc;
   color: white;
   border: none;
-  padding: 8px 12px;
-  border-radius: 5px;
+  padding: 4px 8px;
+  border-radius: 3px;
   cursor: pointer;
   font-weight: bold;
-  font-size: 0.9rem;
-  margin-top: 8px;
-  width: 100%;
+  font-size: 0.8rem;
   transition: background-color 0.2s;
+  margin-top: 5px;
 }
 
 .build-button:hover:not(:disabled) {
@@ -200,21 +204,43 @@ body.light-mode .building-cost {
   cursor: not-allowed;
 }
 
-.build-button.constructing {
+.building-built {
+  font-size: 0.8rem;
+  color: #4dffb8;
+  text-align: center;
+  margin-top: 5px;
+}
+
+body.light-mode .building-built {
+  color: #008000;
+}
+
+.building-progress-container {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.building-progress-bar {
+  flex: 1;
+  height: 8px;
+  background-color: #444;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.building-progress-fill {
+  height: 100%;
   background-color: #007acc;
-  position: relative;
-  color: white;
+  border-radius: 4px;
 }
 
-.build-button.completed {
-  background-color: #4dffb8;
-  color: #000;
-  cursor: default;
-}
-
-body.light-mode .build-button.completed {
-  background-color: #2ecc71;
-  color: #000;
+.building-progress-text {
+  font-size: 0.7rem;
+  color: #aaa;
+  min-width: 30px;
+  text-align: right;
 }
 
 .resource-item {
