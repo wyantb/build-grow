@@ -1,5 +1,5 @@
-import GameEngine from '../systems/gameEngine.js';
-import type { WorldState } from '../types/worldState.js';
+import GameEngine from '../systems/gameEngine.ts';
+import type { WorldState } from '../types/worldState.ts';
 
 class GameUI {
   private engine: GameEngine;

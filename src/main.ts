@@ -1,5 +1,5 @@
-import GameEngine from './systems/gameEngine.js';
-import GameUI from './ui/GameUI.js';
+import GameEngine from './systems/gameEngine.ts';
+import GameUI from './ui/GameUI.ts';
 
 // Initialize the game
 const gameEngine = new GameEngine();
