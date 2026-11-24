@@ -1,16 +1,31 @@
 import { For, createMemo } from 'solid-js';
 import type { Component } from 'solid-js';
 import { getGameState } from '../../hooks/useGameState.js';
+import { BUILDING_JOB_MAP } from '../../data/jobs.js';
 import Tooltip from '../ui/Tooltip.js';
 
 const JobPanel: Component = () => {
   const gameState = getGameState();
 
+  // Reverse mapping: jobId -> buildingId
+  const jobToBuilding: Record<string, string> = {};
+  for (const [buildingId, jobId] of Object.entries(BUILDING_JOB_MAP)) {
+    jobToBuilding[jobId] = buildingId;
+  }
+
   const jobs = createMemo(() => {
     const raw = Object.values(gameState.getJobs());
+    const buildingCounts = gameState.getBuildingCounts();
+
+    // Only show a job if its building has been constructed
+    const visible = raw.filter((job) => {
+      const buildingId = jobToBuilding[job.id];
+      if (!buildingId) {return true;}
+      return (buildingCounts[buildingId] ?? 0) > 0;
+    });
 
     // Sort: defaultable (uncapped) first, then capped jobs by name
-    return raw.sort((a, b) => {
+    return visible.sort((a, b) => {
       const aDefault = a.canDefault ? 0 : 1;
       const bDefault = b.canDefault ? 0 : 1;
       if (aDefault !== bDefault) { return aDefault - bDefault; }
