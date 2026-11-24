@@ -115,6 +115,23 @@ ESLint 10 with a flat config in `eslint.config.js`. Run it with `npm run lint`;
 | `npm run typecheck` | `tsc --noEmit`. |
 | `npm run check` | `lint` + `typecheck` + `build`. The full local gate. |
 
+### Rule Severity Policy
+Every rule is either **off** or **error**. Warnings are not used in this
+project, so `npm run lint` reports a non-zero exit code for anything that
+needs attention and the output has no severity to interpret.
+
+This means the warn-level rules inherited from `solid.configs.recommended`
+(`solid/components-return-once`, `solid/event-handlers`, `solid/imports`,
+`solid/no-react-deps`, `solid/no-react-specific-props`, `solid/self-closing-comp`,
+`solid/style-prop`) are explicitly promoted to `error` in `eslint.config.js`.
+If you add a plugin or extend a shared config, promote or disable its
+warnings rather than letting them through.
+
+`scripts/check-rule-severity.mjs` enforces this. It walks the effective
+config of every linted file and fails if any rule resolves to `warn`. It runs
+as part of `npm run lint` and `npm run lint:fix`, so a plugin upgrade cannot
+silently reintroduce a warning-level rule.
+
 ### Style Rules (all autofixable)
 - Semicolons are required. The codebase is 100% semicolon-terminated.
 - No trailing whitespace; files end with a newline; at most one consecutive blank line.

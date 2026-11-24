@@ -40,7 +40,17 @@ export default tseslint.config(
       'solid/no-store-mutation-outside-setter': 'error',
       'solid/no-write-in-pure-computation': 'error',
       'solid/validate-jsx-nesting': 'error',
-      'solid/prefer-for': 'error'
+      'solid/prefer-for': 'error',
+
+      // `solid.configs.recommended` ships these as warnings. The project
+      // treats every rule as either off or error, so they are promoted here.
+      'solid/components-return-once': 'error',
+      'solid/event-handlers': 'error',
+      'solid/imports': 'error',
+      'solid/no-react-deps': 'error',
+      'solid/no-react-specific-props': 'error',
+      'solid/self-closing-comp': 'error',
+      'solid/style-prop': 'error'
     }
   },
 
@@ -58,7 +68,7 @@ export default tseslint.config(
           caughtErrorsIgnorePattern: '^_'
         }
       ],
-      '@typescript-eslint/no-explicit-any': 'warn'
+      '@typescript-eslint/no-explicit-any': 'error'
     }
   },
 
@@ -146,6 +156,19 @@ export default tseslint.config(
   {
     // The Vite config is a Node file, not browser code.
     files: ['vite.config.ts'],
+    rules: {
+      'no-console': 'off'
+    }
+  },
+  {
+    // Build scripts run in Node, so they get the Node globals.
+    files: ['scripts/**/*.{js,mjs,cjs}'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        process: 'readonly'
+      }
+    },
     rules: {
       'no-console': 'off'
     }
