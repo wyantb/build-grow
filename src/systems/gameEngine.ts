@@ -5,7 +5,7 @@ import MarketSystem from './marketSystem.js';
 class GameEngine {
   private state: WorldState;
   private intervalId: number | null = null;
-  private tickRate: number = 1000; // 1 second per tick
+  private tickRate: number = 200; // 5 ticks per second
   private marketSystem: MarketSystem;
   private previousResources: Resource;
 
@@ -197,16 +197,24 @@ class GameEngine {
     return this.marketSystem.getMerchantCount();
   }
   
-  // Get resource production rates
+  // Get resource production rates (per second)
   getResourceRates(): Resource {
     // Calculate the difference between current and previous resource amounts
-    // Since we're calculating per second and tickRate is 1000ms, we don't need to adjust for time
+    // Adjust for the actual tick rate (200ms = 0.2 seconds per tick)
+    const ticksPerSecond = 1000 / this.tickRate; // 5 ticks per second
     return {
-      wood: this.state.resources.wood - this.previousResources.wood,
-      stone: this.state.resources.stone - this.previousResources.stone,
-      food: this.state.resources.food - this.previousResources.food,
-      gold: this.state.resources.gold - this.previousResources.gold
+      wood: (this.state.resources.wood - this.previousResources.wood) * ticksPerSecond,
+      stone: (this.state.resources.stone - this.previousResources.stone) * ticksPerSecond,
+      food: (this.state.resources.food - this.previousResources.food) * ticksPerSecond,
+      gold: (this.state.resources.gold - this.previousResources.gold) * ticksPerSecond
     };
+  }
+
+  // Update method for external control
+  update(deltaTime: number): void {
+    // For now, we'll just call tick directly
+    // In a more sophisticated implementation, we might interpolate between ticks
+    this.tick();
   }
 }
 

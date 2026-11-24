@@ -1,13 +1,16 @@
 import { Component } from 'solid-js'
-import type { WorldState } from './types/worldState'
-import GameEngine from './systems/gameEngine'
+import { useGameLoop } from './hooks/useGameLoop'
+import ResourcePanel from './components/game/ResourcePanel'
+import BuildingGrid from './components/game/BuildingGrid'
+import JobPanel from './components/game/JobPanel'
 
 const App: Component = () => {
-  // Initialize the game engine
-  const gameEngine = new GameEngine()
+  // Initialize game state and loop
+  const { gameEngine, gameState } = useGameLoop()
   
   // For debugging purposes
   ;(window as any).gameEngine = gameEngine
+  ;(window as any).gameState = gameState
 
   return (
     <div class="game-container">
@@ -21,7 +24,9 @@ const App: Component = () => {
       <div class="game-content">
         <div class="panel resources-panel">
           <h2>Resources</h2>
-          <div id="resources-display"></div>
+          <div id="resources-display">
+            <ResourcePanel />
+          </div>
         </div>
         
         <div class="panel main-panel">
@@ -34,17 +39,23 @@ const App: Component = () => {
           <div class="tab-content">
             <div id="buildings-tab" class="tab-pane active">
               <h2>Buildings</h2>
-              <div id="buildings-list"></div>
+              <div id="buildings-list">
+                <BuildingGrid />
+              </div>
             </div>
             
             <div id="jobs-tab" class="tab-pane">
               <h2>Jobs</h2>
-              <div id="jobs-list"></div>
+              <div id="jobs-list">
+                <JobPanel />
+              </div>
             </div>
             
             <div id="market-tab" class="tab-pane">
               <h2>Market</h2>
-              <div id="market-content"></div>
+              <div id="market-content">
+                {/* Market content will go here */}
+              </div>
             </div>
           </div>
         </div>
