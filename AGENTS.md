@@ -54,17 +54,6 @@ src/
 4. **Verify build**: Run `npm run build` to ensure production build works correctly
 5. **Commit changes**: Add and commit source files only (not generated files)
 
-### Adding New Features
-1. **Plan the feature**: Determine what components/UI elements are needed
-2. **Create branch**: Work on a feature branch for larger changes
-3. **Implement incrementally**: 
-   - Add new UI elements to templates/HTML
-   - Style with CSS following design principles
-   - Add interactivity with TypeScript
-4. **Test functionality**: Use `npm run dev` to test as you go
-5. **Validate build**: Run `npm run build` to ensure production build works
-6. **Update documentation**: Add notes to AGENTS.md if introducing new patterns
-
 ### Troubleshooting Process
 When encountering unexpected issues:
 1. **Check console/network tabs** in browser dev tools for errors
