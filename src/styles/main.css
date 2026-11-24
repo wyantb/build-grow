@@ -7,10 +7,10 @@
 
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+  background-color: #1a1a1a;
   color: #fff;
   min-height: 100vh;
-  padding: 20px;
+  padding: 10px;
 }
 
 .game-container {
@@ -20,50 +20,80 @@ body {
 
 header {
   text-align: center;
-  margin-bottom: 30px;
-  padding: 20px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 10px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 10px;
+  padding: 5px;
+  background-color: #333333;
+  border-radius: 5px;
+  height: 24px;
 }
 
 header h1 {
-  font-size: 2.5rem;
-  margin-bottom: 10px;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-}
-
-.subtitle {
   font-size: 1.2rem;
-  opacity: 0.8;
+  margin: 0;
+  line-height: 24px;
 }
 
 .game-content {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
+  display: flex;
+  gap: 10px;
+  height: calc(100vh - 40px);
 }
 
 .panel {
-  background: rgba(0, 0, 0, 0.4);
-  border-radius: 10px;
-  padding: 20px;
-  backdrop-filter: blur(5px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: #333333;
+  border-radius: 5px;
+  padding: 10px;
+}
+
+.resources-panel {
+  flex: 0 0 200px;
+}
+
+.main-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.tabs {
+  display: flex;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #555;
+}
+
+.tab {
+  padding: 8px 16px;
+  cursor: pointer;
+  background-color: #444;
+  border: none;
+  color: #ccc;
+  border-radius: 5px 5px 0 0;
+  margin-right: 5px;
+}
+
+.tab.active {
+  background-color: #007acc;
+  color: white;
+}
+
+.tab-content {
+  flex: 1;
+  overflow-y: auto;
 }
 
 .panel h2 {
-  margin-bottom: 15px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #555;
 }
 
 .resource-item {
   display: flex;
   justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 6px 0;
+  border-bottom: 1px solid #444;
+  font-size: 0.9rem;
 }
 
 .resource-name {
@@ -75,33 +105,33 @@ header h1 {
 }
 
 .building-item, .job-item {
-  background: rgba(255, 255, 255, 0.05);
+  background-color: #444444;
   border-radius: 5px;
-  padding: 15px;
-  margin-bottom: 15px;
+  padding: 10px;
+  margin-bottom: 10px;
 }
 
 .building-header, .job-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 5px;
 }
 
 .building-name, .job-name {
   font-weight: bold;
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
 .building-progress {
-  background: #007acc;
+  background-color: #007acc;
   padding: 2px 8px;
   border-radius: 10px;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 .building-description, .job-description {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   opacity: 0.8;
   margin-top: 5px;
 }
@@ -115,58 +145,85 @@ header h1 {
 }
 
 .progress-bar {
-  height: 10px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 5px;
-  margin-top: 10px;
+  height: 8px;
+  background-color: #444;
+  border-radius: 4px;
+  margin-top: 8px;
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #007acc, #00c3ff);
-  border-radius: 5px;
+  background-color: #007acc;
+  border-radius: 4px;
 }
 
 .action-buttons {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .action-button {
-  background: linear-gradient(90deg, #007acc, #00c3ff);
+  background-color: #007acc;
   color: white;
   border: none;
-  padding: 12px 15px;
+  padding: 10px 12px;
   border-radius: 5px;
   cursor: pointer;
   font-weight: bold;
-  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
 }
 
 .action-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  background-color: #005fa3;
 }
 
-.action-button:active {
-  transform: translateY(0);
+.action-button:disabled {
+  background-color: #555;
+  cursor: not-allowed;
 }
 
 .job-workers {
-  background: rgba(0, 122, 204, 0.3);
+  background-color: #007acc;
   padding: 2px 8px;
   border-radius: 10px;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
+.tab-pane {
+  display: none;
+}
+
+.tab-pane.active {
+  display: block;
+}
+
+/* Mobile responsive design */
 @media (max-width: 768px) {
   .game-content {
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
   
-  header h1 {
-    font-size: 2rem;
+  .resources-panel {
+    flex: 0 0 auto;
+  }
+  
+  .mobile-tabs {
+    display: flex;
+    margin-bottom: 10px;
+  }
+  
+  .mobile-tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    background-color: #444;
+    cursor: pointer;
+  }
+  
+  .mobile-tab.active {
+    background-color: #007acc;
   }
 }

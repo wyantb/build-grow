@@ -1,5 +1,5 @@
-import GameEngine from '../systems/gameEngine.ts';
-import type { WorldState } from '../types/worldState.ts';
+import GameEngine from '../systems/gameEngine.js';
+import type { WorldState } from '../types/worldState.js';
 
 class GameUI {
   private engine: GameEngine;
@@ -24,7 +24,6 @@ class GameUI {
       <div class="game-container">
         <header>
           <h1>Fantasy Civilization Builder</h1>
-          <p class="subtitle">A new universe awaits</p>
         </header>
         
         <div class="game-content">
@@ -33,30 +32,67 @@ class GameUI {
             <div id="resources-display"></div>
           </div>
           
-          <div class="panel buildings-panel">
-            <h2>Buildings</h2>
-            <div id="buildings-list"></div>
-            <div id="construction-queue"></div>
-          </div>
-          
-          <div class="panel jobs-panel">
-            <h2>Jobs</h2>
-            <div id="jobs-list"></div>
-          </div>
-          
-          <div class="panel actions-panel">
-            <h2>Actions</h2>
-            <div id="available-buildings"></div>
+          <div class="panel main-panel">
+            <div class="tabs">
+              <button class="tab active" data-tab="buildings">Buildings</button>
+              <button class="tab" data-tab="jobs">Jobs</button>
+              <button class="tab" data-tab="actions">Actions</button>
+            </div>
+            
+            <div class="tab-content">
+              <div id="buildings-tab" class="tab-pane active">
+                <h2>Buildings</h2>
+                <div id="buildings-list"></div>
+                <div id="construction-queue"></div>
+              </div>
+              
+              <div id="jobs-tab" class="tab-pane">
+                <h2>Jobs</h2>
+                <div id="jobs-list"></div>
+              </div>
+              
+              <div id="actions-tab" class="tab-pane">
+                <h2>Actions</h2>
+                <div id="available-buildings"></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     `;
     
     this.setupEventListeners();
+    this.setupTabNavigation();
   }
 
   private setupEventListeners(): void {
     // We'll add event listeners for UI interactions here
+  }
+
+  private setupTabNavigation(): void {
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tabName = tab.getAttribute('data-tab');
+        this.switchTab(tabName);
+      });
+    });
+  }
+
+  private switchTab(tabName: string | null): void {
+    if (!tabName) return;
+    
+    // Update tab buttons
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.classList.remove('active');
+    });
+    document.querySelector(`[data-tab="${tabName}"]`)?.classList.add('active');
+
+    // Update tab content
+    document.querySelectorAll('.tab-pane').forEach(pane => {
+      pane.classList.remove('active');
+    });
+    document.getElementById(`${tabName}-tab`)?.classList.add('active');
   }
 
   private updateLoop(): void {

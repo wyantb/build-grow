@@ -1,5 +1,5 @@
-import type { WorldState, Resource } from '../types/worldState.ts';
-import { createInitialState } from '../types/worldState.ts';
+import { createInitialState } from '../types/worldState.js';
+import type { WorldState, Resource } from '../types/worldState.js';
 
 class GameEngine {
   private state: WorldState;
