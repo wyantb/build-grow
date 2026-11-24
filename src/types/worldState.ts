@@ -5,7 +5,7 @@ export const ResourceSchema = z.object({
   wood: z.number(),
   stone: z.number(),
   food: z.number(),
-  gold: z.number(),
+  gold: z.number()
 });
 
 export type Resource = z.infer<typeof ResourceSchema>;
@@ -16,7 +16,7 @@ export const JobSchema = z.object({
   name: z.string(),
   description: z.string(),
   workers: z.number(),
-  productivity: z.number(), // productivity multiplier
+  productivity: z.number() // productivity multiplier
 });
 
 export type Job = z.infer<typeof JobSchema>;
@@ -29,7 +29,7 @@ export const BuildingSchema = z.object({
   cost: ResourceSchema,
   buildTime: z.number(), // in ticks
   built: z.boolean(),
-  constructionProgress: z.number(), // 0-100
+  constructionProgress: z.number() // 0-100
 });
 
 export type Building = z.infer<typeof BuildingSchema>;
@@ -43,10 +43,10 @@ export const SpeciesSchema = z.object({
     strength: z.number(),
     intelligence: z.number(),
     agility: z.number(),
-    magic: z.number(),
+    magic: z.number()
   }),
   growthRate: z.number(),
-  resourceConsumption: z.number(),
+  resourceConsumption: z.number()
 });
 
 // Additional fantasy species
@@ -58,10 +58,10 @@ export const FantasySpeciesSchema = z.object({
     strength: z.number(),
     intelligence: z.number(),
     agility: z.number(),
-    magic: z.number(),
+    magic: z.number()
   }),
   growthRate: z.number(),
-  resourceConsumption: z.number(),
+  resourceConsumption: z.number()
 });
 
 export type FantasySpecies = z.infer<typeof FantasySpeciesSchema>;
@@ -79,7 +79,7 @@ export const WorldStateSchema = z.object({
   species: SpeciesSchema,
   unlockedBuildings: z.array(z.string()),
   unlockedJobs: z.array(z.string()),
-  gameTime: z.number(), // in seconds
+  gameTime: z.number() // in seconds
 });
 
 export type WorldState = z.infer<typeof WorldStateSchema>;
@@ -92,7 +92,7 @@ export const createInitialState = (): WorldState => ({
     wood: 250,
     stone: 250,
     food: 500,
-    gold: 0,
+    gold: 0
   },
   population: 5,
   jobs: {
@@ -101,7 +101,7 @@ export const createInitialState = (): WorldState => ({
       name: 'Settler',
       description: 'General laborer who contributes to all basic resource gathering',
       workers: 5,
-      productivity: 1.0,
+      productivity: 1.0
     }
   },
   buildings: {},
@@ -113,12 +113,12 @@ export const createInitialState = (): WorldState => ({
       strength: 5,
       intelligence: 5,
       agility: 5,
-      magic: 2,
+      magic: 2
     },
     growthRate: 1.0,
-    resourceConsumption: 1.0,
+    resourceConsumption: 1.0
   },
   unlockedBuildings: ['hut', 'market', 'lumberjack', 'quarry', 'builder'],
   unlockedJobs: ['settler'],
-  gameTime: 0,
+  gameTime: 0
 });

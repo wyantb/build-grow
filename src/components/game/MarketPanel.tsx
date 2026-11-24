@@ -1,11 +1,12 @@
-import type { Component } from 'solid-js'
-import { getGameState } from '../../hooks/useGameState.js'
-import { formatNumber } from '../../utils/formatNumber.js'
-import type { Resource } from '../../types/worldState.js'
+import { For } from 'solid-js';
+import type { Component } from 'solid-js';
+import { getGameState } from '../../hooks/useGameState.js';
+import { formatNumber } from '../../utils/formatNumber.js';
+import type { Resource } from '../../types/worldState.js';
 
 const MarketPanel: Component = () => {
-  const gameState = getGameState()
-  
+  const gameState = getGameState();
+
   // Mock market data - in a real implementation this would come from the game engine
   const getMarketData = (): { resource: keyof Resource; price: number; trend: 'up' | 'down' }[] => {
     return [
@@ -13,20 +14,20 @@ const MarketPanel: Component = () => {
       { resource: 'stone', price: 1.2, trend: 'down' },
       { resource: 'food', price: 0.5, trend: 'up' },
       { resource: 'gold', price: 1.0, trend: 'down' }
-    ]
-  }
-  
+    ];
+  };
+
   // Buy resources
   const buyResource = (resource: keyof Resource, amount: number) => {
     // In a real implementation, this would call the game engine
-    console.log(`Buying ${amount} of ${resource}`)
-  }
-  
+    console.info(`Buying ${amount} of ${resource}`);
+  };
+
   // Sell resources
   const sellResource = (resource: keyof Resource, amount: number) => {
     // In a real implementation, this would call the game engine
-    console.log(`Selling ${amount} of ${resource}`)
-  }
+    console.info(`Selling ${amount} of ${resource}`);
+  };
 
   return (
     <div class="market-panel">
@@ -35,7 +36,7 @@ const MarketPanel: Component = () => {
         <p>Trade resources to maximize your profits!</p>
         <p>Prices fluctuate based on supply and demand.</p>
       </div>
-      
+
       <div class="market-table">
         <div class="market-header">
           <span>Resource</span>
@@ -44,8 +45,8 @@ const MarketPanel: Component = () => {
           <span>Your Amount</span>
           <span>Actions</span>
         </div>
-        
-        {getMarketData().map((item) => (
+
+        <For each={getMarketData()}>{(item) => (
           <div class="market-row">
             <span class="resource-name">{item.resource.charAt(0).toUpperCase() + item.resource.slice(1)}</span>
             <span class="price">{formatNumber(item.price)}g</span>
@@ -56,13 +57,13 @@ const MarketPanel: Component = () => {
               {formatNumber(gameState.getResources()[item.resource])}
             </span>
             <div class="trade-buttons">
-              <button 
+              <button
                 class="trade-button buy"
                 onClick={() => buyResource(item.resource, 10)}
               >
                 Buy
               </button>
-              <button 
+              <button
                 class="trade-button sell"
                 onClick={() => sellResource(item.resource, 10)}
               >
@@ -70,9 +71,9 @@ const MarketPanel: Component = () => {
               </button>
             </div>
           </div>
-        ))}
+        )}</For>
       </div>
-      
+
       <div class="trading-info">
         <h3>Trading Tips</h3>
         <ul>
@@ -82,7 +83,7 @@ const MarketPanel: Component = () => {
         </ul>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default MarketPanel
+export default MarketPanel;

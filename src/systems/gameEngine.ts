@@ -20,6 +20,7 @@ class GameEngine {
   // Subscribe to state changes so the UI can mirror the engine reactively
   subscribe(listener: () => void): () => void {
     this.listeners.add(listener);
+
     return () => this.listeners.delete(listener);
   }
 
@@ -34,7 +35,7 @@ class GameEngine {
 
   // Start the game loop
   start(): void {
-    if (this.intervalId !== null) return;
+    if (this.intervalId !== null) {return;}
 
     this.intervalId = window.setInterval(() => {
       this.tick();
@@ -78,7 +79,7 @@ class GameEngine {
       // Production scales poorly compared to specialized jobs
       const baseProduction = 0.1; // Very low base production
       const settlerProduction = baseProduction * settlerJob.workers * settlerJob.productivity;
-      
+
       this.state.resources.wood += settlerProduction;
       this.state.resources.stone += settlerProduction * 0.8; // Stone is slightly less common
       this.state.resources.food += settlerProduction * 1.2; // Food is slightly more common
@@ -90,15 +91,15 @@ class GameEngine {
 
   // Process building construction
   private processBuildingConstruction(): void {
-    Object.values(this.state.buildings).forEach((building: any) => {
+    Object.values(this.state.buildings).forEach((building) => {
       if (!building.built && building.constructionProgress < 100) {
         // Buildings take time to construct
         building.constructionProgress += 10; // 10% per tick for quick testing
-        
+
         if (building.constructionProgress >= 100) {
           building.constructionProgress = 100;
           building.built = true;
-          
+
           // Apply building effects when completed
           this.applyBuildingEffects(building.id);
         }
@@ -108,8 +109,8 @@ class GameEngine {
 
   // Apply building effects when completed
   private applyBuildingEffects(buildingId: string): void {
-    console.log(`Building ${buildingId} completed!`);
-    
+    console.info(`Building ${buildingId} completed!`);
+
     // Add jobs based on building type
     if (buildingId === 'market') {
       // Add merchant job when market is built
@@ -120,7 +121,7 @@ class GameEngine {
         workers: 0,
         productivity: 1.0
       };
-      
+
       // Add merchant to unlocked jobs
       if (!this.state.unlockedJobs.includes('merchant')) {
         this.state.unlockedJobs.push('merchant');
@@ -138,10 +139,10 @@ class GameEngine {
     const buildingCost = cost ?? buildingType.cost;
 
     // Check if player has enough resources
-    if (this.state.resources.wood < buildingCost.wood ||
-        this.state.resources.stone < buildingCost.stone ||
-        this.state.resources.food < buildingCost.food ||
-        this.state.resources.gold < buildingCost.gold) {
+    if (this.state.resources.wood < buildingCost.wood
+        || this.state.resources.stone < buildingCost.stone
+        || this.state.resources.food < buildingCost.food
+        || this.state.resources.gold < buildingCost.gold) {
       return false; // Not enough resources
     }
 
@@ -159,7 +160,7 @@ class GameEngine {
       cost: buildingCost,
       buildTime: buildingType.buildTime,
       built: false,
-      constructionProgress: 0,
+      constructionProgress: 0
     };
 
     this.notify();
@@ -174,24 +175,27 @@ class GameEngine {
       // Handle relative assignments (positive or negative)
       const currentWorkers = this.state.jobs[jobId].workers;
       const newWorkers = Math.max(0, Math.min(this.state.population, currentWorkers + count));
-      
+
       this.state.jobs[jobId].workers = newWorkers;
       this.notify();
+
       return true;
     }
+
     return false;
   }
-  
+
   // Get merchant count from market system
   getMerchantCount(): number {
     return this.marketSystem.getMerchantCount();
   }
-  
+
   // Get resource production rates (per second)
   getResourceRates(): Resource {
     // Calculate the difference between current and previous resource amounts
     // Adjust for the actual tick rate (200ms = 0.2 seconds per tick)
     const ticksPerSecond = 1000 / this.tickRate; // 5 ticks per second
+
     return {
       wood: (this.state.resources.wood - this.previousResources.wood) * ticksPerSecond,
       stone: (this.state.resources.stone - this.previousResources.stone) * ticksPerSecond,

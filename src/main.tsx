@@ -7,4 +7,4 @@ if (root) {
   render(() => <App />, root);
 }
 
-console.log('Fantasy Civilization Builder initialized with SolidJS!');
+console.info('Fantasy Civilization Builder initialized with SolidJS!');

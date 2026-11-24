@@ -102,6 +102,57 @@ verification. Key differences from Solid 1 that affect this codebase:
   That is the framework, not the app — Solid 2's `createStore` is built on the
   `@solidjs/signals` core. See `SOLID2_MIGRATION.md` §7 for the measurements.
 
+## Linting
+
+ESLint 10 with a flat config in `eslint.config.js`. Run it with `npm run lint`;
+`npm run lint:fix` applies every autofixable fix.
+
+### Commands
+| Command | Purpose |
+| --- | --- |
+| `npm run lint` | Report problems. This is the pre-push gate. |
+| `npm run lint:fix` | Apply autofixable fixes (semicolons, whitespace, braces, quotes). |
+| `npm run typecheck` | `tsc --noEmit`. |
+| `npm run check` | `lint` + `typecheck` + `build`. The full local gate. |
+
+### Style Rules (all autofixable)
+- Semicolons are required. The codebase is 100% semicolon-terminated.
+- No trailing whitespace; files end with a newline; at most one consecutive blank line.
+- Control statements: a single-line body is allowed (`if (x) return;`); a multi-line
+  body must use explicit braces.
+- Two-space indentation, single quotes, no trailing commas, `===` over `==`.
+- `const` over `let`; `let` over `var`. `prefer-const` is on.
+- `no-console` allows `console.info`, `console.warn`, and `console.error`. Use
+  `console.info` for intentional game-event logging; `console.log` is rejected.
+
+### Solid Rules
+`eslint-plugin-solid` is enabled with the reactivity-sensitive rules, so Solid 1
+habits fail the lint instead of failing at runtime:
+- `solid/removed-api` — flags Solid 1 APIs removed in Solid 2.
+- `solid/no-single-arg-create-effect` — Solid 2 requires `createEffect(compute, effect)`.
+- `solid/reactivity`, `solid/no-destructure` — props and signals must be read through
+  accessors, never destructured.
+- `solid/no-store-mutation-outside-setter`, `solid/no-write-in-pure-computation` —
+  the engine owns the state; write through the setter, never inside `createMemo`.
+- `solid/prefer-for`, `solid/validate-jsx-nesting`, `solid/no-unused-signal`.
+
+### Vite Rules
+`@typpi/eslint-plugin-vite` is enabled. It is the maintained successor to the
+unpublished `eslint-plugin-vite` package.
+
+### TypeScript Compiler Versions
+`typescript` is aliased to `npm:@typescript/typescript6@^6.0.2` and
+`@typescript/native` is aliased to `npm:typescript@^7.0.2`. This is deliberate:
+- `npx tsc` runs **TypeScript 7** (the native compiler), which is what
+  `npm run typecheck` and `npm run build` use.
+- `require('typescript')` resolves to the **TypeScript 6** JavaScript API, which is
+  what `typescript-eslint` needs to parse and analyze files.
+
+TypeScript 7 ships no JavaScript API, and `typescript-eslint` refuses to run against
+it (`typescript-eslint does not support TS 7.0`). Running both side by side is the
+officially documented arrangement. Do not "fix" the peer-dependency conflict by
+downgrading `typescript` to a single version.
+
 
 ## Development Workflow
 
@@ -109,18 +160,46 @@ verification. Key differences from Solid 1 that affect this codebase:
 1. **Start development server**: Run `npm run dev` to start the development server with hot reloading
 2. **Make UI changes**: Edit HTML/templates, CSS, or TypeScript files as needed
 3. **Test iteratively**: Check changes in the browser (http://localhost:3000) as you work
-4. **Verify build**: Run `npm run build` to ensure production build works correctly
-5. **Commit changes**: Add and commit source files only (not generated files)
+4. **Lint the change**: Run `npm run lint` (or `npm run lint:fix` to apply autofixes).
+   The lint must pass before the change is committed.
+5. **Verify build**: Run `npm run build` to ensure production build works correctly
+6. **Commit changes**: Add and commit source files only (not generated files)
+
+### Pre-Push Check (required)
+Before pushing to `main`, the working tree must pass the full gate. Do not push
+with a failing check; fix the cause instead.
+
+```bash
+npm run lint        # ESLint: style + Solid reactivity rules
+npm run typecheck   # tsc --noEmit: type errors
+npm run build       # production bundle must succeed
+```
+
+`npm run check` runs all three in sequence and is the single command to use.
+`npm run lint` is the required pre-push lint gate: **a push that skips it is a
+defect**, because the rules it enforces (semicolons, explicit braces, no trailing
+whitespace, Solid 2 API usage) are exactly the ones that drift silently in a
+codebase without automation.
+
+Rules of the gate:
+- Lint failures are never silenced with inline disables unless the rule is
+  genuinely wrong for the code, and then the disable carries a short reason.
+- `npm run lint:fix` is the first response to a lint failure. Only hand-fix what
+  the autofixer cannot.
+- Solid reactivity rules (`solid/reactivity`, `solid/removed-api`) catch real
+  Solid 2 defects. Fix the code; do not turn the rule off.
+- Do not commit generated output (`dist/`, `node_modules/`).
 
 ### Troubleshooting Process
 When encountering unexpected issues:
 1. **Check console/network tabs** in browser dev tools for errors
-2. **Verify TypeScript compilation**: Run `npx tsc --noEmit` to check for type errors
-3. **Clean and restart**: 
+2. **Verify lint**: Run `npm run lint` to catch style and Solid rule violations
+3. **Verify TypeScript compilation**: Run `npm run typecheck` to check for type errors
+4. **Clean and restart**: 
    - Stop dev server
    - Run `npm run clean`
    - Restart with `npm run dev`
-4. **Full refresh**: If issues persist:
+5. **Full refresh**: If issues persist:
    - Stop dev server
    - Run `npm run clean-all`
    - Run `npm install`

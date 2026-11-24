@@ -1,5 +1,5 @@
-import { defineConfig } from 'vite'
-import solidPlugin from '@solidjs/vite-plugin'
+import { defineConfig } from 'vite';
+import solidPlugin from '@solidjs/vite-plugin';
 
 export default defineConfig({
   plugins: [solidPlugin()],
@@ -10,4 +10,4 @@ export default defineConfig({
   server: {
     port: 3000
   }
-})
+});
