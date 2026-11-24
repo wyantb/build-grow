@@ -92,7 +92,7 @@ class GameEngine {
 
   // Process building construction
   private processBuildingConstruction(): void {
-    for (const [buildingId, building] of Object.entries(this.state.buildings)) {
+    for (const [_instanceKey, building] of Object.entries(this.state.buildings)) {
       if (!building.built && building.constructionProgress < 100) {
         // Buildings take time to construct
         building.constructionProgress += 10; // 10% per tick for quick testing
@@ -101,12 +101,13 @@ class GameEngine {
           building.constructionProgress = 100;
           building.built = true;
 
-          // Increment count for this building type
-          this.state.buildingCounts[buildingId]
-            = (this.state.buildingCounts[buildingId] ?? 0) + 1;
+          // Increment count for this building type (use the building's type id, not the instance key)
+          const buildingTypeId = building.id;
+          this.state.buildingCounts[buildingTypeId]
+            = (this.state.buildingCounts[buildingTypeId] ?? 0) + 1;
 
           // Apply building effects when completed
-          this.applyBuildingEffects(buildingId);
+          this.applyBuildingEffects(buildingTypeId);
         }
       }
     }
