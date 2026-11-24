@@ -63,7 +63,7 @@ describe('Market availability', () => {
 });
 
 describe('Market allocation', () => {
-  it('refuses a new order when every merchant slot is taken', () => {
+  it('refuses a new order when every merchant trade is taken', () => {
     const engine = new GameEngine(marketWorld());
 
     expect(engine.setMarketAllocation('buy', 'wood', 1)).toBe(true);
@@ -78,31 +78,45 @@ describe('Market allocation', () => {
     expect(engine.getMarketOrders().buys['wood']).toBe(1);
   });
 
-  it('raises the quantity of an existing order without needing a slot', () => {
+  it('needs an extra merchant to raise the quantity of an existing order', () => {
     const engine = new GameEngine(marketWorld());
 
-    expect(engine.setMarketAllocation('buy', 'wood', 5)).toBe(true);
-    expect(engine.getMarketOrders().buys['wood']).toBe(5);
-    expect(engine.getFreeMarketSlots('buy')).toBe(0);
+    // One merchant carries one trade, so a single unit is all it can offer.
+    expect(engine.setMarketAllocation('buy', 'wood', 2)).toBe(false);
+    expect(engine.getMarketOrders().buys['wood']).toBeUndefined();
+    expect(engine.getFreeMarketTrades('buy')).toBe(1);
   });
 
-  it('counts buy and sell slots separately', () => {
+  it('raises the quantity of an existing order when a trade is free', () => {
+    const engine = new GameEngine(marketWorld({
+      workers: { merchant: 2 },
+    }));
+
+    expect(engine.setMarketAllocation('buy', 'wood', 1)).toBe(true);
+    expect(engine.setMarketAllocation('buy', 'wood', 2)).toBe(true);
+    expect(engine.getMarketOrders().buys['wood']).toBe(2);
+    expect(engine.getFreeMarketTrades('buy')).toBe(0);
+  });
+
+  it('counts buy and sell trades separately', () => {
     const engine = new GameEngine(marketWorld());
 
-    // One buy order and one sell order, both within the single merchant.
+    // One buy trade and one sell trade, both within the single merchant.
     expect(engine.setMarketAllocation('buy', 'wood', 1)).toBe(true);
     expect(engine.setMarketAllocation('sell', 'stone', 1)).toBe(true);
-    expect(engine.getFreeMarketSlots('buy')).toBe(0);
-    expect(engine.getFreeMarketSlots('sell')).toBe(0);
+    expect(engine.getFreeMarketTrades('buy')).toBe(0);
+    expect(engine.getFreeMarketTrades('sell')).toBe(0);
   });
 
   it('releases an order when the quantity drops to zero', () => {
-    const engine = new GameEngine(marketWorld());
+    const engine = new GameEngine(marketWorld({
+      workers: { merchant: 2 },
+    }));
 
     expect(engine.setMarketAllocation('buy', 'wood', 2)).toBe(true);
     expect(engine.setMarketAllocation('buy', 'wood', 0)).toBe(true);
     expect(engine.getMarketOrders().buys['wood']).toBeUndefined();
-    expect(engine.getFreeMarketSlots('buy')).toBe(1);
+    expect(engine.getFreeMarketTrades('buy')).toBe(2);
   });
 
   it('refuses a negative or non-finite allocation', () => {
@@ -135,6 +149,18 @@ describe('Market allocation', () => {
     expect(engine.getMarketOrders().sells['wood']).toBe(1);
   });
 
+  it('takes one trade off a sale when a merchant is removed', () => {
+    const engine = new GameEngine(marketWorld({
+      workers: { merchant: 3 },
+    }));
+    engine.setMarketAllocation('sell', 'wood', 3);
+
+    engine.assignWorkers('merchant', -1);
+
+    // The order keeps the trades the remaining merchants can carry.
+    expect(engine.getMarketOrders().sells['wood']).toBe(2);
+  });
+
   it('drops a buy when a merchant is removed and no sales remain', () => {
     const engine = new GameEngine(marketWorld({
       workers: { merchant: 2 },
@@ -153,6 +179,7 @@ describe('Market allocation', () => {
 describe('Market settlement', () => {
   it('sells resources for gold every tick', () => {
     const engine = new GameEngine(marketWorld({
+      workers: { merchant: 2 },
       resources: { wood: 100 },
       marketSells: { wood: 2 },
     }));
@@ -204,6 +231,7 @@ describe('Market settlement', () => {
 
   it('sells only what is available', () => {
     const engine = new GameEngine(marketWorld({
+      workers: { merchant: 5 },
       resources: { wood: 1 },
       marketSells: { wood: 5 },
     }));
@@ -242,6 +270,7 @@ describe('Market rates', () => {
 
   it('omits a buy order that cannot be paid for', () => {
     const engine = new GameEngine(marketWorld({
+      workers: { merchant: 2 },
       resources: { gold: 0 },
       marketBuys: { wood: 2 },
     }));
@@ -254,6 +283,7 @@ describe('Market rates', () => {
 
   it('counts only the part of a buy order that the gold covers', () => {
     const engine = new GameEngine(marketWorld({
+      workers: { merchant: 2 },
       resources: { gold: getBuyPrice('wood') },
       marketBuys: { wood: 2 },
     }));
@@ -264,6 +294,7 @@ describe('Market rates', () => {
 
   it('omits a sell order that has nothing to sell', () => {
     const engine = new GameEngine(marketWorld({
+      workers: { merchant: 3 },
       resources: { wood: 0 },
       marketSells: { wood: 3 },
     }));

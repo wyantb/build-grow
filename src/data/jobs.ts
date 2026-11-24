@@ -61,7 +61,7 @@ export const JOBS: Record<string, Omit<Job, 'workers'>> = {
   merchant: {
     id: 'merchant',
     name: 'Merchant',
-    description: 'Trades goods at the market (production TBD).',
+    description: 'Trades goods at the market. Each merchant carries one buy and one sell trade per tick.',
     capacity: 0, // set dynamically from buildings
     canDefault: false,
     production: ZERO,

@@ -3,6 +3,7 @@ import {
   MARKET_RESOURCES,
   getBuyPrice,
   getSellPrice,
+  getTradeCapacity,
 } from '../data/market.js';
 import type { MarketResource } from '../data/market.js';
 
@@ -75,24 +76,29 @@ class MarketSystem {
   }
 
   /**
-   * Number of orders in use for `action`.
+   * Trades in use for `action`.
    *
-   * Each merchant carries one buy order and one sell order, so the count of
-   * orders may never exceed the merchant count. An order is a resource and
-   * a per-tick quantity; its quantity does not consume extra slots.
+   * A merchant offers `TRADES_PER_MERCHANT` trades per tick in each
+   * direction, and every unit of an order consumes one of them, so the total
+   * quantity may never exceed the capacity the merchant count provides.
    */
-  getUsedSlots(action: MarketAction): number {
+  getUsedTrades(action: MarketAction): number {
     const allocations = this.state.market[ALLOCATION_KEY[action]];
 
     return MARKET_RESOURCES.reduce(
-      (sum, resource) => sum + (allocations[resource] ? 1 : 0),
+      (sum, resource) => sum + (allocations[resource] ?? 0),
       0,
     );
   }
 
-  /** Slots still free for `action`. */
-  getFreeSlots(action: MarketAction): number {
-    return Math.max(0, this.getMerchantCount() - this.getUsedSlots(action));
+  /** Total trades per tick the merchants can carry, in each direction. */
+  getTradeCapacity(): number {
+    return getTradeCapacity(this.getMerchantCount());
+  }
+
+  /** Trades still free for `action`. */
+  getFreeTrades(action: MarketAction): number {
+    return Math.max(0, this.getTradeCapacity() - this.getUsedTrades(action));
   }
 
   /** The current per-tick orders. */
@@ -106,10 +112,12 @@ class MarketSystem {
   /**
    * Allocate `count` units of `resource` to be bought or sold per tick.
    *
-   * Starting a new order needs a free slot; raising the quantity of an
-   * existing order does not. When no slot is available the allocation is
-   * refused rather than silently trimmed, so the UI can tell the player
-   * why nothing happened.
+   * Every unit of an order occupies one trade, so the total quantity for an
+   * action may never exceed the capacity the merchants provide. Raising the
+   * quantity of an existing order therefore needs a free trade just as
+   * opening a new one does. When no trade is available the allocation is
+   * refused rather than silently trimmed, so the UI can tell the player why
+   * nothing happened.
    */
   setAllocation(action: MarketAction, resource: MarketResource, count: number): boolean {
     if (!MARKET_RESOURCES.includes(resource)) {return false;}
@@ -119,15 +127,16 @@ class MarketSystem {
     const current = allocations[resource] ?? 0;
     if (count === current) {return true;}
 
-    // Releasing an order never needs a slot.
+    // Releasing an order always frees its trades.
     if (count === 0) {
       delete allocations[resource];
 
       return true;
     }
 
-    // Opening an order needs a free slot.
-    if (current === 0 && this.getFreeSlots(action) <= 0) {return false;}
+    // The allocation needs `count - current` more trades than it holds now.
+    const extra = count - current;
+    if (extra > this.getFreeTrades(action)) {return false;}
 
     allocations[resource] = count;
 
@@ -135,39 +144,46 @@ class MarketSystem {
   }
 
   /**
-   * Free the slots held by merchants that are no longer assigned.
+   * Free the trades held by merchants that are no longer assigned.
    *
-   * Removing a merchant drops one sale order first, taken from the
-   * bottom-most resource that holds one. If there are no sales left, a buy
-   * order is dropped from the bottom-most resource instead.
+   * Sales are trimmed first, then buys. Within a direction the trade comes
+   * off the bottom-most resource that holds one, so the last resource in
+   * `MARKET_RESOURCES` order goes first.
    */
   trimAllocationsToMerchants(): void {
-    const merchants = this.getMerchantCount();
+    const capacity = this.getTradeCapacity();
 
-    while (this.getUsedSlots('sell') > merchants) {
-      this.removeBottomMostOrder('sell');
+    while (this.getUsedTrades('sell') > capacity) {
+      this.removeBottomMostTrade('sell');
     }
 
-    while (this.getUsedSlots('buy') > merchants) {
-      this.removeBottomMostOrder('buy');
+    while (this.getUsedTrades('buy') > capacity) {
+      this.removeBottomMostTrade('buy');
     }
   }
 
   /**
-   * Drop the order held by the bottom-most resource that has one.
+   * Take one trade off the bottom-most resource that holds one.
+   *
+   * The order is dropped entirely once its last trade is removed.
    */
-  private removeBottomMostOrder(action: MarketAction): void {
+  private removeBottomMostTrade(action: MarketAction): void {
     const allocations = this.state.market[ALLOCATION_KEY[action]];
 
     for (let i = MARKET_RESOURCES.length - 1; i >= 0; i--) {
       const resource = MARKET_RESOURCES[i];
       if (!resource) {continue;}
 
-      if (allocations[resource]) {
-        delete allocations[resource];
+      const count = allocations[resource] ?? 0;
+      if (count <= 0) {continue;}
 
-        return;
+      if (count === 1) {
+        delete allocations[resource];
+      } else {
+        allocations[resource] = count - 1;
       }
+
+      return;
     }
   }
 

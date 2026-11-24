@@ -331,7 +331,8 @@ class GameEngine {
   /**
    * Allocate `count` units of `resource` to be bought or sold per tick.
    *
-   * The number of slots in use is capped at the merchant count.
+   * Every unit occupies one of the merchants' trades, so the total quantity
+   * for an action is capped at the capacity the merchant count provides.
    */
   setMarketAllocation(action: MarketAction, resource: MarketResource, count: number): boolean {
     const allocated = this.marketSystem.setAllocation(action, resource, count);
@@ -343,9 +344,9 @@ class GameEngine {
     return allocated;
   }
 
-  /** Slots still free for `action`. */
-  getFreeMarketSlots(action: MarketAction): number {
-    return this.marketSystem.getFreeSlots(action);
+  /** Trades still free for `action`. */
+  getFreeMarketTrades(action: MarketAction): number {
+    return this.marketSystem.getFreeTrades(action);
   }
 
   /** The price the player pays to buy one unit of `resource`. */

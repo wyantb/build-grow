@@ -4,6 +4,7 @@ import type { WorldState, Resource } from '../types/worldState.js';
 import { createInitialState } from '../types/worldState.js';
 import { BUILDING_TYPES, getBuildingType } from '../data/buildings.js';
 import type { BuildingType } from '../data/buildings.js';
+import { getTradeCapacity } from '../data/market.js';
 import type { MarketResource } from '../data/market.js';
 import type { MarketAction } from '../systems/marketSystem.js';
 import GameEngine from '../systems/gameEngine.js';
@@ -194,16 +195,16 @@ export const useGameState = () => {
   };
 
   /**
-   * Slots still free for `action`.
+   * Trades still free for `action`.
    *
-   * An order is a resource and a per-tick quantity; the quantity does not
-   * consume extra slots, so only resources with an order count as used.
+   * Every unit of an order occupies one of the merchants' trades, so the
+   * quantity in use is what counts against the merchant capacity.
    */
-  const getFreeMarketSlots = (action: MarketAction): number => {
+  const getFreeMarketTrades = (action: MarketAction): number => {
     const orders = action === 'buy' ? state.market.buys : state.market.sells;
-    const used = Object.values(orders).filter((count) => (count ?? 0) > 0).length;
+    const used = Object.values(orders).reduce((sum, count) => sum + (count ?? 0), 0);
 
-    return Math.max(0, getMerchantCount() - used);
+    return Math.max(0, getTradeCapacity(getMerchantCount()) - used);
   };
 
   /**
@@ -256,7 +257,7 @@ export const useGameState = () => {
     isMarketBuilt,
     setMarketAllocation,
     getMerchantCount,
-    getFreeMarketSlots,
+    getFreeMarketTrades,
     getMarketTickRates,
     gameEngine,
     mirrorEngineState,

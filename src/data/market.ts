@@ -27,6 +27,21 @@ export const BUY_PRICE_MULTIPLIER = 1.5;
 /** Price the player receives for selling one unit, as a multiple of the base factor. */
 export const SELL_PRICE_MULTIPLIER = 0.75;
 
+/**
+ * Trades a single merchant offers per tick, per direction.
+ *
+ * A merchant carries one buy trade and one sell trade, so their capacity is
+ * one unit of each per tick. Raising the quantity of an order beyond this
+ * needs another merchant.
+ */
+export const TRADES_PER_MERCHANT = 1;
+
+/**
+ * Trades per tick that `merchantCount` merchants can carry, in each direction.
+ */
+export const getTradeCapacity = (merchantCount: number): number =>
+  merchantCount * TRADES_PER_MERCHANT;
+
 /** Display metadata for the market rows. */
 export const MARKET_RESOURCE_INFO: Record<MarketResource, { label: string; description: string }> = {
   wood: {
@@ -50,59 +65,3 @@ export const getBuyPrice = (resource: MarketResource): number =>
 /** Price the player receives for selling one unit of `resource`. */
 export const getSellPrice = (resource: MarketResource): number =>
   RESOURCE_BASE_FACTORS[resource] * SELL_PRICE_MULTIPLIER;
-
-/**
- * Gold the player spends per tick on the given buy allocation.
- *
- * Gold is not a tradable resource, so it never appears in an allocation map.
- */
-export const getBuyCost = (allocations: Partial<Record<MarketResource, number>>): number => {
-  let cost = 0;
-
-  for (const resource of MARKET_RESOURCES) {
-    cost += (allocations[resource] ?? 0) * getBuyPrice(resource);
-  }
-
-  return cost;
-};
-
-/**
- * Gold the player earns per tick from the given sell allocation.
- */
-export const getSaleRevenue = (allocations: Partial<Record<MarketResource, number>>): number => {
-  let revenue = 0;
-
-  for (const resource of MARKET_RESOURCES) {
-    revenue += (allocations[resource] ?? 0) * getSellPrice(resource);
-  }
-
-  return revenue;
-};
-
-/** True if `key` is a resource that can be traded. */
-export const isMarketResource = (key: string): key is MarketResource =>
-  (MARKET_RESOURCES as readonly string[]).includes(key);
-
-/**
- * Total number of buy and sell slots in use.
- *
- * Each merchant can carry one buy and one sell slot, so the total must never
- * exceed twice the merchant count.
- */
-export const countAllocations = (allocations: Partial<Record<MarketResource, number>>): number =>
-  MARKET_RESOURCES.reduce((sum, resource) => sum + (allocations[resource] ?? 0), 0);
-
-/** True if the allocations hold no slots. */
-export const isEmptyAllocation = (allocations: Partial<Record<MarketResource, number>>): boolean =>
-  countAllocations(allocations) === 0;
-
-/** A zeroed allocation map over every tradable resource. */
-export const emptyAllocations = (): Record<MarketResource, number> =>
-  Object.fromEntries(MARKET_RESOURCES.map((resource) => [resource, 0])) as Record<MarketResource, number>;
-
-/** The gold cost of a single unit of each tradable resource, for display. */
-export const getGoldPriceTable = (): Record<MarketResource, { buy: number; sell: number }> =>
-  Object.fromEntries(MARKET_RESOURCES.map((resource) => [resource, {
-    buy: getBuyPrice(resource),
-    sell: getSellPrice(resource),
-  }])) as Record<MarketResource, { buy: number; sell: number }>;

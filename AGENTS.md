@@ -9,7 +9,7 @@ before modifying the systems it describes:
 |------|-----|----------------|
 | Buildings | `game_design/buildings.md` | Building catalog, costs, job slots, scaling |
 | Jobs | `game_design/jobs.md` | Job types, production rates, capacity, defaults |
-| Market | `game_design/market.md` | Tick-based orders, merchant slots, prices, rates |
+| Market | `game_design/market.md` | Tick-based orders, merchant trade capacity, prices, rates |
 
 When implementing or refactoring features that touch buildings or jobs, read
 the matching doc first and keep the implementation consistent with it. If the
@@ -201,6 +201,27 @@ Vitest runs the engine tests. The suite lives next to the code it covers, in
 - Use `toBeCloseTo` for resource amounts. Accumulating a per-tick delta
   over many ticks drifts in floating point (3.75 arrives as
   3.750000000000006).
+
+### Testing Strategy
+
+**Engine behavior is covered by Vitest. That is the primary strategy.**
+Anything with a rule, a rate, a capacity, or a settlement order belongs in
+`src/systems/__tests__/`, asserted against the engine rather than the UI.
+
+- **Do not test math by clicking.** Resource rates, market settlement, and
+  capacity limits are engine rules; assert them in Vitest. Reading a
+  computed number off the screen is not a test.
+- **UI checks are optional and should be brief.** Check visibility at most:
+  that a tab or pane appears when its condition is met, and that a control
+  is present. Do not verify arithmetic through the UI, and do not drive long
+  click sequences to reach a game state.
+- **If a UI check is taking more than about a minute, stop.** It usually
+  means the state is hard to reach by hand, which is a signal to build
+  in-repo tooling (a test world helper, a seed or debug hook) instead of
+  clicking through the game.
+- **Reach a game state through the engine, not through clicks.** For example,
+  build a market and assign merchants through `createTestWorld` overrides
+  rather than clicking through the Buildings and Jobs tabs.
 
 ### Rule Severity Policy
 Every rule is either **off** or **error**. Warnings are not used in this

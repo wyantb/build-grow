@@ -8,6 +8,7 @@ import {
   MARKET_RESOURCES,
   getBuyPrice,
   getSellPrice,
+  getTradeCapacity,
 } from '../../data/market.js';
 import type { MarketResource } from '../../data/market.js';
 
@@ -28,20 +29,17 @@ const MarketPanel: Component = () => {
   const buyCount = (resource: MarketResource): number => orders().buys[resource] ?? 0;
   const sellCount = (resource: MarketResource): number => orders().sells[resource] ?? 0;
 
-  const freeSlots = (action: 'buy' | 'sell'): number =>
-    gameState.getFreeMarketSlots(action);
+  const freeTrades = (action: 'buy' | 'sell'): number =>
+    gameState.getFreeMarketTrades(action);
 
   /**
-   * True when the increment for `action` and `resource` cannot be applied.
+   * True when the increment for `action` cannot be applied.
    *
-   * Raising the quantity of an existing order never needs a free slot; only
-   * opening a new order does.
+   * Every unit of an order occupies one of the merchants' trades, so an
+   * increment always needs a free trade, whether it opens an order or
+   * raises the quantity of an existing one.
    */
-  const atSlotLimit = (action: 'buy' | 'sell', resource: MarketResource): boolean => {
-    const current = action === 'buy' ? buyCount(resource) : sellCount(resource);
-
-    return current === 0 && freeSlots(action) <= 0;
-  };
+  const atCapacity = (action: 'buy' | 'sell'): boolean => freeTrades(action) <= 0;
 
   const adjust = (action: 'buy' | 'sell', resource: MarketResource, delta: number): void => {
     const current = action === 'buy' ? buyCount(resource) : sellCount(resource);
@@ -52,7 +50,7 @@ const MarketPanel: Component = () => {
     gameState.setMarketAllocation(action, resource, next);
   };
 
-  const slotTooltip = (action: 'buy' | 'sell', resource: MarketResource): string => {
+  const tradeTooltip = (action: 'buy' | 'sell', resource: MarketResource): string => {
     const label = MARKET_RESOURCE_INFO[resource].label;
     const verb = action === 'buy' ? 'Buy' : 'Sell';
 
@@ -60,12 +58,14 @@ const MarketPanel: Component = () => {
       return `No merchants available. Assign a worker to the Merchant job to ${verb.toLowerCase()} ${label}.`;
     }
 
-    const free = freeSlots(action);
+    const free = freeTrades(action);
     if (free <= 0) {
-      return `All ${merchants()} merchant slot${merchants() === 1 ? '' : 's'} are in use.`;
+      const capacity = getTradeCapacity(merchants());
+
+      return `No trade left. ${merchants()} merchant${merchants() === 1 ? '' : 's'} carr${merchants() === 1 ? 'ies' : 'y'} ${capacity} ${action} trade${capacity === 1 ? '' : 's'} per tick.`;
     }
 
-    return `${verb} ${label} per tick. ${free} slot${free === 1 ? '' : 's'} free.`;
+    return `${verb} one ${label} per tick. ${free} trade${free === 1 ? '' : 's'} left.`;
   };
 
   return (
@@ -104,11 +104,11 @@ const MarketPanel: Component = () => {
 
               <div class="market-actions">
                 <div class="market-action-group">
-                  <Tooltip content={slotTooltip('buy', resource)} placement="top">
+                  <Tooltip content={tradeTooltip('buy', resource)} placement="top">
                     <button
                       class="market-btn"
                       onClick={() => adjust('buy', resource, 1)}
-                      disabled={atSlotLimit('buy', resource)}
+                      disabled={atCapacity('buy')}
                     >
                       Buy
                     </button>
@@ -128,11 +128,11 @@ const MarketPanel: Component = () => {
                 </div>
 
                 <div class="market-action-group">
-                  <Tooltip content={slotTooltip('sell', resource)} placement="top">
+                  <Tooltip content={tradeTooltip('sell', resource)} placement="top">
                     <button
                       class="market-btn market-btn-sell"
                       onClick={() => adjust('sell', resource, 1)}
-                      disabled={atSlotLimit('sell', resource)}
+                      disabled={atCapacity('sell')}
                     >
                       Sell
                     </button>
@@ -157,7 +157,8 @@ const MarketPanel: Component = () => {
       </div>
 
       <p class="market-note">
-        Merchants buy and sell every tick. Each merchant carries one buy and one sell order.
+        Merchants buy and sell every tick. Each merchant carries one buy and one sell
+        trade per tick.
       </p>
     </div>
   );
