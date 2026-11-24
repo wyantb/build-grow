@@ -10,6 +10,7 @@ class GameEngine {
   private marketSystem: MarketSystem;
   private previousResources: Resource;
   private listeners = new Set<() => void>();
+  private buildingInstanceCounter: Record<string, number> = {};
 
   constructor() {
     this.state = createInitialState();
@@ -160,8 +161,13 @@ class GameEngine {
     this.state.resources.food -= buildingCost.food;
     this.state.resources.gold -= buildingCost.gold;
 
+    // Generate a unique instance key for this building
+    const instanceIndex = this.buildingInstanceCounter[buildingId] ?? 0;
+    this.buildingInstanceCounter[buildingId] = instanceIndex + 1;
+    const instanceKey = `${buildingId}-${instanceIndex}`;
+
     // Add building to state
-    this.state.buildings[buildingId] = {
+    this.state.buildings[instanceKey] = {
       id: buildingId,
       name: buildingType.name,
       description: buildingType.description,

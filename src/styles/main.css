@@ -87,7 +87,7 @@ body.light-mode header {
 }
 
 .resources-panel {
-  flex: 0 0 200px;
+  flex: 0 0 260px;
 }
 
 .main-panel {
@@ -222,6 +222,17 @@ body.light-mode .building-btn:disabled {
   background-color: #e0e0e0;
   color: #999;
   border-color: #ccc;
+}
+
+/* Button state: currently constructing */
+.building-btn-constructing {
+  border-color: #007acc;
+  background-color: #1a2a3a;
+}
+
+body.light-mode .building-btn-constructing {
+  border-color: #3498db;
+  background-color: #e8f4fd;
 }
 
 /* Count badge in upper-right corner */

@@ -60,6 +60,18 @@ const BuildingGrid: Component = () => {
                       const scaledTime = () => getScaledBuildTime(type().buildTime, count());
                       const affordable = () => canAfford(scaledCost());
 
+                      // Find any in-progress construction for this building type
+                      const construction = () => {
+                        const allBuildings = gameState.getBuildings();
+                        for (const [_key, building] of Object.entries(allBuildings)) {
+                          if (building.id === type().id && !building.built) {
+                            return building;
+                          }
+                        }
+
+                        return undefined;
+                      };
+
                       return (
                         <Tooltip
                           content={
@@ -99,11 +111,13 @@ const BuildingGrid: Component = () => {
                         >
 
                           <button
-                            class={`building-btn ${!affordable() ? 'building-btn-unaffordable' : ''}`}
-                            disabled={!affordable()}
+                            class={`building-btn ${!affordable() ? 'building-btn-unaffordable' : ''}${construction() ? ' building-btn-constructing' : ''}`}
+                            disabled={!affordable() || !!construction()}
                             onClick={() => buildBuilding(type().id)}
                           >
-                            <span class="building-name">{type().name}</span>
+                            <span class="building-name">
+                              {construction() ? `Building... (${construction()?.constructionProgress}%)` : type().name}
+                            </span>
                             <Show when={count() > 0}>
                               <span class="building-count">{count()}</span>
                             </Show>
