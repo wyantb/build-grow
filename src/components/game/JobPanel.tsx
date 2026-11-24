@@ -2,96 +2,89 @@ import { For, createMemo } from 'solid-js';
 import type { Component } from 'solid-js';
 import { getGameState } from '../../hooks/useGameState.js';
 import Tooltip from '../ui/Tooltip.js';
-import type { Job } from '../../types/worldState.js';
-
-const EMPTY_JOB: Job = {
-  id: '',
-  name: '',
-  description: '',
-  workers: 0,
-  productivity: 0
-};
 
 const JobPanel: Component = () => {
   const gameState = getGameState();
 
-  // Job ids are stable, so the list keeps its identity across ticks. The live
-  // job record is read reactively inside each row instead of being copied into
-  // the list, which would rebuild every row each tick.
-  const jobs = createMemo<string[]>(() => Object.keys(gameState.getJobs()));
-  const job = (id: string): Job => gameState.getJobs()[id] ?? EMPTY_JOB;
+  const jobs = createMemo(() => {
+    const raw = Object.values(gameState.getJobs());
 
-  // Get total population and assigned workers
-  const getTotalAssignedWorkers = (): number => {
-    return Object.values(gameState.getJobs()).reduce((total, job) => total + job.workers, 0);
-  };
+    // Sort: defaultable (uncapped) first, then capped jobs by name
+    return raw.sort((a, b) => {
+      const aDefault = a.canDefault ? 0 : 1;
+      const bDefault = b.canDefault ? 0 : 1;
+      if (aDefault !== bDefault) { return aDefault - bDefault; }
 
-  const getAvailableWorkers = (): number => {
-    return gameState.getPopulation() - getTotalAssignedWorkers();
-  };
+      return a.name.localeCompare(b.name);
+    });
+  });
 
-  // Assign workers to a job
-  const assignWorker = (jobId: string) => {
-    gameState.assignWorker(jobId);
-  };
+  const isDefaultJob = (jobId: string): boolean =>
+    gameState.state.defaultJob === jobId;
 
-  // Unassign workers from a job
-  const unassignWorker = (jobId: string) => {
-    gameState.unassignWorker(jobId);
+  const capacityLabel = (w: number, cap: number): string => {
+    if (cap === 0) { return `${w}`; }
+
+    return `${w} / ${cap}`;
   };
 
   return (
     <div class="job-panel">
-      <div class="population-info">
-        <Tooltip content="Workers not yet assigned to a job." placement="right">
-          <div>Available Workers: {getAvailableWorkers()}</div>
-        </Tooltip>
-        <Tooltip content="Your total population, assigned or not." placement="right">
-          <div>Total Population: {gameState.getPopulation()}</div>
-        </Tooltip>
-      </div>
-
-      <For each={jobs()} keyed={(id) => id}>
-        {(id) => (
-          <div class="job-card">
-            <Tooltip
-              content={
-                <>
-                  <span class="tooltip-title">{job(id()).name}</span>
-                  <span class="tooltip-detail">
-                    Each worker adds {job(id()).productivity}x output.
-                  </span>
-                </>
-              }
-              placement="top"
-            >
-              <h3>{job(id()).name}</h3>
-            </Tooltip>
-            <p>{job(id()).description}</p>
-            <div class="job-workers">
-              Workers: {job(id()).workers}
+      <For each={jobs()} keyed={(j) => j.id}>
+        {(job) => (
+          <div class="job-row">
+            <div class="job-row-name">
+              <Tooltip content={job().description} placement="top">
+                <span class="job-label">{job().name}</span>
+              </Tooltip>
             </div>
-            <div class="job-productivity">
-              Productivity: {job(id()).productivity}x
+            <div class="job-row-count">
+              {capacityLabel(job().workers, job().capacity)}
             </div>
-            <div class="worker-controls">
-              <Tooltip content="Remove one worker from this job." placement="top">
+            <div class="job-row-controls">
+              <Tooltip content="Remove 5 workers" placement="top">
                 <button
-                  class="worker-button"
-                  onClick={() => unassignWorker(id())}
-                  disabled={job(id()).workers <= 0}
+                  class="job-btn"
+                  onClick={() => gameState.assignWorkers(job().id, -5)}
+                  disabled={job().workers <= 0}
                 >
-                  -
+                  {'\u00AB'}
                 </button>
               </Tooltip>
-              <span class="worker-count">{job(id()).workers}</span>
-              <Tooltip content="Assign one more worker to this job." placement="top">
+              <Tooltip content="Remove 1 worker" placement="top">
                 <button
-                  class="worker-button"
-                  onClick={() => assignWorker(id())}
-                  disabled={getAvailableWorkers() <= 0}
+                  class="job-btn"
+                  onClick={() => gameState.assignWorkers(job().id, -1)}
+                  disabled={job().workers <= 0}
                 >
-                  +
+                  {'\u2039'}
+                </button>
+              </Tooltip>
+              <Tooltip content="Set as default job" placement="top">
+                <button
+                  class="job-btn job-btn-default"
+                  disabled={!job().canDefault || isDefaultJob(job().id)}
+                  onClick={() => gameState.setDefaultJob(job().id)}
+                >
+                  {job().canDefault && !isDefaultJob(job().id) ? 'D' : '\u00A0'}
+                </button>
+              </Tooltip>
+              <Tooltip content="Add 1 worker" placement="top">
+                <button
+                  class="job-btn"
+                  onClick={() => gameState.assignWorkers(job().id, 1)}
+                  disabled={job().capacity > 0 && job().workers >= job().capacity}
+                >
+                  {'\u203A'}
+                </button>
+              </Tooltip>
+              <Tooltip content="Add 5 workers" placement="top">
+                <button
+                  class="job-btn"
+                  onClick={() => gameState.assignWorkers(job().id, 5)}
+                  disabled={job().capacity > 0 && job().workers >= job().capacity}
+                >
+                  {'\u00BB'}
                 </button>
               </Tooltip>
             </div>

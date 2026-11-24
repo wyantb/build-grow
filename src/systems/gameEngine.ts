@@ -1,6 +1,7 @@
 import { createInitialState } from '../types/worldState.js';
 import type { WorldState, Resource } from '../types/worldState.js';
 import { getBuildingType, getScaledCost, getScaledBuildTime } from '../data/buildings.js';
+import { BUILDING_JOB_MAP, FOOD_CONSUMPTION_PER_TICK } from '../data/jobs.js';
 import MarketSystem from './marketSystem.js';
 
 class GameEngine {
@@ -16,6 +17,34 @@ class GameEngine {
     this.state = createInitialState();
     this.marketSystem = new MarketSystem(this.state);
     this.previousResources = { ...this.state.resources };
+
+    // Recalculate job capacities from existing completed buildings
+    this.recalculateJobCapacities();
+  }
+
+  // Recalculate job capacities from completed building counts
+  private recalculateJobCapacities(): void {
+    for (const [buildingTypeId, count] of Object.entries(this.state.buildingCounts)) {
+      const jobId = BUILDING_JOB_MAP[buildingTypeId];
+      if (jobId && this.state.jobs[jobId]) {
+        this.state.jobs[jobId].capacity = count;
+      }
+    }
+
+    // Rebuild instance counter from existing buildings
+    for (const instanceKey of Object.keys(this.state.buildings)) {
+      const parts = instanceKey.split('-');
+      const buildingTypeId = parts.slice(0, -1).join('-');
+      const lastPart = parts[parts.length - 1];
+      if (!lastPart || !buildingTypeId) {continue;}
+      const idx = parseInt(lastPart, 10);
+      if (!Number.isNaN(idx)) {
+        this.buildingInstanceCounter[buildingTypeId] = Math.max(
+          this.buildingInstanceCounter[buildingTypeId] ?? 0,
+          idx + 1
+        );
+      }
+    }
   }
 
   // Subscribe to state changes so the UI can mirror the engine reactively
@@ -73,21 +102,41 @@ class GameEngine {
 
   // Process resource generation from jobs
   private processResourceGeneration(): void {
-    // Calculate resources from settlers (catch-all job)
-    const settlerJob = this.state.jobs['settler'];
-    if (settlerJob) {
-      // Settlers produce small amounts of all basic resources
-      // Production scales poorly compared to specialized jobs
-      const baseProduction = 0.1; // Very low base production
-      const settlerProduction = baseProduction * settlerJob.workers * settlerJob.productivity;
+    const jobs = this.state.jobs;
 
-      this.state.resources.wood += settlerProduction;
-      this.state.resources.stone += settlerProduction * 0.8; // Stone is slightly less common
-      this.state.resources.food += settlerProduction * 1.2; // Food is slightly more common
+    // Calculate total assigned workers (all jobs except settler)
+    let totalAssigned = 0;
+    for (const [jobId, job] of Object.entries(jobs)) {
+      if (jobId !== 'settler') {
+        totalAssigned += job.workers;
+      }
     }
 
-    // Process specialized jobs (when implemented)
-    // For now, we only have settlers
+    // Settler workers = population - total assigned
+    // (settle automatically fills remaining population)
+    const settlerJob = jobs['settler'];
+    if (settlerJob) {
+      settlerJob.workers = Math.max(0, this.state.population - totalAssigned);
+    }
+
+    // Food consumption: every population point consumes 0.01 food/tick
+    this.state.resources.food -= this.state.population * FOOD_CONSUMPTION_PER_TICK;
+
+    // Production from each job
+    for (const job of Object.values(jobs)) {
+      if (job.workers <= 0) {continue;}
+
+      this.state.resources.wood += job.production.wood * job.workers;
+      this.state.resources.stone += job.production.stone * job.workers;
+      this.state.resources.food += job.production.food * job.workers;
+      this.state.resources.gold += job.production.gold * job.workers;
+
+      // Consumption per worker
+      this.state.resources.wood -= job.consumption.wood * job.workers;
+      this.state.resources.stone -= job.consumption.stone * job.workers;
+      this.state.resources.food -= job.consumption.food * job.workers;
+      this.state.resources.gold -= job.consumption.gold * job.workers;
+    }
   }
 
   // Process building construction
@@ -117,21 +166,10 @@ class GameEngine {
   private applyBuildingEffects(buildingId: string): void {
     console.info(`Building ${buildingId} completed!`);
 
-    // Add jobs based on building type
-    if (buildingId === 'market') {
-      // Add merchant job when market is built
-      this.state.jobs['merchant'] = {
-        id: 'merchant',
-        name: 'Merchant',
-        description: 'Trades resources at the market',
-        workers: 0,
-        productivity: 1.0
-      };
-
-      // Add merchant to unlocked jobs
-      if (!this.state.unlockedJobs.includes('merchant')) {
-        this.state.unlockedJobs.push('merchant');
-      }
+    // Each building adds +1 capacity to its associated job
+    const jobId = BUILDING_JOB_MAP[buildingId];
+    if (jobId && this.state.jobs[jobId]) {
+      this.state.jobs[jobId].capacity += 1;
     }
   }
 
@@ -183,21 +221,41 @@ class GameEngine {
     return true;
   }
 
-  // Assign workers to jobs
+  // Assign workers to a job
   assignWorkers(jobId: string, count: number): boolean {
-    // For simplicity, we'll just adjust the settler job for now
-    if (this.state.jobs[jobId]) {
-      // Handle relative assignments (positive or negative)
-      const currentWorkers = this.state.jobs[jobId].workers;
-      const newWorkers = Math.max(0, Math.min(this.state.population, currentWorkers + count));
+    const job = this.state.jobs[jobId];
+    if (!job) {return false;}
 
-      this.state.jobs[jobId].workers = newWorkers;
-      this.notify();
+    const totalAssigned = Object.values(this.state.jobs)
+      .reduce((sum, j) => sum + j.workers, 0);
+    const available = Math.max(0, this.state.population - totalAssigned);
 
-      return true;
+    // When adding workers: can't exceed capacity or available population
+    if (count > 0) {
+      const room = job.capacity > 0
+        ? Math.min(available, job.capacity - job.workers)
+        : available;
+      const actual = Math.min(count, room);
+      job.workers = Math.min(job.workers + actual, this.state.population);
+    } else {
+      // When removing: can't go below 0
+      job.workers = Math.max(0, job.workers + count);
     }
 
-    return false;
+    this.notify();
+
+    return true;
+  }
+
+  // Set the default job (where new workers go)
+  setDefaultJob(jobId: string): boolean {
+    const job = this.state.jobs[jobId];
+    if (!job || !job.canDefault) {return false;}
+
+    this.state.defaultJob = jobId;
+    this.notify();
+
+    return true;
   }
 
   // Get merchant count from market system

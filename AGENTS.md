@@ -1,5 +1,20 @@
 # Project Conventions
 
+## Game Design Docs
+
+Core game rules live in `game_design/`. Always consult the relevant document
+before modifying the systems it describes:
+
+| Area | Doc | What it covers |
+|------|-----|----------------|
+| Buildings | `game_design/buildings.md` | Building catalog, costs, job slots, scaling |
+| Jobs | `game_design/jobs.md` | Job types, production rates, capacity, defaults |
+
+When implementing or refactoring features that touch buildings or jobs, read
+the matching doc first and keep the implementation consistent with it. If the
+doc and code drift, fix the doc or the code — but do not change both in
+uncoordinated commits.
+
 ## UI Design Principles
 
 ### Layout Structure

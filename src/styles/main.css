@@ -606,10 +606,11 @@ body.light-mode .resource-rate.negative {
 
 /* Job UI Styles */
 .job-row {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
   align-items: center;
-  padding: 10px 0;
+  gap: 12px;
+  padding: 8px 0;
   border-bottom: 1px solid #444;
 }
 
@@ -617,40 +618,62 @@ body.light-mode .job-row {
   border-bottom: 1px solid #ccc;
 }
 
-.job-controls {
+.job-row-name {
+  min-width: 0;
+}
+
+.job-label {
+  font-weight: bold;
+  font-size: 0.95rem;
+}
+
+.job-row-count {
+  min-width: 60px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #ccc;
+}
+
+.job-row-controls {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 3px;
 }
 
 .job-btn {
   background-color: #444;
   color: white;
-  border: none;
-  padding: 5px 10px;
+  border: 1px solid #555;
+  padding: 3px 8px;
   border-radius: 3px;
   cursor: pointer;
   font-weight: bold;
-  min-width: 30px;
+  font-size: 0.85rem;
+  min-width: 26px;
+  text-align: center;
+}
+
+.job-btn-default {
+  color: #4dffb8;
 }
 
 body.light-mode .job-btn {
   background-color: #ccc;
   color: #333;
+  border-color: #aaa;
 }
 
-.job-btn:hover {
+.job-btn:hover:not(:disabled) {
   background-color: #555;
 }
 
-body.light-mode .job-btn:hover {
+body.light-mode .job-btn:hover:not(:disabled) {
   background-color: #bbb;
 }
 
-.job-worker-count {
-  min-width: 30px;
-  text-align: center;
-  font-weight: bold;
+.job-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 /* Market UI Styles */

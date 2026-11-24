@@ -53,7 +53,7 @@ export const useGameState = () => {
       for (const [jobId, job] of Object.entries(engineState.jobs)) {
         if (state.jobs[jobId]) {
           state.jobs[jobId].workers = job.workers;
-          state.jobs[jobId].productivity = job.productivity;
+          state.jobs[jobId].capacity = job.capacity;
         } else {
           state.jobs[jobId] = { ...job };
         }
@@ -107,8 +107,7 @@ export const useGameState = () => {
   };
 
   // Job management
-  const assignWorker = (jobId: string) => {
-    // Check if job exists
+  const assignWorkers = (jobId: string, count: number): boolean => {
     const job = state.jobs[jobId];
     if (!job) {
       console.error(`Job ${jobId} not found`);
@@ -116,18 +115,9 @@ export const useGameState = () => {
       return false;
     }
 
-    // Check if there are available workers
-    const totalAssigned = Object.values(state.jobs).reduce((total, j) => total + j.workers, 0);
-    if (totalAssigned >= state.population) {
-      console.error('No available workers');
-
-      return false;
-    }
-
-    // The engine owns the job assignments
-    const assigned = gameEngine.assignWorkers(jobId, 1);
+    const assigned = gameEngine.assignWorkers(jobId, count);
     if (!assigned) {
-      console.error('No available workers');
+      console.error(`Could not assign ${count} workers to ${jobId}`);
 
       return false;
     }
@@ -137,25 +127,10 @@ export const useGameState = () => {
     return true;
   };
 
-  const unassignWorker = (jobId: string) => {
-    // Check if job exists
-    const job = state.jobs[jobId];
-    if (!job) {
-      console.error(`Job ${jobId} not found`);
-
-      return false;
-    }
-
-    // Check if there are workers to unassign
-    if (job.workers <= 0) {
-      console.error('No workers to unassign');
-
-      return false;
-    }
-
-    const assigned = gameEngine.assignWorkers(jobId, -1);
-    if (!assigned) {
-      console.error('No workers to unassign');
+  const setDefaultJob = (jobId: string): boolean => {
+    const success = gameEngine.setDefaultJob(jobId);
+    if (!success) {
+      console.error(`Cannot set ${jobId} as default job`);
 
       return false;
     }
@@ -163,6 +138,14 @@ export const useGameState = () => {
     mirrorEngineState();
 
     return true;
+  };
+
+  const getAvailableWorkers = (): number => {
+    const totalAssigned = Object.values(state.jobs)
+      .filter((j) => j.id !== 'settler')
+      .reduce((sum, j) => sum + j.workers, 0);
+
+    return Math.max(0, state.population - totalAssigned);
   };
 
   // Simple state accessors
@@ -192,8 +175,9 @@ export const useGameState = () => {
     setResourceRates: setResourceRatesExternal,
     getBuildingCatalog,
     buildBuilding,
-    assignWorker,
-    unassignWorker,
+    assignWorkers,
+    setDefaultJob,
+    getAvailableWorkers,
     gameEngine,
     mirrorEngineState,
     // Expose the raw state for debugging

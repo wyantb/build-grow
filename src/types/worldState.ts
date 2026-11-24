@@ -16,7 +16,10 @@ export const JobSchema = z.object({
   name: z.string(),
   description: z.string(),
   workers: z.number(),
-  productivity: z.number() // productivity multiplier
+  capacity: z.number(), // 0 = uncapped
+  canDefault: z.boolean(),
+  production: ResourceSchema, // per tick
+  consumption: ResourceSchema // per tick (e.g. food per worker)
 });
 
 export type Job = z.infer<typeof JobSchema>;
@@ -80,7 +83,8 @@ export const WorldStateSchema = z.object({
   species: SpeciesSchema,
   unlockedBuildings: z.array(z.string()),
   unlockedJobs: z.array(z.string()),
-  gameTime: z.number() // in seconds
+  gameTime: z.number(), // in seconds
+  defaultJob: z.string() // id of the job new workers go to
 });
 
 export type WorldState = z.infer<typeof WorldStateSchema>;
@@ -100,9 +104,42 @@ export const createInitialState = (): WorldState => ({
     settler: {
       id: 'settler',
       name: 'Settler',
-      description: 'General laborer who contributes to all basic resource gathering',
+      description: 'Unemployed workers gathering basic resources.',
       workers: 5,
-      productivity: 1.0
+      capacity: 0,
+      canDefault: true,
+      production: { wood: 0.1, stone: 0.04, food: 0.02, gold: 0 },
+      consumption: { wood: 0, stone: 0, food: 0, gold: 0 }
+    },
+    lumberjack: {
+      id: 'lumberjack',
+      name: 'Lumberjack',
+      description: 'Cuts wood from nearby forests.',
+      workers: 0,
+      capacity: 0,
+      canDefault: false,
+      production: { wood: 1.0, stone: 0, food: 0, gold: 0 },
+      consumption: { wood: 0, stone: 0, food: 0, gold: 0 }
+    },
+    quarrier: {
+      id: 'quarrier',
+      name: 'Quarrier',
+      description: 'Mines stone from quarries.',
+      workers: 0,
+      capacity: 0,
+      canDefault: false,
+      production: { wood: 0, stone: 0.8, food: 0, gold: 0 },
+      consumption: { wood: 0, stone: 0, food: 0, gold: 0 }
+    },
+    merchant: {
+      id: 'merchant',
+      name: 'Merchant',
+      description: 'Trades goods at the market (production TBD).',
+      workers: 0,
+      capacity: 0,
+      canDefault: false,
+      production: { wood: 0, stone: 0, food: 0, gold: 0 },
+      consumption: { wood: 0, stone: 0, food: 0, gold: 0 }
     }
   },
   buildings: {},
@@ -122,5 +159,6 @@ export const createInitialState = (): WorldState => ({
   },
   unlockedBuildings: ['hut', 'market', 'lumberjack', 'quarry', 'builder'],
   unlockedJobs: ['settler'],
-  gameTime: 0
+  gameTime: 0,
+  defaultJob: 'settler'
 });
