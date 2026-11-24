@@ -4,6 +4,8 @@ import type { WorldState, Resource } from '../types/worldState.js';
 import { createInitialState } from '../types/worldState.js';
 import { BUILDING_TYPES, getBuildingType } from '../data/buildings.js';
 import type { BuildingType } from '../data/buildings.js';
+import type { MarketResource } from '../data/market.js';
+import type { MarketAction } from '../systems/marketSystem.js';
 import GameEngine from '../systems/gameEngine.js';
 
 // Create a game state store with proper typing
@@ -73,7 +75,15 @@ export const useGameState = () => {
       for (const [id, count] of Object.entries(engineState.buildingCounts)) {
         state.buildingCounts[id] = count;
       }
+
+      // Mirror market orders
+      state.market.buys = { ...engineState.market.buys };
+      state.market.sells = { ...engineState.market.sells };
     });
+
+    // The market rates come from the engine's plan for the next tick, so
+    // they are mirrored alongside the state they were planned against.
+    setMarketTickRates(gameEngine.getMarketTickRates());
   };
 
   // Building management
@@ -150,6 +160,68 @@ export const useGameState = () => {
     return Math.max(0, state.population - totalAssigned);
   };
 
+  // Market management
+  const setMarketAllocation = (
+    action: MarketAction,
+    resource: MarketResource,
+    count: number,
+  ): boolean => {
+    const allocated = gameEngine.setMarketAllocation(action, resource, count);
+    if (!allocated) {
+      console.error(`Could not allocate ${count} ${resource} ${action} slots`);
+
+      return false;
+    }
+
+    mirrorEngineState();
+
+    return true;
+  };
+
+  const getMarketOrders = () => state.market;
+  const isMarketBuilt = () => (state.buildingCounts['market'] ?? 0) > 0;
+
+  /**
+   * Merchants available to trade.
+   *
+   * Read from the mirrored store so the count stays reactive; the engine's
+   * own state is not a tracking scope.
+   */
+  const getMerchantCount = (): number => {
+    if (!isMarketBuilt()) {return 0;}
+
+    return state.jobs['merchant']?.workers ?? 0;
+  };
+
+  /**
+   * Slots still free for `action`.
+   *
+   * An order is a resource and a per-tick quantity; the quantity does not
+   * consume extra slots, so only resources with an order count as used.
+   */
+  const getFreeMarketSlots = (action: MarketAction): number => {
+    const orders = action === 'buy' ? state.market.buys : state.market.sells;
+    const used = Object.values(orders).filter((count) => (count ?? 0) > 0).length;
+
+    return Math.max(0, getMerchantCount() - used);
+  };
+
+  /**
+   * Net resource change per tick that the market orders will settle.
+   *
+   * The engine plans the tick's trades from the current state, so this
+   * matches what actually settles: a buy that cannot be paid for does not
+   * show up here.
+   */
+  const [marketTickRates, setMarketTickRates] = createSignal<Resource>({
+    wood: 0,
+    stone: 0,
+    food: 0,
+    gold: 0,
+  });
+
+  const getMarketTickRates = (): Resource => marketTickRates();
+
   // Simple state accessors
   const getTick = () => state.tick;
   const getResources = () => state.resources;
@@ -180,6 +252,12 @@ export const useGameState = () => {
     assignWorkers,
     setDefaultJob,
     getAvailableWorkers,
+    getMarketOrders,
+    isMarketBuilt,
+    setMarketAllocation,
+    getMerchantCount,
+    getFreeMarketSlots,
+    getMarketTickRates,
     gameEngine,
     mirrorEngineState,
     // Expose the raw state for debugging

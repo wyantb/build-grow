@@ -22,7 +22,25 @@ per worker, a capacity (often tied to buildings), and optional default status.
   net per-tick rate summed over staffed jobs, multiplied by the tick
   frequency (5). The engine must not derive rates from a before/after
   snapshot of the resource amounts: that lags a tick behind and folds
-  one-off events such as building costs into the rate.
+  one-off events such as building costs into the rate. Market flows are
+  included in these rates; see `game_design/market.md`.
+
+## Merchants
+
+- **A merchant only trades once a market is built.** The Merchant job
+  exists as a job, but the merchant count is zero and the Market tab is
+  hidden until at least one Market building is completed.
+- **Each merchant carries one buy order and one sell order.** A merchant
+  buys and sells resources every tick, in the same way production happens
+  every tick. There are no bulk trades.
+- **The number of buy and sell orders in use is capped at the merchant
+  count.** Opening an order needs a free slot; raising the quantity of an
+  existing order does not. Removing a merchant removes its orders: the sale
+  order of the bottom-most resource that holds one, or, when there are no
+  sales left, the buy order of the bottom-most resource that holds one.
+- **The merchant produces and consumes nothing.** A merchant eats like any
+  other worker (0.01 food per tick) but has no production of its own.
+- Full market rules live in `game_design/market.md`.
 
 ## Job Catalog
 

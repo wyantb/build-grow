@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { JOBS } from '../data/jobs.js';
+import { MARKET_RESOURCES } from '../data/market.js';
 
 // Define the basic resource schema
 export const ResourceSchema = z.object({
@@ -72,6 +73,21 @@ export type FantasySpecies = z.infer<typeof FantasySpeciesSchema>;
 
 export type Species = z.infer<typeof SpeciesSchema>;
 
+/**
+ * Per-tick market orders.
+ *
+ * Gold is the medium of exchange and is never traded, so the allocation maps
+ * only hold tradable resources.
+ */
+export const MarketSchema = z.object({
+  /** Units bought per tick, by resource. */
+  buys: z.partialRecord(z.enum(MARKET_RESOURCES), z.number()),
+  /** Units sold per tick, by resource. */
+  sells: z.partialRecord(z.enum(MARKET_RESOURCES), z.number()),
+});
+
+export type MarketState = z.infer<typeof MarketSchema>;
+
 // Define the main world state schema
 export const WorldStateSchema = z.object({
   version: z.string(),
@@ -86,6 +102,7 @@ export const WorldStateSchema = z.object({
   unlockedJobs: z.array(z.string()),
   gameTime: z.number(), // in seconds
   defaultJob: z.string(), // id of the job new workers go to
+  market: MarketSchema,
 });
 
 export type WorldState = z.infer<typeof WorldStateSchema>;
@@ -124,6 +141,10 @@ export const createInitialState = (): WorldState => {
     unlockedJobs: ['settler'],
     gameTime: 0,
     defaultJob: 'unemployed',
+    market: {
+      buys: {},
+      sells: {},
+    },
   };
 
   // Put initial population in the default job

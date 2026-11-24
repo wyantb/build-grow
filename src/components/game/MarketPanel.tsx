@@ -1,102 +1,164 @@
-import { For } from 'solid-js';
+import { For, createMemo } from 'solid-js';
 import type { Component } from 'solid-js';
 import { getGameState } from '../../hooks/useGameState.js';
 import { formatNumber } from '../../utils/formatNumber.js';
 import Tooltip from '../ui/Tooltip.js';
-import type { Resource } from '../../types/worldState.js';
+import {
+  MARKET_RESOURCE_INFO,
+  MARKET_RESOURCES,
+  getBuyPrice,
+  getSellPrice,
+} from '../../data/market.js';
+import type { MarketResource } from '../../data/market.js';
 
 const MarketPanel: Component = () => {
   const gameState = getGameState();
 
-  // Mock market data - in a real implementation this would come from the game engine
-  const getMarketData = (): { resource: keyof Resource; price: number; trend: 'up' | 'down' }[] => {
-    return [
-      { resource: 'wood', price: 0.8, trend: 'up' },
-      { resource: 'stone', price: 1.2, trend: 'down' },
-      { resource: 'food', price: 0.5, trend: 'up' },
-      { resource: 'gold', price: 1.0, trend: 'down' },
-    ];
+  const orders = createMemo(() => gameState.getMarketOrders());
+  const merchants = createMemo(() => gameState.getMerchantCount());
+
+  /**
+   * Gold spent or earned per tick by the market orders.
+   *
+   * The engine plans the tick's trades from the current state, so this is
+   * what actually settles: a buy that cannot be paid for is not counted.
+   */
+  const goldPerTick = createMemo(() => gameState.getMarketTickRates().gold);
+
+  const buyCount = (resource: MarketResource): number => orders().buys[resource] ?? 0;
+  const sellCount = (resource: MarketResource): number => orders().sells[resource] ?? 0;
+
+  const freeSlots = (action: 'buy' | 'sell'): number =>
+    gameState.getFreeMarketSlots(action);
+
+  /**
+   * True when the increment for `action` and `resource` cannot be applied.
+   *
+   * Raising the quantity of an existing order never needs a free slot; only
+   * opening a new order does.
+   */
+  const atSlotLimit = (action: 'buy' | 'sell', resource: MarketResource): boolean => {
+    const current = action === 'buy' ? buyCount(resource) : sellCount(resource);
+
+    return current === 0 && freeSlots(action) <= 0;
   };
 
-  // Buy resources
-  const buyResource = (resource: keyof Resource, amount: number) => {
-    // In a real implementation, this would call the game engine
-    console.info(`Buying ${amount} of ${resource}`);
+  const adjust = (action: 'buy' | 'sell', resource: MarketResource, delta: number): void => {
+    const current = action === 'buy' ? buyCount(resource) : sellCount(resource);
+    const next = Math.max(0, current + delta);
+
+    if (next === current) {return;}
+
+    gameState.setMarketAllocation(action, resource, next);
   };
 
-  // Sell resources
-  const sellResource = (resource: keyof Resource, amount: number) => {
-    // In a real implementation, this would call the game engine
-    console.info(`Selling ${amount} of ${resource}`);
+  const slotTooltip = (action: 'buy' | 'sell', resource: MarketResource): string => {
+    const label = MARKET_RESOURCE_INFO[resource].label;
+    const verb = action === 'buy' ? 'Buy' : 'Sell';
+
+    if (merchants() <= 0) {
+      return `No merchants available. Assign a worker to the Merchant job to ${verb.toLowerCase()} ${label}.`;
+    }
+
+    const free = freeSlots(action);
+    if (free <= 0) {
+      return `All ${merchants()} merchant slot${merchants() === 1 ? '' : 's'} are in use.`;
+    }
+
+    return `${verb} ${label} per tick. ${free} slot${free === 1 ? '' : 's'} free.`;
   };
 
   return (
     <div class="market-panel">
-      <h2>Market Trading</h2>
-      <div class="market-info">
-        <p>Trade resources to maximize your profits!</p>
-        <p>Prices fluctuate based on supply and demand.</p>
+      <div class="market-summary">
+        <span>
+          Merchants: <strong>{merchants()}</strong>
+        </span>
+        <span>
+          Gold/tick: <strong class={goldPerTick() >= 0 ? 'positive' : 'negative'}>
+            {goldPerTick() >= 0 ? '+' : ''}{formatNumber(goldPerTick())}
+          </strong>
+        </span>
       </div>
 
       <div class="market-table">
         <div class="market-header">
-          <span>Resource</span>
-          <span>Price (Gold)</span>
-          <span>Trend</span>
-          <span>Your Amount</span>
-          <span>Actions</span>
+          <span class="header-name">Name</span>
+          <span class="header-price">Current Buy Price</span>
+          <span class="header-actions">Actions</span>
         </div>
 
-        <For each={getMarketData()}>{(item) => (
-          <div class="market-row">
-            <Tooltip
-              content={`Current price for one ${item.resource}. The price rises and falls with demand.`}
-              placement="right"
-            >
-              <span class="resource-name">{item.resource.charAt(0).toUpperCase() + item.resource.slice(1)}</span>
-            </Tooltip>
-            <span class="price">{formatNumber(item.price)}g</span>
-            <Tooltip
-              content={item.trend === 'up' ? 'The price is trending up.' : 'The price is trending down.'}
-              placement="right"
-            >
-              <span class={`trend ${item.trend}`}>
-                {item.trend === 'up' ? '↗' : '↘'}
-              </span>
-            </Tooltip>
-            <span class="your-amount">
-              {formatNumber(gameState.getResources()[item.resource])}
-            </span>
-            <div class="trade-buttons">
-              <Tooltip content="Buy 10 units of this resource." placement="top">
-                <button
-                  class="trade-button buy"
-                  onClick={() => buyResource(item.resource, 10)}
-                >
-                  Buy
-                </button>
+        <For each={[...MARKET_RESOURCES]}>
+          {(resource) => (
+            <div class="market-row">
+              <Tooltip content={MARKET_RESOURCE_INFO[resource].description} placement="right">
+                <span class="market-name">{MARKET_RESOURCE_INFO[resource].label}</span>
               </Tooltip>
-              <Tooltip content="Sell 10 units of this resource." placement="top">
-                <button
-                  class="trade-button sell"
-                  onClick={() => sellResource(item.resource, 10)}
-                >
-                  Sell
-                </button>
+
+              <Tooltip
+                content={`Sells at ${formatNumber(getSellPrice(resource))}g per unit.`}
+                placement="right"
+              >
+                <span class="market-price">{formatNumber(getBuyPrice(resource))}g</span>
               </Tooltip>
+
+              <div class="market-actions">
+                <div class="market-action-group">
+                  <Tooltip content={slotTooltip('buy', resource)} placement="top">
+                    <button
+                      class="market-btn"
+                      onClick={() => adjust('buy', resource, 1)}
+                      disabled={atSlotLimit('buy', resource)}
+                    >
+                      Buy
+                    </button>
+                  </Tooltip>
+                  <span class="market-count" aria-label="Units bought per tick">
+                    {buyCount(resource)}
+                  </span>
+                  <Tooltip content="Buy one less unit per tick." placement="top">
+                    <button
+                      class="market-btn market-btn-minus"
+                      onClick={() => adjust('buy', resource, -1)}
+                      disabled={buyCount(resource) <= 0}
+                    >
+                      -
+                    </button>
+                  </Tooltip>
+                </div>
+
+                <div class="market-action-group">
+                  <Tooltip content={slotTooltip('sell', resource)} placement="top">
+                    <button
+                      class="market-btn market-btn-sell"
+                      onClick={() => adjust('sell', resource, 1)}
+                      disabled={atSlotLimit('sell', resource)}
+                    >
+                      Sell
+                    </button>
+                  </Tooltip>
+                  <span class="market-count" aria-label="Units sold per tick">
+                    {sellCount(resource)}
+                  </span>
+                  <Tooltip content="Sell one less unit per tick." placement="top">
+                    <button
+                      class="market-btn market-btn-minus"
+                      onClick={() => adjust('sell', resource, -1)}
+                      disabled={sellCount(resource) <= 0}
+                    >
+                      -
+                    </button>
+                  </Tooltip>
+                </div>
+              </div>
             </div>
-          </div>
-        )}</For>
+          )}
+        </For>
       </div>
 
-      <div class="trading-info">
-        <h3>Trading Tips</h3>
-        <ul>
-          <li>Buy low, sell high for maximum profit</li>
-          <li>Watch price trends to predict future values</li>
-          <li>Diversify your resource portfolio</li>
-        </ul>
-      </div>
+      <p class="market-note">
+        Merchants buy and sell every tick. Each merchant carries one buy and one sell order.
+      </p>
     </div>
   );
 };

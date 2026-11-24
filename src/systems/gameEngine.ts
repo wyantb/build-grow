@@ -2,7 +2,10 @@ import { createInitialState } from '../types/worldState.js';
 import type { WorldState, Resource } from '../types/worldState.js';
 import { getBuildingType, getScaledCost, getScaledBuildTime } from '../data/buildings.js';
 import { BUILDING_JOB_MAP } from '../data/jobs.js';
+import { MARKET_RESOURCES } from '../data/market.js';
+import type { MarketResource } from '../data/market.js';
 import MarketSystem from './marketSystem.js';
+import type { MarketAction, MarketOrders } from './marketSystem.js';
 
 /** Resource keys the engine tracks. */
 const RESOURCE_KEYS = ['wood', 'stone', 'food', 'gold'] as const;
@@ -281,6 +284,9 @@ class GameEngine {
       }
     }
 
+    // Free the market slots held by merchants that are no longer assigned.
+    this.marketSystem.trimAllocationsToMerchants();
+
     this.notify();
 
     return true;
@@ -302,8 +308,64 @@ class GameEngine {
     return this.marketSystem.getMerchantCount();
   }
 
+  /** True once a market has been built. */
+  isMarketBuilt(): boolean {
+    return this.marketSystem.isMarketBuilt();
+  }
+
+  /** The current per-tick market orders. */
+  getMarketOrders(): MarketOrders {
+    return this.marketSystem.getOrders();
+  }
+
   /**
-   * Net resource change per tick, derived from the staffed jobs.
+   * Net resource change per tick that the market orders will settle.
+   *
+   * The engine plans the tick's trades from the current state, so this
+   * matches what actually settles.
+   */
+  getMarketTickRates(): Resource {
+    return this.marketSystem.getTickRates();
+  }
+
+  /**
+   * Allocate `count` units of `resource` to be bought or sold per tick.
+   *
+   * The number of slots in use is capped at the merchant count.
+   */
+  setMarketAllocation(action: MarketAction, resource: MarketResource, count: number): boolean {
+    const allocated = this.marketSystem.setAllocation(action, resource, count);
+
+    if (allocated) {
+      this.notify();
+    }
+
+    return allocated;
+  }
+
+  /** Slots still free for `action`. */
+  getFreeMarketSlots(action: MarketAction): number {
+    return this.marketSystem.getFreeSlots(action);
+  }
+
+  /** The price the player pays to buy one unit of `resource`. */
+  getBuyPrice(resource: MarketResource): number {
+    return this.marketSystem.getBuyPrice(resource);
+  }
+
+  /** The price the player receives for selling one unit of `resource`. */
+  getSellPrice(resource: MarketResource): number {
+    return this.marketSystem.getSellPrice(resource);
+  }
+
+  /** The resources that can be traded at the market. */
+  getMarketResources(): MarketResource[] {
+    return [...MARKET_RESOURCES];
+  }
+
+  /**
+   * Net resource change per tick, derived from the staffed jobs and the
+   * market orders.
    *
    * This is the authoritative source for the rates shown in the UI. It is
    * computed from the job table rather than from a before/after snapshot of
@@ -319,6 +381,11 @@ class GameEngine {
       for (const key of RESOURCE_KEYS) {
         rates[key] += (job.production[key] - job.consumption[key]) * job.workers;
       }
+    }
+
+    const marketRates = this.marketSystem.getTickRates();
+    for (const key of RESOURCE_KEYS) {
+      rates[key] += marketRates[key];
     }
 
     return rates;

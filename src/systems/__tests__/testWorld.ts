@@ -1,5 +1,6 @@
 import { createInitialState } from '../../types/worldState.js';
 import type { Building, Resource, WorldState } from '../../types/worldState.js';
+import type { MarketResource } from '../../data/market.js';
 
 export interface WorldOverrides {
   population?: number;
@@ -8,6 +9,10 @@ export interface WorldOverrides {
   workers?: Record<string, number>;
   /** Completed buildings, by building type id. */
   buildings?: string[];
+  /** Per-tick market buy orders, by resource. */
+  marketBuys?: Partial<Record<MarketResource, number>>;
+  /** Per-tick market sell orders, by resource. */
+  marketSells?: Partial<Record<MarketResource, number>>;
 }
 
 const zeroResource = (): Resource => ({ wood: 0, stone: 0, food: 0, gold: 0 });
@@ -52,6 +57,14 @@ export function createTestWorld(overrides: WorldOverrides = {}): WorldState {
     };
     state.buildings[key] = building;
     state.buildingCounts[buildingId] = (state.buildingCounts[buildingId] ?? 0) + 1;
+  }
+
+  if (overrides.marketBuys) {
+    state.market.buys = { ...overrides.marketBuys };
+  }
+
+  if (overrides.marketSells) {
+    state.market.sells = { ...overrides.marketSells };
   }
 
   return state;

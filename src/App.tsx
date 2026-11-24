@@ -1,4 +1,4 @@
-import { createSignal } from 'solid-js';
+import { createSignal, createMemo } from 'solid-js';
 import type { Component } from 'solid-js';
 import { useGameLoop } from './hooks/useGameLoop.js';
 import { useTheme } from './hooks/useTheme.js';
@@ -49,6 +49,9 @@ const App: Component = () => {
   // Tab management
   const [activeTab, setActiveTab] = createSignal<'buildings' | 'jobs' | 'market' | 'settings'>('buildings');
 
+  // The market tab only appears once a market has been built.
+  const marketBuilt = createMemo(() => (gameState.getBuildingCounts()['market'] ?? 0) > 0);
+
   // Exposed for debugging and for the browser verification suite.
   window.gameEngine = gameEngine;
   window.gameState = gameState;
@@ -85,6 +88,7 @@ const App: Component = () => {
             <button
               class={`tab ${activeTab() === 'market' ? 'active' : ''}`}
               onClick={() => setActiveTab('market')}
+              hidden={!marketBuilt()}
             >
               Market
             </button>
@@ -111,7 +115,11 @@ const App: Component = () => {
               </div>
             </div>
 
-            <div id="market-tab" class={`tab-pane ${activeTab() === 'market' ? 'active' : ''}`}>
+            <div
+              id="market-tab"
+              class={`tab-pane ${activeTab() === 'market' ? 'active' : ''}`}
+              hidden={!marketBuilt()}
+            >
               <h2>Market</h2>
               <div id="market-content">
                 <MarketPanel />
