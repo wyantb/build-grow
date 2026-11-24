@@ -1,5 +1,5 @@
 import { createSignal, createMemo } from 'solid-js'
-import { createStore } from 'solid-js/store'
+import { createStore } from 'solid-js'
 import type { WorldState, Resource } from '../types/worldState.js'
 import { createInitialState } from '../types/worldState.js'
 import { BUILDING_TYPES, getBuildingType } from '../data/buildings.js'
@@ -34,39 +34,40 @@ export const useGameState = () => {
   })
 
   // Mirror the engine state into the reactive store.
-  // Nested objects are written field by field: handing Solid the engine's own
-  // object would hit its identity check and skip the reactivity update.
-  // Existing entries are updated field by field so their object identity is
-  // preserved and <For> does not rebuild its rows on every tick.
+  // Solid 2's store setter takes a single draft callback. The draft is
+  // mutated in place, which preserves the identity of existing nested objects
+  // so <For> does not rebuild its rows on every tick.
   const mirrorEngineState = () => {
     const engineState = gameEngine.getState()
 
-    setState('tick', engineState.tick)
-    setState('gameTime', engineState.gameTime)
-    setState('population', engineState.population)
+    setState((state) => {
+      state.tick = engineState.tick
+      state.gameTime = engineState.gameTime
+      state.population = engineState.population
 
-    setState('resources', 'wood', engineState.resources.wood)
-    setState('resources', 'stone', engineState.resources.stone)
-    setState('resources', 'food', engineState.resources.food)
-    setState('resources', 'gold', engineState.resources.gold)
+      state.resources.wood = engineState.resources.wood
+      state.resources.stone = engineState.resources.stone
+      state.resources.food = engineState.resources.food
+      state.resources.gold = engineState.resources.gold
 
-    for (const [jobId, job] of Object.entries(engineState.jobs)) {
-      if (state.jobs[jobId]) {
-        setState('jobs', jobId, 'workers', job.workers)
-        setState('jobs', jobId, 'productivity', job.productivity)
-      } else {
-        setState('jobs', jobId, { ...job })
+      for (const [jobId, job] of Object.entries(engineState.jobs)) {
+        if (state.jobs[jobId]) {
+          state.jobs[jobId].workers = job.workers
+          state.jobs[jobId].productivity = job.productivity
+        } else {
+          state.jobs[jobId] = { ...job }
+        }
       }
-    }
 
-    for (const [buildingId, building] of Object.entries(engineState.buildings)) {
-      if (state.buildings[buildingId]) {
-        setState('buildings', buildingId, 'constructionProgress', building.constructionProgress)
-        setState('buildings', buildingId, 'built', building.built)
-      } else {
-        setState('buildings', buildingId, { ...building })
+      for (const [buildingId, building] of Object.entries(engineState.buildings)) {
+        if (state.buildings[buildingId]) {
+          state.buildings[buildingId].constructionProgress = building.constructionProgress
+          state.buildings[buildingId].built = building.built
+        } else {
+          state.buildings[buildingId] = { ...building }
+        }
       }
-    }
+    })
   }
 
   // Building management

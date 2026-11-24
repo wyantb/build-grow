@@ -2,9 +2,11 @@
 
 Target: `solid-js@2.0.3` (npm `latest`; `v1-latest` is `1.9.20`). Solid 2 is GA.
 
-Status: **validated on a scratch spike** — typecheck clean, production build clean, 12/12
-browser checks pass on both the dev server and the production preview with zero Solid
-warnings. The spike touched 5 source files and ~88 lines.
+Status: **applied to the main working tree.** Typecheck clean, production build clean, and a
+48-check browser suite passes on both the dev server and the production preview with zero
+console errors and zero Solid warnings.
+
+Two defects were found by that suite and fixed during the migration; see §8.
 
 ---
 
@@ -162,7 +164,25 @@ The spike already passes all six.
 
 ## 7. Notes and risks
 
-- **Bundle size** was effectively unchanged: 165.63 kB → 165.74 kB (52.85 → 52.90 kB gzip).
+- **Bundle size grew by ~45% gzip: 36.63 kB → 53.31 kB.** An earlier note in this
+  document claimed the bundle was "effectively unchanged"; that was a mis-measurement,
+  taken against a baseline that was not the pre-migration app. Measured properly against
+  the pre-migration commit (`a391ca7`) with identical source, Solid 1 produces 122.88 kB
+  / 36.63 kB gzip and Solid 2 produces 166.72 kB / 53.31 kB gzip.
+
+  The growth is inherent to Solid 2, not to this migration. Isolating it with a
+  minimal hello-world (one signal, one button):
+
+  | | Solid 1 | Solid 2 |
+  |---|---|---|
+  | hello-world | 11.36 kB / 4.50 kB gzip | 28.98 kB / 11.96 kB gzip |
+  | hello-world + `createStore` | 15.17 kB / 5.85 kB gzip | 54.30 kB / 20.87 kB gzip |
+  | `createStore` cost | +1.35 kB gzip | +8.91 kB gzip |
+
+  Solid 2's runtime is larger, and its `createStore` is built on the new signals core
+  (`@solidjs/signals`) rather than Solid 1's lightweight store, which accounts for most
+  of the difference. Nothing in this repo's code adds extra weight beyond that
+  framework baseline.
 - **Solid 2's dev diagnostics are a feature, not a nuisance.** They caught a
   row-rebuild problem that Solid 1 hid. Worth keeping the dev server in the loop during
   the migration rather than only checking the production build.
@@ -171,3 +191,47 @@ The spike already passes all six.
 - **Node resolves Solid's server build**, where `createEffect` never runs. Reactivity
   must be verified in a browser, not Node. (This already bit us once on the Solid 1 work.)
 - The spike lives at `/tmp/s2spike` and can be replayed or promoted directly.
+
+---
+
+## 8. Defects found by browser verification, and their fixes
+
+The verification suite is what caught these. Typecheck and build were both clean while
+they were present.
+
+### 8.1 `keyed` children receive an Accessor, not the raw item
+
+`BuildingGrid.tsx` and `JobPanel.tsx` mixed `type()` and bare `type` inside the
+`<For>` body, so building names and job records rendered as `undefined` while the types
+still checked out — the two forms are structurally similar enough that TypeScript
+accepted the mixture.
+
+Solid 2's rule, from `node_modules/solid-js/types/client/flow.d.ts`:
+
+| `keyed` | child receives |
+|---|---|
+| `keyed={true}` | the raw item |
+| `keyed={false}` | an `Accessor` |
+| `keyed={(item) => key}` | an `Accessor` |
+
+**Fix:** read every occurrence through the accessor — `type().id`, `job(id()).workers`.
+
+### 8.2 `STRICT_READ_UNTRACKED` diagnostics on the theme signal
+
+Solid 2's dev build warned:
+
+```
+[STRICT_READ_UNTRACKED] Reactive value "theme" read directly in <ThemeToggle> will not update.
+```
+
+Two distinct causes:
+
+1. `useTheme()` read `theme()` directly in the hook body to apply the theme before first
+   paint. **Fix:** wrap that one-time read in `untrack()`, which is the documented way to
+   mark a deliberate snapshot. The `createEffect` keeps the class in sync afterwards.
+2. `App.tsx` read `theme()` in a component body for the toggle's icon and ARIA label.
+   **Fix:** extract a `ThemeToggle` component so the read happens inside JSX, which is a
+   tracking scope.
+
+The theme signal also moved to module scope so every caller shares one source of truth
+instead of each `useTheme()` call creating its own.

@@ -3,11 +3,22 @@ import type { Component } from 'solid-js'
 import { getGameState } from '../../hooks/useGameState.js'
 import type { Job } from '../../types/worldState.js'
 
+const EMPTY_JOB: Job = {
+  id: '',
+  name: '',
+  description: '',
+  workers: 0,
+  productivity: 0
+}
+
 const JobPanel: Component = () => {
   const gameState = getGameState()
   
-  // Get jobs from game state
-  const jobs = createMemo<Job[]>(() => Object.values(gameState.getJobs()))
+  // Job ids are stable, so the list keeps its identity across ticks. The live
+  // job record is read reactively inside each row instead of being copied into
+  // the list, which would rebuild every row each tick.
+  const jobs = createMemo<string[]>(() => Object.keys(gameState.getJobs()))
+  const job = (id: string): Job => gameState.getJobs()[id] ?? EMPTY_JOB
   
   // Get total population and assigned workers
   const getTotalAssignedWorkers = (): number => {
@@ -35,29 +46,29 @@ const JobPanel: Component = () => {
         <div>Total Population: {gameState.getPopulation()}</div>
       </div>
       
-      <For each={jobs()}>
-        {(job) => (
+      <For each={jobs()} keyed={(id) => id}>
+        {(id) => (
           <div class="job-card">
-            <h3>{job.name}</h3>
-            <p>{job.description}</p>
+            <h3>{job(id()).name}</h3>
+            <p>{job(id()).description}</p>
             <div class="job-workers">
-              Workers: {job.workers}
+              Workers: {job(id()).workers}
             </div>
             <div class="job-productivity">
-              Productivity: {job.productivity}x
+              Productivity: {job(id()).productivity}x
             </div>
             <div class="worker-controls">
               <button 
                 class="worker-button" 
-                onClick={() => unassignWorker(job.id)}
-                disabled={job.workers <= 0}
+                onClick={() => unassignWorker(id())}
+                disabled={job(id()).workers <= 0}
               >
                 -
               </button>
-              <span class="worker-count">{job.workers}</span>
+              <span class="worker-count">{job(id()).workers}</span>
               <button 
                 class="worker-button" 
-                onClick={() => assignWorker(job.id)}
+                onClick={() => assignWorker(id())}
                 disabled={getAvailableWorkers() <= 0}
               >
                 +

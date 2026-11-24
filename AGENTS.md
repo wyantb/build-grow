@@ -66,7 +66,7 @@ covers the framework upgrade; neither replaces the other.
   survive into the bundle and break at runtime (e.g. `SetStoreFunction`, `Component`).
 - `moduleResolution: node16` requires relative imports to carry a `.js` extension.
 - The game engine must not be mutated through a Solid store proxy: the dev build of
-  `solid-js/store` blocks direct proxy writes ("Cannot mutate a Store directly").
+  Solid's store blocks direct proxy writes ("Cannot mutate a Store directly").
 - When mirroring engine state into a Solid store, write nested fields one by one.
   Passing the engine's own nested object hits Solid's identity check
   (`setProperty` returns early when `state[property] === value`) and silently skips
@@ -74,9 +74,10 @@ covers the framework upgrade; neither replaces the other.
 - Verify Solid reactivity **in the browser**. Node resolves `solid-js` to its *server*
   build, where `createEffect` never runs and reactivity tests give false negatives.
 
-### Solid 2 (target: `solid-js@2.0.3`)
-Solid 2 is GA and the current `latest` tag. See `SOLID2_MIGRATION.md` for the full plan.
-Key differences from Solid 1 that affect this codebase:
+### Solid 2 (`solid-js@2.0.3`)
+Solid 2 is GA and the current `latest` tag. The upgrade is applied; see
+`SOLID2_MIGRATION.md` for the plan, the measurements, and the defects found during
+verification. Key differences from Solid 1 that affect this codebase:
 - `solid-js/store` no longer exists as an export path: `createStore` comes from `solid-js`.
 - The store setter takes a single draft callback instead of a path:
   `setState((state) => { state.resources.wood = 12 })` replaces
@@ -85,13 +86,21 @@ Key differences from Solid 1 that affect this codebase:
   `"jsxImportSource": "@solidjs/web"`. The Vite plugin is `@solidjs/vite-plugin`.
 - `classList` is gone; use `class={{ 'name': boolean }}` instead.
 - `<For>` with `keyed={(item) => key}` passes the child an **Accessor**: read `item().id`.
+  Only `keyed={true}` passes the raw item. Mixing the two forms type-checks but
+  renders `undefined` at runtime, so read every occurrence through the accessor.
 - Solid 2's dev build reports `UNSTABLE_LIST_IDENTITY` when a `<For>` rebuilds rows that
   are equivalent to the ones they replace. Keep list inputs stable (iterate ids or
   catalog entries) and read live records inside the row, instead of copying them into
   the list on every tick.
+- Solid 2's dev build reports `STRICT_READ_UNTRACKED` when a reactive value is read
+  directly in a component body. Move the read into JSX (a tracking scope), or wrap a
+  deliberate one-time snapshot in `untrack()`.
 - Packages pinned to Solid 1 peers (`vite-plugin-solid`, `solid-app-router`,
   `lucide-solid`, `solid-refresh`) must be dropped. `solid-app-router`'s Solid 2
   successor is `@solidjs/router`.
+- The Solid 2 bundle is larger than Solid 1's: 36.63 kB → 53.31 kB gzip for this app.
+  That is the framework, not the app — Solid 2's `createStore` is built on the
+  `@solidjs/signals` core. See `SOLID2_MIGRATION.md` §7 for the measurements.
 
 
 ## Development Workflow

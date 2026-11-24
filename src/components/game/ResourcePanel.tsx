@@ -19,7 +19,7 @@ const ResourcePanel: Component = () => {
       <div class="resource-row">
         <span class="resource-name">Wood</span>
         <span class="resource-amount">{formatNumber(gameState.getResources().wood)}</span>
-        <span classList={{ 
+        <span class={{ 
           'resource-rate': true, 
           'positive': rates().wood >= 0, 
           'negative': rates().wood < 0 
@@ -30,7 +30,7 @@ const ResourcePanel: Component = () => {
       <div class="resource-row">
         <span class="resource-name">Stone</span>
         <span class="resource-amount">{formatNumber(gameState.getResources().stone)}</span>
-        <span classList={{ 
+        <span class={{ 
           'resource-rate': true, 
           'positive': rates().stone >= 0, 
           'negative': rates().stone < 0 
@@ -41,7 +41,7 @@ const ResourcePanel: Component = () => {
       <div class="resource-row">
         <span class="resource-name">Food</span>
         <span class="resource-amount">{formatNumber(gameState.getResources().food)}</span>
-        <span classList={{ 
+        <span class={{ 
           'resource-rate': true, 
           'positive': rates().food >= 0, 
           'negative': rates().food < 0 
@@ -52,7 +52,7 @@ const ResourcePanel: Component = () => {
       <div class="resource-row">
         <span class="resource-name">Gold</span>
         <span class="resource-amount">{formatNumber(gameState.getResources().gold)}</span>
-        <span classList={{ 
+        <span class={{ 
           'resource-rate': true, 
           'positive': rates().gold >= 0, 
           'negative': rates().gold < 0 

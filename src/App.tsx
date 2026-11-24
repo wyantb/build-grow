@@ -7,15 +7,31 @@ import BuildingGrid from './components/game/BuildingGrid.js'
 import JobPanel from './components/game/JobPanel.js'
 import MarketPanel from './components/game/MarketPanel.js'
 
+// A separate component so the theme signal is read inside JSX, which is a
+// tracking scope. Reading it directly in a component body is a
+// STRICT_READ_UNTRACKED diagnostic in Solid 2.
+const ThemeToggle: Component = () => {
+  const { theme, toggleTheme } = useTheme()
+
+  return (
+    <button
+      class="theme-toggle"
+      id="theme-toggle"
+      type="button"
+      onClick={toggleTheme}
+      aria-label={`Switch to ${theme() === 'light' ? 'dark' : 'light'} mode`}
+    >
+      <span class="theme-icon">{theme() === 'light' ? '🌙' : '☀️'}</span>
+    </button>
+  )
+}
+
 const App: Component = () => {
   // Initialize game state and loop
   const { gameEngine, gameState } = useGameLoop()
   
   // Tab management
   const [activeTab, setActiveTab] = createSignal<'buildings' | 'jobs' | 'market'>('buildings')
-
-  // Theme (light by default), toggled from the header
-  const { theme, toggleTheme } = useTheme()
   
   // For debugging purposes
   ;(window as any).gameEngine = gameEngine
@@ -25,15 +41,7 @@ const App: Component = () => {
     <div class="game-container">
       <header>
         <h1>Fantasy Civilization Builder</h1>
-        <button
-          class="theme-toggle"
-          id="theme-toggle"
-          type="button"
-          onClick={toggleTheme}
-          aria-label={`Switch to ${theme() === 'light' ? 'dark' : 'light'} mode`}
-        >
-          <span class="theme-icon">{theme() === 'light' ? '🌙' : '☀️'}</span>
-        </button>
+        <ThemeToggle />
       </header>
       
       <div class="game-content">

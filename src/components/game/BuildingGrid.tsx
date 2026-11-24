@@ -8,13 +8,10 @@ import type { BuildingType } from '../../data/buildings.js'
 const BuildingGrid: Component = () => {
   const gameState = getGameState()
 
-  // Building types the player has unlocked, plus their live construction state
-  const buildings = createMemo(() =>
-    gameState.getBuildingCatalog().map((type) => ({
-      type,
-      construction: gameState.getBuildings()[type.id]
-    }))
-  )
+  // The unlocked catalog is stable, so the list keeps its identity across
+  // ticks. Construction state is read reactively inside the row instead of
+  // being copied into the list, which would rebuild every row each tick.
+  const buildings = createMemo(() => gameState.getBuildingCatalog())
 
   // Format cost for display
   const formatCost = (cost: Resource): string => {
@@ -44,31 +41,34 @@ const BuildingGrid: Component = () => {
 
   return (
     <div class="building-grid">
-      <For each={buildings()}>
-        {({ type, construction }) => (
-          <div class={`building-card ${construction?.built ? 'built' : 'unbuilt'}`}>
-            <h3>{type.name}</h3>
-            <p>{type.description}</p>
-            <div class="building-cost">
-              Cost: {formatCost(type.cost)}
-            </div>
-            <div class="building-time">
-              Time: {type.buildTime}s
-            </div>
-            {construction && !construction.built && (
-              <div class="construction-progress">
-                Progress: {construction.constructionProgress}%
+      <For each={buildings()} keyed={(type) => type.id}>
+        {(type) => {
+          const construction = () => gameState.getBuildings()[type().id]
+          return (
+            <div class={`building-card ${construction()?.built ? 'built' : 'unbuilt'}`}>
+              <h3>{type().name}</h3>
+              <p>{type().description}</p>
+              <div class="building-cost">
+                Cost: {formatCost(type().cost)}
               </div>
-            )}
-            <button
-              class="build-button"
-              disabled={construction?.built || !canAffordBuilding(type)}
-              onClick={() => buildBuilding(type.id)}
-            >
-              {construction?.built ? 'Built' : 'Build'}
-            </button>
-          </div>
-        )}
+              <div class="building-time">
+                Time: {type().buildTime}s
+              </div>
+              {construction() && !construction()?.built && (
+                <div class="construction-progress">
+                  Progress: {construction()?.constructionProgress}%
+                </div>
+              )}
+              <button
+                class="build-button"
+                disabled={construction()?.built || !canAffordBuilding(type())}
+                onClick={() => buildBuilding(type().id)}
+              >
+                {construction()?.built ? 'Built' : 'Build'}
+              </button>
+            </div>
+          )
+        }}
       </For>
     </div>
   )

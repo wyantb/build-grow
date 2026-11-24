@@ -1,4 +1,4 @@
-import { createSignal, createEffect } from 'solid-js'
+import { createSignal, createEffect, untrack } from 'solid-js'
 
 export type Theme = 'light' | 'dark'
 
@@ -16,30 +16,33 @@ const readStoredTheme = (): Theme | null => {
   }
 }
 
-/**
- * Theme is applied by toggling the `light-mode` class on <body>, which is what
- * the stylesheet keys its light-theme overrides off.
- */
+// Module-level so every caller shares one source of truth.
+const [theme, setTheme] = createSignal<Theme>(readStoredTheme() ?? DEFAULT_THEME)
+
+// Theme is applied by toggling the `light-mode` class on <body>, which is what
+// the stylesheet keys its light-theme overrides off.
+const applyTheme = (next: Theme) => {
+  document.body.classList.toggle('light-mode', next === 'light')
+}
+
 export const useTheme = () => {
-  const [theme, setTheme] = createSignal<Theme>(readStoredTheme() ?? DEFAULT_THEME)
+  // The first paint must already use the right theme, so apply it up front.
+  // `untrack` marks this as a deliberate one-time snapshot: the effect below
+  // keeps the class in sync with every later change.
+  untrack(() => applyTheme(theme()))
 
-  const applyTheme = (next: Theme) => {
-    document.body.classList.toggle('light-mode', next === 'light')
-  }
-
-  // Applied synchronously so the first paint already uses the right theme.
-  applyTheme(theme())
-
-  createEffect(() => {
-    const current = theme()
-    applyTheme(current)
-    try {
-      localStorage.setItem(STORAGE_KEY, current)
-    } catch {
-      // Storage can be unavailable (private mode, disabled cookies); the theme
-      // still applies for this session.
+  createEffect(
+    () => theme(),
+    (current) => {
+      applyTheme(current)
+      try {
+        localStorage.setItem(STORAGE_KEY, current)
+      } catch {
+        // Storage can be unavailable (private mode, disabled cookies); the theme
+        // still applies for this session.
+      }
     }
-  })
+  )
 
   const toggleTheme = () => {
     setTheme((current) => (current === 'light' ? 'dark' : 'light'))
