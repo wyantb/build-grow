@@ -33,30 +33,19 @@ uncoordinated commits.
 
 ## UI Design Principles
 
-### Layout Structure
-- Keep UI compact with minimal header (max 24px height)
-- Resources always listed on the left column
-- Main section body uses tabbed navigation (Buildings, Jobs, Market, Settings)
+- Keep UI compact with a minimal header (max 24px height).
+- Resources always listed on the left column.
+- Main section body uses tabbed navigation (Buildings, Jobs, Market, Settings).
 - Mobile responsive design:
   - Wide screens: Left resources + tabbed main content
   - Narrow screens: Resources also becomes a tab
-
-### Visual Design
-- No gradients - use flat colors without opacity
-- Minimalist approach with clear hierarchy
-- Consistent spacing and alignment
-
-### Color Palette
-- Primary: Dark backgrounds (#1a1a1a)
-- Secondary: Medium grays (#333333)
-- Accent: Blue for interactive elements (#4d9de0)
-- Status colors: Green (positive), Red (negative), Yellow (warning)
-
-### UI Component Structure
-- Header: Max 24px height
-- Left Panel: Resources display
-- Main Content: Tabbed interface (Buildings, Jobs, Actions)
-- Responsive design that adapts to screen width
+- No gradients — use flat colors without opacity.
+- Minimalist approach with clear hierarchy; consistent spacing and alignment.
+- Color palette:
+  - Primary: Dark backgrounds (#1a1a1a)
+  - Secondary: Medium grays (#333333)
+  - Accent: Blue for interactive elements (#4d9de0)
+  - Status colors: Green (positive), Red (negative), Yellow (warning)
 
 ## Development Workflow
 
@@ -71,19 +60,29 @@ uncoordinated commits.
 - **Do not break existing working behavior to enable future plans.** If the current
   code handles a case correctly (even awkwardly), leave it alone unless the user's
   request directly touches that area.
-- **State ownership:** the GameEngine is the single writer of game state. Never
-  write state from a component, hook, or store. If a new piece of data is needed,
-  add it to the engine and mirror it out.
 
-### Commands
+### Commands and Pre-Push Check (required)
+
 | Command | Purpose |
 | --- | --- |
-| `npm run lint` | Report problems. This is the pre-push gate. |
+| `npm run check` | `lint` + `typecheck` + `test` + `build`. **The full local gate — run this before pushing.** |
+| `npm run lint` | ESLint: style + Solid reactivity rules. The required pre-push lint gate. |
 | `npm run lint:fix` | Apply autofixable fixes (semicolons, whitespace, braces, quotes). |
-| `npm run typecheck` | `tsc --noEmit`. |
-| `npm run test` | `vitest run`. The engine test suite. |
+| `npm run typecheck` | `tsc --noEmit`: type errors. |
+| `npm run test` | `vitest run`: the engine test suite. |
 | `npm run test:watch` | `vitest` in watch mode. |
-| `npm run check` | `lint` + `typecheck` + `test` + `build`. The full local gate. |
+
+Before pushing to `main`, the working tree must pass `npm run check`. Do not
+push with a failing check; fix the cause instead.
+
+Rules of the gate:
+- Lint failures are never silenced with inline disables unless the rule is
+  genuinely wrong for the code, and then the disable carries a short reason.
+- `npm run lint:fix` is the first response to a lint failure. Only hand-fix what
+  the autofixer cannot.
+- Solid reactivity rules (`solid/reactivity`, `solid/removed-api`) catch real
+  Solid 2 defects. Fix the code; do not turn the rule off.
+- Do not commit generated output (`dist/`, `node_modules/`).
 
 ### Development Cycle
 1. **Make the change**: Edit the source files the task touches, and add or
@@ -97,35 +96,13 @@ uncoordinated commits.
    arithmetic here; that belongs in Vitest.
 4. **Commit**: source files only, not generated files.
 
-The browser check is deliberately the **last** step. It is the most expensive
-step per unit of information, so run it after the cheap automated checks have
-narrowed the problem down to layout and wiring. A CSS tweak may need a look
-while iterating; anything else should get one look at the end. See
-`## Testing` for how far a browser check should go.
-
-### Pre-Push Check (required)
-Before pushing to `main`, the working tree must pass the full gate of `npm run check`. Do not push
-with a failing check; fix the cause instead.
-
-```bash
-npm run lint        # ESLint: style + Solid reactivity rules
-npm run typecheck   # tsc --noEmit: type errors
-npm run test        # vitest: engine test suite
-npm run build       # production bundle must succeed
-```
-
-Rules of the gate:
-- Lint failures are never silenced with inline disables unless the rule is
-  genuinely wrong for the code, and then the disable carries a short reason.
-- `npm run lint:fix` is the first response to a lint failure. Only hand-fix what
-  the autofixer cannot.
-- Solid reactivity rules (`solid/reactivity`, `solid/removed-api`) catch real
-  Solid 2 defects. Fix the code; do not turn the rule off.
-- Do not commit generated output (`dist/`, `node_modules/`).
+The browser check is deliberately last: it is the most expensive step per unit
+of information, so run it after the cheap automated checks have narrowed the
+problem down to layout and wiring. A CSS tweak may need a look while
+iterating; anything else should get one look at the end. See `## Testing`.
 
 ## Testing
 
-### Strategy
 **Engine behavior is covered by Vitest. That is the primary strategy.**
 Anything with a rule, a rate, a capacity, or a settlement order belongs in
 `src/systems/__tests__/`, asserted against the engine rather than the UI.
@@ -137,8 +114,8 @@ Anything with a rule, a rate, a capacity, or a settlement order belongs in
   market, assign merchants, or set up any other world through
   `createTestWorld` overrides rather than clicking through the tabs.
 - **UI checks are optional and should be brief.** Check visibility at most:
-  that a tab or pane appears when its condition is met, and that a control is
-  present.
+  that a tab or pane appears when its condition is met, and that a control
+  is present.
 - **If a UI check takes more than about a minute, stop.** It usually means
   the state is hard to reach by hand, which is a signal to build in-repo
   tooling (a test world helper, a seed or debug hook) instead of clicking
@@ -148,10 +125,7 @@ Anything with a rule, a rate, a capacity, or a settlement order belongs in
   reactivity bugs do not reproduce under Vitest. See
   `### SolidJS / TypeScript Conventions`.
 
-### Writing Engine Tests
-Vitest runs the engine tests. The suite lives next to the code it covers, in
-`src/systems/__tests__/`.
-
+Writing engine tests:
 - The engine takes an optional `WorldState` in its constructor, so a test
   can start from an exact world. `createTestWorld` in
   `src/systems/__tests__/testWorld.ts` builds one from a small set of
@@ -171,21 +145,23 @@ Vitest runs the engine tests. The suite lives next to the code it covers, in
 ### File Structure
 ```
 src/
-├── main.ts              # Entry point
-├── styles/              # CSS files
-├── types/               # Zod schemas and TypeScript types
-├── data/                # Static game content (building catalog, etc.)
-├── systems/             # Core game logic
-├── hooks/               # SolidJS hooks bridging engine and store
-├── components/game/     # Game-screen components
-└── components/ui/       # Reusable presentation components (Tooltip)
+├── main.tsx            # Entry point
+├── styles/             # CSS files
+├── types/              # Zod schemas and TypeScript types
+├── data/               # Static game content (building catalog, etc.)
+├── systems/            # Core game logic (gameEngine, marketSystem)
+├── hooks/              # SolidJS hooks bridging engine and store
+├── components/game/    # Game-screen components
+├── components/ui/      # Reusable presentation components (Tooltip)
+└── utils/              # Formatting helpers
 ```
 
 ### Component Architecture
 - GameEngine: Core game state and logic. Owns the authoritative state and is the **single writer**.
 - Solid store (`useGameState`): a reactive **mirror** of the engine, not a second writer.
-- Components should be modular and reusable
-- State management through GameEngine events
+- Never write state from a component, hook, or store. If a new piece of data is
+  needed, add it to the engine and mirror it out.
+- Components should be modular and reusable. State management through GameEngine events.
 
 ### SolidJS / TypeScript Conventions
 - `verbatimModuleSyntax` is on: type-only imports must use `import type`, otherwise they
@@ -197,8 +173,7 @@ src/
   Passing the engine's own nested object hits Solid's identity check
   (`setProperty` returns early when `state[property] === value`) and silently skips
   the reactivity update, which freezes the UI counters.
-- Verify Solid reactivity **in the browser**. Node resolves `solid-js` to its *server*
-  build, where `createEffect` never runs and reactivity tests give false negatives.
+- Verify Solid reactivity **in the browser** — see `## Testing`.
 
 ### Tooltips and Settings
 - `src/components/ui/Tooltip.tsx` is the only tooltip implementation. Wrap the
@@ -206,11 +181,11 @@ src/
 - The trigger wrapper is `display: contents`, so it does not change the layout of
   its parent. Because the wrapper then has no box of its own, the tooltip measures
   its anchor with a `Range` over the wrapper's contents. Do not swap the wrapper
-  back to a plain `inline-flex`: it re-breaks the flex layout of every row it
-  is put in.
-- The bubble is rendered through `Portal` into `document.body` and is positioned
-  with `position: fixed`. It flips to the opposite side when the preferred side
-  would overflow the viewport, and is clamped to stay on screen.
+  back to a plain `inline-flex`: it re-breaks the flex layout of every row it is
+  put in.
+- The bubble renders through `Portal` into `document.body`, is positioned with
+  `position: fixed`, flips to the opposite side when the preferred side would
+  overflow the viewport, and is clamped to stay on screen.
 - The delay is app-wide and user-configurable. `useSettings` persists it to
   `localStorage` under `build-grow:settings`; the default is 250 ms and 0 ms means
   "show immediately".
@@ -237,19 +212,12 @@ src/
 
 ## Troubleshooting
 
-When encountering unexpected issues:
-1. **Check console/network tabs** in browser dev tools for errors
-2. **Verify lint**: Run `npm run lint` to catch style and Solid rule violations
-3. **Verify TypeScript compilation**: Run `npm run typecheck` to check for type errors
-4. **Clean and restart**: 
-   - Stop dev server
-   - Run `npm run clean`
-   - Restart with `npm run dev`
-5. **Full refresh**: If issues persist:
-   - Stop dev server
-   - Run `npm run clean-all`
-   - Run `npm install`
-   - Restart with `npm run dev`
+1. **Check console/network tabs** in browser dev tools for errors.
+2. **Verify lint**: Run `npm run lint` to catch style and Solid rule violations.
+3. **Verify TypeScript compilation**: Run `npm run typecheck` to check for type errors.
+4. **Clean and restart**: stop the dev server, run `npm run clean`, restart with `npm run dev`.
+5. **Full refresh**: if issues persist, stop the dev server, run `npm run clean-all`,
+   `npm install`, then `npm run dev`.
 
 ### Stale Vite dependency cache
 A browser error like `The requested module 'http://localhost:3000/node_modules/.vite/deps/<pkg>.js?v=<hash>'
@@ -259,6 +227,5 @@ in the URL identifies the bundle the browser cached; it no longer matches anythi
 Vite has built. Clear it with `npm run clean` and restart the dev server. Check
 `node_modules/.vite/deps/_metadata.json` to see which packages Vite actually
 optimized — a package that appears there but is absent from `package.json` is the
-stale one. This is what a removed Solid 1 package such as `solid-js-store` looks
-like after the Solid 2 migration; the current `solid-js` does not export
-`SetStoreFunction` and never did need to.
+stale one, which is what a removed package such as `solid-js-store` looks like
+after the Solid 2 migration.
