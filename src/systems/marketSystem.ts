@@ -30,12 +30,13 @@ class MarketSystem {
   
   // Get available merchants
   getMerchantCount(): number {
-    // Check if we have a market building
+    // Check if we have a market building and merchant job
     const market = this.state.buildings['market'];
-    if (market && market.built) {
-      // For now, we'll just return 1 merchant if market is built
-      // Later this could be based on upgrades or additional buildings
-      return 1;
+    const merchantJob = this.state.jobs['merchant'];
+    
+    if (market && market.built && merchantJob) {
+      // Return the number of workers assigned to merchant job
+      return merchantJob.workers;
     }
     return 0;
   }

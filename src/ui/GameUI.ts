@@ -266,13 +266,36 @@ class GameUI {
                       resources.food >= buildingType.cost.food && 
                       resources.gold >= buildingType.cost.gold;
     
+    // Create tooltip content
+    let tooltipContent = `${buildingType.description}`;
+    if (buildingType.cost.wood > 0 || buildingType.cost.stone > 0 || buildingType.cost.food > 0 || buildingType.cost.gold > 0) {
+      tooltipContent += `\n\nCost:`;
+      if (buildingType.cost.wood > 0) tooltipContent += `\nWood: ${buildingType.cost.wood}`;
+      if (buildingType.cost.stone > 0) tooltipContent += `\nStone: ${buildingType.cost.stone}`;
+      if (buildingType.cost.food > 0) tooltipContent += `\nFood: ${buildingType.cost.food}`;
+      if (buildingType.cost.gold > 0) tooltipContent += `\nGold: ${buildingType.cost.gold}`;
+    }
+    
+    // Add building-specific effects
+    if (buildingType.id === 'market') {
+      tooltipContent += `\n\nEffect:\n- Provides 1 merchant job\n- Enables resource trading`;
+    } else if (buildingType.id === 'hut') {
+      tooltipContent += `\n\nEffect:\n- Provides housing for citizens`;
+    } else if (buildingType.id === 'lumberjack') {
+      tooltipContent += `\n\nEffect:\n- Provides work for lumberjacks\n- Increases wood production`;
+    } else if (buildingType.id === 'quarry') {
+      tooltipContent += `\n\nEffect:\n- Provides work for quarry workers\n- Increases stone production`;
+    } else if (buildingType.id === 'builder') {
+      tooltipContent += `\n\nEffect:\n- Allows construction of advanced buildings`;
+    }
+    
     // Count how many of this building type exist
     const buildingCount = existingBuilding && existingBuilding.built ? 1 : 0;
     
     // If building is already built, show a disabled button with "Built" text
     if (existingBuilding && existingBuilding.built) {
       return `
-        <div class="building-tile">
+        <div class="building-tile" title="${tooltipContent}">
           <button class="build-button built" disabled id="build-${buildingType.id}">
             <span class="building-name">${buildingType.name}</span>
             ${buildingCount > 0 ? `<span class="building-count">${buildingCount}</span>` : ''}
@@ -285,7 +308,7 @@ class GameUI {
     if (existingBuilding && !existingBuilding.built) {
       const progressPercent = existingBuilding.constructionProgress;
       return `
-        <div class="building-tile">
+        <div class="building-tile" title="${tooltipContent}">
           <button class="build-button constructing" disabled id="build-${buildingType.id}">
             <span class="building-name">${buildingType.name}</span>
             ${buildingCount > 0 ? `<span class="building-count">${buildingCount}</span>` : ''}
@@ -302,7 +325,7 @@ class GameUI {
     
     // Otherwise, show a build button
     return `
-      <div class="building-tile">
+      <div class="building-tile" title="${tooltipContent}">
         <button class="build-button ${!canAfford ? 'cannot-afford' : ''}" id="build-${buildingType.id}" ${!canAfford ? 'disabled' : ''}>
           <span class="building-name">${buildingType.name}</span>
         </button>
@@ -363,10 +386,13 @@ class GameUI {
         // Show market tab
         marketTabButton.style.display = 'block';
         
+        // Get merchant count from market system
+        const merchantCount = this.engine.getMerchantCount();
+        
         // Update market content
         marketContent.innerHTML = `
           <div class="market-info">
-            <p>You have 1 merchant available for trading.</p>
+            <p>You have ${merchantCount} merchant(s) available for trading.</p>
             <p>Trades are processed once per second.</p>
           </div>
           <div class="market-rates">

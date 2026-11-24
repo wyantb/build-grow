@@ -89,8 +89,24 @@ class GameEngine {
 
   // Apply building effects when completed
   private applyBuildingEffects(buildingId: string): void {
-    // For now, just placeholder logic
     console.log(`Building ${buildingId} completed!`);
+    
+    // Add jobs based on building type
+    if (buildingId === 'market') {
+      // Add merchant job when market is built
+      this.state.jobs['merchant'] = {
+        id: 'merchant',
+        name: 'Merchant',
+        description: 'Trades resources at the market',
+        workers: 0,
+        productivity: 1.0
+      };
+      
+      // Add merchant to unlocked jobs
+      if (!this.state.unlockedJobs.includes('merchant')) {
+        this.state.unlockedJobs.push('merchant');
+      }
+    }
   }
 
   // Add a building to construction queue
@@ -160,7 +176,7 @@ class GameEngine {
   // Assign workers to jobs
   assignWorkers(jobId: string, count: number): boolean {
     // For simplicity, we'll just adjust the settler job for now
-    if (jobId === 'settler' && this.state.jobs[jobId]) {
+    if (this.state.jobs[jobId]) {
       // Handle relative assignments (positive or negative)
       const currentWorkers = this.state.jobs[jobId].workers;
       const newWorkers = Math.max(0, Math.min(this.state.population, currentWorkers + count));
@@ -169,6 +185,11 @@ class GameEngine {
       return true;
     }
     return false;
+  }
+  
+  // Get merchant count from market system
+  getMerchantCount(): number {
+    return this.marketSystem.getMerchantCount();
   }
 }
 
