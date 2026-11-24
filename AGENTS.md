@@ -35,15 +35,31 @@ src/
 ├── main.ts              # Entry point
 ├── styles/              # CSS files
 ├── types/               # Zod schemas and TypeScript types
+├── data/                # Static game content (building catalog, etc.)
 ├── systems/             # Core game logic
-└── ui/                  # UI components
+├── hooks/               # SolidJS hooks bridging engine and store
+└── components/game/     # SolidJS components
 ```
 
 ### Component Architecture
-- GameEngine: Core game state and logic
-- GameUI: Presentation layer
+- GameEngine: Core game state and logic. Owns the authoritative state and is the **single writer**.
+- Solid store (`useGameState`): a reactive **mirror** of the engine, not a second writer.
 - Components should be modular and reusable
 - State management through GameEngine events
+
+### SolidJS / TypeScript Conventions
+- `verbatimModuleSyntax` is on: type-only imports must use `import type`, otherwise they
+  survive into the bundle and break at runtime (e.g. `SetStoreFunction`, `Component`).
+- `moduleResolution: node16` requires relative imports to carry a `.js` extension.
+- The game engine must not be mutated through a Solid store proxy: the dev build of
+  `solid-js/store` blocks direct proxy writes ("Cannot mutate a Store directly").
+- When mirroring engine state into a Solid store, write nested fields one by one.
+  Passing the engine's own nested object hits Solid's identity check
+  (`setProperty` returns early when `state[property] === value`) and silently skips
+  the reactivity update, which freezes the UI counters.
+- Verify Solid reactivity **in the browser**. Node resolves `solid-js` to its *server*
+  build, where `createEffect` never runs and reactivity tests give false negatives.
+
 
 ## Development Workflow
 

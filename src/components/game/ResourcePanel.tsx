@@ -1,6 +1,7 @@
-import { Component, createMemo } from 'solid-js'
-import { getGameState } from '../../hooks/useGameState'
-import { formatNumber } from '../../utils/formatNumber'
+import { createMemo } from 'solid-js'
+import type { Component } from 'solid-js'
+import { getGameState } from '../../hooks/useGameState.js'
+import { formatNumber } from '../../utils/formatNumber.js'
 
 const ResourcePanel: Component = () => {
   const gameState = getGameState()

@@ -1,9 +1,10 @@
-import { Component, createSignal } from 'solid-js'
-import { useGameLoop } from './hooks/useGameLoop'
-import ResourcePanel from './components/game/ResourcePanel'
-import BuildingGrid from './components/game/BuildingGrid'
-import JobPanel from './components/game/JobPanel'
-import MarketPanel from './components/game/MarketPanel'
+import { createSignal } from 'solid-js'
+import type { Component } from 'solid-js'
+import { useGameLoop } from './hooks/useGameLoop.js'
+import ResourcePanel from './components/game/ResourcePanel.js'
+import BuildingGrid from './components/game/BuildingGrid.js'
+import JobPanel from './components/game/JobPanel.js'
+import MarketPanel from './components/game/MarketPanel.js'
 
 const App: Component = () => {
   // Initialize game state and loop

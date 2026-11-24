@@ -1,13 +1,13 @@
-import { Component, For, createMemo } from 'solid-js'
-import { getGameState } from '../../hooks/useGameState'
-import { formatNumber } from '../../utils/formatNumber'
-import type { Job } from '../../types/worldState'
+import { For, createMemo } from 'solid-js'
+import type { Component } from 'solid-js'
+import { getGameState } from '../../hooks/useGameState.js'
+import type { Job } from '../../types/worldState.js'
 
 const JobPanel: Component = () => {
   const gameState = getGameState()
   
   // Get jobs from game state
-  const jobs = createMemo(() => Object.values(gameState.getJobs()))
+  const jobs = createMemo<Job[]>(() => Object.values(gameState.getJobs()))
   
   // Get total population and assigned workers
   const getTotalAssignedWorkers = (): number => {

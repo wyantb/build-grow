@@ -118,7 +118,7 @@ export const createInitialState = (): WorldState => ({
     growthRate: 1.0,
     resourceConsumption: 1.0,
   },
-  unlockedBuildings: [],
+  unlockedBuildings: ['hut', 'market', 'lumberjack', 'quarry', 'builder'],
   unlockedJobs: ['settler'],
   gameTime: 0,
 });

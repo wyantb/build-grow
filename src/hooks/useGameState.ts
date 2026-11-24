@@ -1,13 +1,20 @@
 import { createSignal, createMemo } from 'solid-js'
-import { createStore, SetStoreFunction, reconcile } from 'solid-js/store'
-import type { WorldState, Resource, Job, Building } from '../types/worldState'
-import { createInitialState } from '../types/worldState'
+import { createStore } from 'solid-js/store'
+import type { WorldState, Resource } from '../types/worldState.js'
+import { createInitialState } from '../types/worldState.js'
+import { BUILDING_TYPES, getBuildingType } from '../data/buildings.js'
+import type { BuildingType } from '../data/buildings.js'
+import GameEngine from '../systems/gameEngine.js'
 
 // Create a game state store with proper typing
 export const useGameState = () => {
+  // The engine owns the authoritative game state; the store mirrors it
+  // reactively so the UI can bind to plain reactive reads.
+  const gameEngine = new GameEngine()
+
   // Create the main game state store
   const [state, setState] = createStore<WorldState>(createInitialState())
-  
+
   // Resource rates - to be updated by the game loop
   const [resourceRates, setResourceRates] = createSignal<Resource>({
     wood: 0,
@@ -15,102 +22,128 @@ export const useGameState = () => {
     food: 0,
     gold: 0
   })
-  
-  // Update the game state
-  const updateState: SetStoreFunction<WorldState> = (...args: any[]) => {
-    // @ts-ignore - This is a limitation of the solid-js types
-    return setState(...args)
-  }
-  
+
   // Set resource rates from external source (game engine)
   const setResourceRatesExternal = (rates: Resource) => {
     setResourceRates(rates)
   }
-  
+
   // Get resource production rates
   const getResourceRates = createMemo((): Resource => {
     return resourceRates()
   })
-  
+
+  // Mirror the engine state into the reactive store.
+  // Nested objects are written field by field: handing Solid the engine's own
+  // object would hit its identity check and skip the reactivity update.
+  // Existing entries are updated field by field so their object identity is
+  // preserved and <For> does not rebuild its rows on every tick.
+  const mirrorEngineState = () => {
+    const engineState = gameEngine.getState()
+
+    setState('tick', engineState.tick)
+    setState('gameTime', engineState.gameTime)
+    setState('population', engineState.population)
+
+    setState('resources', 'wood', engineState.resources.wood)
+    setState('resources', 'stone', engineState.resources.stone)
+    setState('resources', 'food', engineState.resources.food)
+    setState('resources', 'gold', engineState.resources.gold)
+
+    for (const [jobId, job] of Object.entries(engineState.jobs)) {
+      if (state.jobs[jobId]) {
+        setState('jobs', jobId, 'workers', job.workers)
+        setState('jobs', jobId, 'productivity', job.productivity)
+      } else {
+        setState('jobs', jobId, { ...job })
+      }
+    }
+
+    for (const [buildingId, building] of Object.entries(engineState.buildings)) {
+      if (state.buildings[buildingId]) {
+        setState('buildings', buildingId, 'constructionProgress', building.constructionProgress)
+        setState('buildings', buildingId, 'built', building.built)
+      } else {
+        setState('buildings', buildingId, { ...building })
+      }
+    }
+  }
+
   // Building management
   const buildBuilding = (buildingId: string) => {
-    // Check if building exists
-    if (!state.buildings[buildingId]) {
+    const buildingType = getBuildingType(buildingId)
+    if (!buildingType) {
       console.error(`Building ${buildingId} not found`)
       return false
     }
-    
-    // Check if already built
-    if (state.buildings[buildingId].built) {
+
+    // Already under construction or finished
+    const existing = state.buildings[buildingId]
+    if (existing?.built) {
       console.error(`Building ${buildingId} already built`)
       return false
     }
-    
-    // Check if player can afford it
-    const building = state.buildings[buildingId]
-    const resources = state.resources
-    if (resources.wood < building.cost.wood ||
-        resources.stone < building.cost.stone ||
-        resources.food < building.cost.food ||
-        resources.gold < building.cost.gold) {
+
+    // The engine owns the state, so the cost check and the construction
+    // start must both happen there.
+    const started = gameEngine.addBuilding(buildingId)
+    if (!started) {
       console.error(`Not enough resources to build ${buildingId}`)
       return false
     }
-    
-    // Deduct resources
-    setState('resources', {
-      wood: resources.wood - building.cost.wood,
-      stone: resources.stone - building.cost.stone,
-      food: resources.food - building.cost.food,
-      gold: resources.gold - building.cost.gold
-    })
-    
-    // Start construction
-    setState('buildings', buildingId, {
-      constructionProgress: 0,
-      built: false
-    })
-    
+
+    mirrorEngineState()
     return true
   }
   
   // Job management
   const assignWorker = (jobId: string) => {
     // Check if job exists
-    if (!state.jobs[jobId]) {
+    const job = state.jobs[jobId]
+    if (!job) {
       console.error(`Job ${jobId} not found`)
       return false
     }
-    
+
     // Check if there are available workers
-    const totalAssigned = Object.values(state.jobs).reduce((total, job) => total + job.workers, 0)
+    const totalAssigned = Object.values(state.jobs).reduce((total, j) => total + j.workers, 0)
     if (totalAssigned >= state.population) {
       console.error('No available workers')
       return false
     }
-    
-    // Assign worker
-    setState('jobs', jobId, 'workers', state.jobs[jobId].workers + 1)
-    
+
+    // The engine owns the job assignments
+    const assigned = gameEngine.assignWorkers(jobId, 1)
+    if (!assigned) {
+      console.error('No available workers')
+      return false
+    }
+
+    mirrorEngineState()
     return true
   }
-  
+
   const unassignWorker = (jobId: string) => {
     // Check if job exists
-    if (!state.jobs[jobId]) {
+    const job = state.jobs[jobId]
+    if (!job) {
       console.error(`Job ${jobId} not found`)
       return false
     }
-    
+
     // Check if there are workers to unassign
-    if (state.jobs[jobId].workers <= 0) {
+    if (job.workers <= 0) {
       console.error('No workers to unassign')
       return false
     }
-    
-    // Unassign worker
-    setState('jobs', jobId, 'workers', state.jobs[jobId].workers - 1)
-    
+
+    const assigned = gameEngine.assignWorkers(jobId, -1)
+    if (!assigned) {
+      console.error('No workers to unassign')
+      return false
+    }
+
+    mirrorEngineState()
     return true
   }
   
@@ -121,10 +154,14 @@ export const useGameState = () => {
   const getJobs = () => state.jobs
   const getBuildings = () => state.buildings
   const getGameTime = () => state.gameTime
-  
+
+  // Building catalog for the unlocked building types
+  const getBuildingCatalog = (): BuildingType[] =>
+    BUILDING_TYPES.filter((type) => state.unlockedBuildings.includes(type.id))
+
   return {
     state,
-    setState: updateState,
+    setState,
     getTick,
     getResources,
     getPopulation,
@@ -133,9 +170,12 @@ export const useGameState = () => {
     getGameTime,
     getResourceRates,
     setResourceRates: setResourceRatesExternal,
+    getBuildingCatalog,
     buildBuilding,
     assignWorker,
     unassignWorker,
+    gameEngine,
+    mirrorEngineState,
     // Expose the raw state for debugging
     rawState: state
   }

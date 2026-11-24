@@ -1,5 +1,6 @@
 import { createInitialState } from '../types/worldState.js';
 import type { WorldState, Resource } from '../types/worldState.js';
+import { getBuildingType } from '../data/buildings.js';
 import MarketSystem from './marketSystem.js';
 
 class GameEngine {
@@ -8,11 +9,22 @@ class GameEngine {
   private tickRate: number = 200; // 5 ticks per second
   private marketSystem: MarketSystem;
   private previousResources: Resource;
+  private listeners = new Set<() => void>();
 
   constructor() {
     this.state = createInitialState();
     this.marketSystem = new MarketSystem(this.state);
     this.previousResources = { ...this.state.resources };
+  }
+
+  // Subscribe to state changes so the UI can mirror the engine reactively
+  subscribe(listener: () => void): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  private notify(): void {
+    this.listeners.forEach((listener) => listener());
   }
 
   // Get current game state
@@ -41,18 +53,20 @@ class GameEngine {
   private tick(): void {
     this.state.tick++;
     this.state.gameTime += this.tickRate / 1000; // Convert ms to seconds
-    
+
     // Store previous resource amounts
     this.previousResources = { ...this.state.resources };
-    
+
     // Process resource generation
     this.processResourceGeneration();
-    
+
     // Process building construction
     this.processBuildingConstruction();
-    
+
     // Process market trades
     this.marketSystem.processTrades();
+
+    this.notify();
   }
 
   // Process resource generation from jobs
@@ -115,67 +129,42 @@ class GameEngine {
   }
 
   // Add a building to construction queue
-  addBuilding(buildingId: string, cost: Resource): boolean {
+  addBuilding(buildingId: string, cost?: Resource): boolean {
+    const buildingType = getBuildingType(buildingId);
+    if (!buildingType) {
+      return false; // Unknown building type
+    }
+
+    const buildingCost = cost ?? buildingType.cost;
+
     // Check if player has enough resources
-    if (this.state.resources.wood < cost.wood ||
-        this.state.resources.stone < cost.stone ||
-        this.state.resources.food < cost.food ||
-        this.state.resources.gold < cost.gold) {
+    if (this.state.resources.wood < buildingCost.wood ||
+        this.state.resources.stone < buildingCost.stone ||
+        this.state.resources.food < buildingCost.food ||
+        this.state.resources.gold < buildingCost.gold) {
       return false; // Not enough resources
     }
 
     // Deduct resources
-    this.state.resources.wood -= cost.wood;
-    this.state.resources.stone -= cost.stone;
-    this.state.resources.food -= cost.food;
-    this.state.resources.gold -= cost.gold;
+    this.state.resources.wood -= buildingCost.wood;
+    this.state.resources.stone -= buildingCost.stone;
+    this.state.resources.food -= buildingCost.food;
+    this.state.resources.gold -= buildingCost.gold;
 
     // Add building to state
     this.state.buildings[buildingId] = {
       id: buildingId,
-      name: this.getBuildingName(buildingId),
-      description: this.getBuildingDescription(buildingId),
-      cost: cost,
-      buildTime: this.getBuildingTime(buildingId),
+      name: buildingType.name,
+      description: buildingType.description,
+      cost: buildingCost,
+      buildTime: buildingType.buildTime,
       built: false,
       constructionProgress: 0,
     };
 
+    this.notify();
+
     return true;
-  }
-
-  // Helper functions for building properties
-  private getBuildingName(id: string): string {
-    const names: Record<string, string> = {
-      'hut': 'Hut',
-      'market': 'Market',
-      'lumberjack': 'Lumberjack Post',
-      'quarry': 'Quarry',
-      'builder': 'Builder Workshop'
-    };
-    return names[id] || id;
-  }
-
-  private getBuildingDescription(id: string): string {
-    const descriptions: Record<string, string> = {
-      'hut': 'Provides shelter for your people',
-      'market': 'Allows trading of resources for gold',
-      'lumberjack': 'Increases wood production',
-      'quarry': 'Increases stone production',
-      'builder': 'Allows construction of more advanced buildings'
-    };
-    return descriptions[id] || 'A basic building';
-  }
-
-  private getBuildingTime(id: string): number {
-    const times: Record<string, number> = {
-      'hut': 5,
-      'market': 10,
-      'lumberjack': 8,
-      'quarry': 8,
-      'builder': 15
-    };
-    return times[id] || 10;
   }
 
   // Assign workers to jobs
@@ -187,6 +176,7 @@ class GameEngine {
       const newWorkers = Math.max(0, Math.min(this.state.population, currentWorkers + count));
       
       this.state.jobs[jobId].workers = newWorkers;
+      this.notify();
       return true;
     }
     return false;
@@ -211,7 +201,7 @@ class GameEngine {
   }
 
   // Update method for external control
-  update(deltaTime: number): void {
+  update(_deltaTime: number): void {
     // For now, we'll just call tick directly
     // In a more sophisticated implementation, we might interpolate between ticks
     this.tick();

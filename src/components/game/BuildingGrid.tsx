@@ -1,16 +1,23 @@
-import { Component, For, createMemo } from 'solid-js'
-import { getGameState } from '../../hooks/useGameState'
-import { formatNumber } from '../../utils/formatNumber'
-import type { Building } from '../../types/worldState'
+import { For, createMemo } from 'solid-js'
+import type { Component } from 'solid-js'
+import { getGameState } from '../../hooks/useGameState.js'
+import { formatNumber } from '../../utils/formatNumber.js'
+import type { Resource } from '../../types/worldState.js'
+import type { BuildingType } from '../../data/buildings.js'
 
 const BuildingGrid: Component = () => {
   const gameState = getGameState()
-  
-  // Get buildings from game state
-  const buildings = createMemo(() => Object.values(gameState.getBuildings()))
-  
+
+  // Building types the player has unlocked, plus their live construction state
+  const buildings = createMemo(() =>
+    gameState.getBuildingCatalog().map((type) => ({
+      type,
+      construction: gameState.getBuildings()[type.id]
+    }))
+  )
+
   // Format cost for display
-  const formatCost = (cost: Building['cost']): string => {
+  const formatCost = (cost: Resource): string => {
     const costs = []
     if (cost.wood > 0) costs.push(`${formatNumber(cost.wood)} Wood`)
     if (cost.stone > 0) costs.push(`${formatNumber(cost.stone)} Stone`)
@@ -18,9 +25,9 @@ const BuildingGrid: Component = () => {
     if (cost.gold > 0) costs.push(`${formatNumber(cost.gold)} Gold`)
     return costs.join(', ')
   }
-  
+
   // Check if player can afford a building
-  const canAffordBuilding = (building: Building): boolean => {
+  const canAffordBuilding = (building: BuildingType): boolean => {
     const resources = gameState.getResources()
     return (
       resources.wood >= building.cost.wood &&
@@ -29,7 +36,7 @@ const BuildingGrid: Component = () => {
       resources.gold >= building.cost.gold
     )
   }
-  
+
   // Build a building
   const buildBuilding = (buildingId: string) => {
     gameState.buildBuilding(buildingId)
@@ -38,27 +45,27 @@ const BuildingGrid: Component = () => {
   return (
     <div class="building-grid">
       <For each={buildings()}>
-        {(building) => (
-          <div class={`building-card ${building.built ? 'built' : 'unbuilt'}`}>
-            <h3>{building.name}</h3>
-            <p>{building.description}</p>
+        {({ type, construction }) => (
+          <div class={`building-card ${construction?.built ? 'built' : 'unbuilt'}`}>
+            <h3>{type.name}</h3>
+            <p>{type.description}</p>
             <div class="building-cost">
-              Cost: {formatCost(building.cost)}
+              Cost: {formatCost(type.cost)}
             </div>
             <div class="building-time">
-              Time: {building.buildTime}s
+              Time: {type.buildTime}s
             </div>
-            {!building.built && (
+            {construction && !construction.built && (
               <div class="construction-progress">
-                Progress: {building.constructionProgress}%
+                Progress: {construction.constructionProgress}%
               </div>
             )}
-            <button 
-              class="build-button" 
-              disabled={building.built || !canAffordBuilding(building)}
-              onClick={() => buildBuilding(building.id)}
+            <button
+              class="build-button"
+              disabled={construction?.built || !canAffordBuilding(type)}
+              onClick={() => buildBuilding(type.id)}
             >
-              {building.built ? 'Built' : 'Build'}
+              {construction?.built ? 'Built' : 'Build'}
             </button>
           </div>
         )}

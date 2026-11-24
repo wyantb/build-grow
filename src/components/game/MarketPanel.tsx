@@ -1,7 +1,7 @@
-import { Component, createMemo } from 'solid-js'
-import { getGameState } from '../../hooks/useGameState'
-import { formatNumber } from '../../utils/formatNumber'
-import type { Resource } from '../../types/worldState'
+import type { Component } from 'solid-js'
+import { getGameState } from '../../hooks/useGameState.js'
+import { formatNumber } from '../../utils/formatNumber.js'
+import type { Resource } from '../../types/worldState.js'
 
 const MarketPanel: Component = () => {
   const gameState = getGameState()

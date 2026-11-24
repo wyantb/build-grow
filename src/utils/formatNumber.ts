@@ -1,5 +1,3 @@
-import { createMemo } from 'solid-js'
-
 // Format numbers to show scientific notation when appropriate
 export const formatNumber = (num: number): string => {
   // Handle negative numbers
