@@ -64,8 +64,3 @@ For TypeScript compilation errors:
 1. Run `npx tsc --noEmit` to check for type errors
 2. Fix import paths (ensure .js extensions for ESM)
 3. Clean and rebuild
-
-### Testing
-- Manual testing during development
-- Visual verification of UI changes
-- Performance considerations for mobile
