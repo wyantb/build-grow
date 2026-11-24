@@ -145,6 +145,12 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
 
+# TypeScript build artifacts
+*.js
+*.map
+*.d.ts
+!vite.config.ts
+
 # Astro generated types
 .astro/
 
