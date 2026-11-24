@@ -1,6 +1,7 @@
 import { createSignal } from 'solid-js'
 import type { Component } from 'solid-js'
 import { useGameLoop } from './hooks/useGameLoop.js'
+import { useTheme } from './hooks/useTheme.js'
 import ResourcePanel from './components/game/ResourcePanel.js'
 import BuildingGrid from './components/game/BuildingGrid.js'
 import JobPanel from './components/game/JobPanel.js'
@@ -12,6 +13,9 @@ const App: Component = () => {
   
   // Tab management
   const [activeTab, setActiveTab] = createSignal<'buildings' | 'jobs' | 'market'>('buildings')
+
+  // Theme (light by default), toggled from the header
+  const { theme, toggleTheme } = useTheme()
   
   // For debugging purposes
   ;(window as any).gameEngine = gameEngine
@@ -21,9 +25,15 @@ const App: Component = () => {
     <div class="game-container">
       <header>
         <h1>Fantasy Civilization Builder</h1>
-        <div class="theme-toggle" id="theme-toggle">
-          <span class="theme-icon">☀️</span>
-        </div>
+        <button
+          class="theme-toggle"
+          id="theme-toggle"
+          type="button"
+          onClick={toggleTheme}
+          aria-label={`Switch to ${theme() === 'light' ? 'dark' : 'light'} mode`}
+        >
+          <span class="theme-icon">{theme() === 'light' ? '🌙' : '☀️'}</span>
+        </button>
       </header>
       
       <div class="game-content">
