@@ -80,7 +80,7 @@ const JobPanel: Component = () => {
                 <button
                   class="job-btn"
                   onClick={() => gameState.assignWorkers(job().id, -5)}
-                  disabled={job().workers <= 0}
+                  disabled={isDefaultJob(job().id) || job().workers <= 0}
                 >
                   {'\u00AB'}
                 </button>
@@ -89,20 +89,21 @@ const JobPanel: Component = () => {
                 <button
                   class="job-btn"
                   onClick={() => gameState.assignWorkers(job().id, -1)}
-                  disabled={job().workers <= 0}
+                  disabled={isDefaultJob(job().id) || job().workers <= 0}
                 >
                   {'\u2039'}
                 </button>
               </Tooltip>
-              <Tooltip content="Set as default job" placement="top">
-                <button
-                  class="job-btn job-btn-default"
-                  disabled={!job().canDefault || isDefaultJob(job().id)}
-                  onClick={() => gameState.setDefaultJob(job().id)}
-                >
-                  {job().canDefault && !isDefaultJob(job().id) ? 'D' : '\u00A0'}
-                </button>
-              </Tooltip>
+              {job().canDefault && !isDefaultJob(job().id) && (
+                <Tooltip content="Set as default job" placement="top">
+                  <button
+                    class="job-btn job-btn-default"
+                    onClick={() => gameState.setDefaultJob(job().id)}
+                  >
+                    D
+                  </button>
+                </Tooltip>
+              )}
               <Tooltip content={addWorkersTooltip(job().id, 1)} placement="top">
                 <button
                   class="job-btn"
