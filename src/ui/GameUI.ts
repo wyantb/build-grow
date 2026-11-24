@@ -139,30 +139,55 @@ class GameUI {
   private updateResources(state: WorldState): void {
     const resourcesDisplay = document.getElementById('resources-display');
     if (resourcesDisplay) {
+      // Format numbers to show scientific notation when appropriate
+      const formatNumber = (num: number): string => {
+        if (num >= 1000000) {
+          return (num / 1000000).toFixed(2) + 'M';
+        } else if (num >= 1000) {
+          return (num / 1000).toFixed(2) + 'K';
+        } else {
+          return num.toFixed(1);
+        }
+      };
+      
+      // Get actual resource production rates from the game engine
+      const resourceRates = this.engine.getResourceRates();
+      
       resourcesDisplay.innerHTML = `
-        <div class="resource-item">
-          <span class="resource-name">Wood:</span>
-          <span class="resource-value">${state.resources.wood.toFixed(1)}</span>
+        <div class="resource-header">
+          <span class="header-name">Resource</span>
+          <span class="header-amount">Amount</span>
+          <span class="header-rate">Rate/s</span>
         </div>
-        <div class="resource-item">
-          <span class="resource-name">Stone:</span>
-          <span class="resource-value">${state.resources.stone.toFixed(1)}</span>
+        <div class="resource-row">
+          <span class="resource-name">Wood</span>
+          <span class="resource-amount">${formatNumber(state.resources.wood)}</span>
+          <span class="resource-rate ${resourceRates.wood >= 0 ? 'positive' : 'negative'}">${resourceRates.wood >= 0 ? '+' : ''}${resourceRates.wood.toFixed(1)}/s</span>
         </div>
-        <div class="resource-item">
-          <span class="resource-name">Food:</span>
-          <span class="resource-value">${state.resources.food.toFixed(1)}</span>
+        <div class="resource-row">
+          <span class="resource-name">Stone</span>
+          <span class="resource-amount">${formatNumber(state.resources.stone)}</span>
+          <span class="resource-rate ${resourceRates.stone >= 0 ? 'positive' : 'negative'}">${resourceRates.stone >= 0 ? '+' : ''}${resourceRates.stone.toFixed(1)}/s</span>
         </div>
-        <div class="resource-item">
-          <span class="resource-name">Gold:</span>
-          <span class="resource-value">${state.resources.gold.toFixed(1)}</span>
+        <div class="resource-row">
+          <span class="resource-name">Food</span>
+          <span class="resource-amount">${formatNumber(state.resources.food)}</span>
+          <span class="resource-rate ${resourceRates.food >= 0 ? 'positive' : 'negative'}">${resourceRates.food >= 0 ? '+' : ''}${resourceRates.food.toFixed(1)}/s</span>
         </div>
-        <div class="resource-item">
-          <span class="resource-name">Population:</span>
-          <span class="resource-value">${state.population}</span>
+        <div class="resource-row">
+          <span class="resource-name">Gold</span>
+          <span class="resource-amount">${formatNumber(state.resources.gold)}</span>
+          <span class="resource-rate ${resourceRates.gold >= 0 ? 'positive' : 'negative'}">${resourceRates.gold >= 0 ? '+' : ''}${resourceRates.gold.toFixed(1)}/s</span>
         </div>
-        <div class="resource-item">
-          <span class="resource-name">Time:</span>
-          <span class="resource-value">${state.gameTime.toFixed(0)}s</span>
+        <div class="resource-row">
+          <span class="resource-name">Population</span>
+          <span class="resource-amount">${state.population}</span>
+          <span class="resource-rate">-</span>
+        </div>
+        <div class="resource-row">
+          <span class="resource-name">Time</span>
+          <span class="resource-amount">${state.gameTime.toFixed(0)}s</span>
+          <span class="resource-rate">-</span>
         </div>
       `;
     }

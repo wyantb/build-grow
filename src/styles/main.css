@@ -271,6 +271,63 @@ body.light-mode .resource-value {
   color: #008000;
 }
 
+/* New resource display styles */
+.resource-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-weight: bold;
+  border-bottom: 1px solid #555;
+  font-size: 0.9rem;
+}
+
+body.light-mode .resource-header {
+  border-bottom: 1px solid #ccc;
+}
+
+.resource-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #333;
+}
+
+body.light-mode .resource-row {
+  border-bottom: 1px solid #ddd;
+}
+
+.header-name, .resource-name {
+  font-weight: bold;
+  flex: 1;
+}
+
+.header-amount, .resource-amount {
+  flex: 1;
+  text-align: center;
+}
+
+.header-rate, .resource-rate {
+  flex: 1;
+  text-align: right;
+}
+
+.resource-rate.positive {
+  color: #4dffb8;
+}
+
+.resource-rate.negative {
+  color: #ff4d4d;
+}
+
+body.light-mode .resource-rate.positive {
+  color: #008000;
+}
+
+body.light-mode .resource-rate.negative {
+  color: #cc0000;
+}
+
 .building-item, .job-item {
   background-color: #444444;
   border-radius: 5px;

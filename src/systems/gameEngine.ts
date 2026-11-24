@@ -7,10 +7,12 @@ class GameEngine {
   private intervalId: number | null = null;
   private tickRate: number = 1000; // 1 second per tick
   private marketSystem: MarketSystem;
+  private previousResources: Resource;
 
   constructor() {
     this.state = createInitialState();
     this.marketSystem = new MarketSystem(this.state);
+    this.previousResources = { ...this.state.resources };
   }
 
   // Get current game state
@@ -39,6 +41,9 @@ class GameEngine {
   private tick(): void {
     this.state.tick++;
     this.state.gameTime += this.tickRate / 1000; // Convert ms to seconds
+    
+    // Store previous resource amounts
+    this.previousResources = { ...this.state.resources };
     
     // Process resource generation
     this.processResourceGeneration();
@@ -190,6 +195,18 @@ class GameEngine {
   // Get merchant count from market system
   getMerchantCount(): number {
     return this.marketSystem.getMerchantCount();
+  }
+  
+  // Get resource production rates
+  getResourceRates(): Resource {
+    // Calculate the difference between current and previous resource amounts
+    // Since we're calculating per second and tickRate is 1000ms, we don't need to adjust for time
+    return {
+      wood: this.state.resources.wood - this.previousResources.wood,
+      stone: this.state.resources.stone - this.previousResources.stone,
+      food: this.state.resources.food - this.previousResources.food,
+      gold: this.state.resources.gold - this.previousResources.gold
+    };
   }
 }
 
