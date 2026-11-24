@@ -2,6 +2,7 @@ import { For, createMemo } from 'solid-js';
 import type { Component } from 'solid-js';
 import { getGameState } from '../../hooks/useGameState.js';
 import { formatNumber } from '../../utils/formatNumber.js';
+import Tooltip from '../ui/Tooltip.js';
 import type { Resource } from '../../types/worldState.js';
 import type { BuildingType } from '../../data/buildings.js';
 
@@ -49,7 +50,17 @@ const BuildingGrid: Component = () => {
 
           return (
             <div class={`building-card ${construction()?.built ? 'built' : 'unbuilt'}`}>
-              <h3>{type().name}</h3>
+              <Tooltip
+                content={
+                  <>
+                    <span class="tooltip-title">{type().name}</span>
+                    <span class="tooltip-detail">{type().effect}</span>
+                  </>
+                }
+                placement="top"
+              >
+                <h3>{type().name}</h3>
+              </Tooltip>
               <p>{type().description}</p>
               <div class="building-cost">
                 Cost: {formatCost(type().cost)}
@@ -62,13 +73,24 @@ const BuildingGrid: Component = () => {
                   Progress: {construction()?.constructionProgress}%
                 </div>
               )}
-              <button
-                class="build-button"
-                disabled={construction()?.built || !canAffordBuilding(type())}
-                onClick={() => buildBuilding(type().id)}
+              <Tooltip
+                content={
+                  construction()?.built
+                    ? 'This building is complete.'
+                    : canAffordBuilding(type())
+                      ? 'Click to start construction.'
+                      : 'Not enough resources yet.'
+                }
+                placement="top"
               >
-                {construction()?.built ? 'Built' : 'Build'}
-              </button>
+                <button
+                  class="build-button"
+                  disabled={construction()?.built || !canAffordBuilding(type())}
+                  onClick={() => buildBuilding(type().id)}
+                >
+                  {construction()?.built ? 'Built' : 'Build'}
+                </button>
+              </Tooltip>
             </div>
           );
         }}

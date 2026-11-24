@@ -2,6 +2,7 @@ import { For } from 'solid-js';
 import type { Component } from 'solid-js';
 import { getGameState } from '../../hooks/useGameState.js';
 import { formatNumber } from '../../utils/formatNumber.js';
+import Tooltip from '../ui/Tooltip.js';
 import type { Resource } from '../../types/worldState.js';
 
 const MarketPanel: Component = () => {
@@ -48,27 +49,41 @@ const MarketPanel: Component = () => {
 
         <For each={getMarketData()}>{(item) => (
           <div class="market-row">
-            <span class="resource-name">{item.resource.charAt(0).toUpperCase() + item.resource.slice(1)}</span>
+            <Tooltip
+              content={`Current price for one ${item.resource}. The price rises and falls with demand.`}
+              placement="right"
+            >
+              <span class="resource-name">{item.resource.charAt(0).toUpperCase() + item.resource.slice(1)}</span>
+            </Tooltip>
             <span class="price">{formatNumber(item.price)}g</span>
-            <span class={`trend ${item.trend}`}>
-              {item.trend === 'up' ? '↗' : '↘'}
-            </span>
+            <Tooltip
+              content={item.trend === 'up' ? 'The price is trending up.' : 'The price is trending down.'}
+              placement="right"
+            >
+              <span class={`trend ${item.trend}`}>
+                {item.trend === 'up' ? '↗' : '↘'}
+              </span>
+            </Tooltip>
             <span class="your-amount">
               {formatNumber(gameState.getResources()[item.resource])}
             </span>
             <div class="trade-buttons">
-              <button
-                class="trade-button buy"
-                onClick={() => buyResource(item.resource, 10)}
-              >
-                Buy
-              </button>
-              <button
-                class="trade-button sell"
-                onClick={() => sellResource(item.resource, 10)}
-              >
-                Sell
-              </button>
+              <Tooltip content="Buy 10 units of this resource." placement="top">
+                <button
+                  class="trade-button buy"
+                  onClick={() => buyResource(item.resource, 10)}
+                >
+                  Buy
+                </button>
+              </Tooltip>
+              <Tooltip content="Sell 10 units of this resource." placement="top">
+                <button
+                  class="trade-button sell"
+                  onClick={() => sellResource(item.resource, 10)}
+                >
+                  Sell
+                </button>
+              </Tooltip>
             </div>
           </div>
         )}</For>

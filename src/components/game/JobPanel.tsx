@@ -1,6 +1,7 @@
 import { For, createMemo } from 'solid-js';
 import type { Component } from 'solid-js';
 import { getGameState } from '../../hooks/useGameState.js';
+import Tooltip from '../ui/Tooltip.js';
 import type { Job } from '../../types/worldState.js';
 
 const EMPTY_JOB: Job = {
@@ -42,14 +43,30 @@ const JobPanel: Component = () => {
   return (
     <div class="job-panel">
       <div class="population-info">
-        <div>Available Workers: {getAvailableWorkers()}</div>
-        <div>Total Population: {gameState.getPopulation()}</div>
+        <Tooltip content="Workers not yet assigned to a job." placement="right">
+          <div>Available Workers: {getAvailableWorkers()}</div>
+        </Tooltip>
+        <Tooltip content="Your total population, assigned or not." placement="right">
+          <div>Total Population: {gameState.getPopulation()}</div>
+        </Tooltip>
       </div>
 
       <For each={jobs()} keyed={(id) => id}>
         {(id) => (
           <div class="job-card">
-            <h3>{job(id()).name}</h3>
+            <Tooltip
+              content={
+                <>
+                  <span class="tooltip-title">{job(id()).name}</span>
+                  <span class="tooltip-detail">
+                    Each worker adds {job(id()).productivity}x output.
+                  </span>
+                </>
+              }
+              placement="top"
+            >
+              <h3>{job(id()).name}</h3>
+            </Tooltip>
             <p>{job(id()).description}</p>
             <div class="job-workers">
               Workers: {job(id()).workers}
@@ -58,21 +75,25 @@ const JobPanel: Component = () => {
               Productivity: {job(id()).productivity}x
             </div>
             <div class="worker-controls">
-              <button
-                class="worker-button"
-                onClick={() => unassignWorker(id())}
-                disabled={job(id()).workers <= 0}
-              >
-                -
-              </button>
+              <Tooltip content="Remove one worker from this job." placement="top">
+                <button
+                  class="worker-button"
+                  onClick={() => unassignWorker(id())}
+                  disabled={job(id()).workers <= 0}
+                >
+                  -
+                </button>
+              </Tooltip>
               <span class="worker-count">{job(id()).workers}</span>
-              <button
-                class="worker-button"
-                onClick={() => assignWorker(id())}
-                disabled={getAvailableWorkers() <= 0}
-              >
-                +
-              </button>
+              <Tooltip content="Assign one more worker to this job." placement="top">
+                <button
+                  class="worker-button"
+                  onClick={() => assignWorker(id())}
+                  disabled={getAvailableWorkers() <= 0}
+                >
+                  +
+                </button>
+              </Tooltip>
             </div>
           </div>
         )}

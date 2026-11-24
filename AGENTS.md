@@ -5,7 +5,7 @@
 ### Layout Structure
 - Keep UI compact with minimal header (max 24px height)
 - Resources always listed on the left column
-- Main section body uses tabbed navigation (Buildings, Jobs as primary tabs)
+- Main section body uses tabbed navigation (Buildings, Jobs, Market, Settings)
 - Mobile responsive design:
   - Wide screens: Left resources + tabbed main content
   - Narrow screens: Resources also becomes a tab
@@ -38,7 +38,8 @@ src/
 ├── data/                # Static game content (building catalog, etc.)
 ├── systems/             # Core game logic
 ├── hooks/               # SolidJS hooks bridging engine and store
-└── components/game/     # SolidJS components
+├── components/game/     # Game-screen components
+└── components/ui/       # Reusable presentation components (Tooltip)
 ```
 
 ### Component Architecture
@@ -58,8 +59,7 @@ updated to match. The stylesheet still targets the old markup:
 - `AGENTS.md` requires a mobile layout where Resources also becomes a tab, but
   the `.mobile-tabs` CSS exists with **no matching markup** in `App.tsx`.
 
-Restoring the visual design is a separate, dedicated project. `SOLID2_MIGRATION.md`
-covers the framework upgrade; neither replaces the other.
+Restoring the visual design is a separate, dedicated project.
 
 ### SolidJS / TypeScript Conventions
 - `verbatimModuleSyntax` is on: type-only imports must use `import type`, otherwise they
@@ -75,9 +75,8 @@ covers the framework upgrade; neither replaces the other.
   build, where `createEffect` never runs and reactivity tests give false negatives.
 
 ### Solid 2 (`solid-js@2.0.3`)
-Solid 2 is GA and the current `latest` tag. The upgrade is applied; see
-`SOLID2_MIGRATION.md` for the plan, the measurements, and the defects found during
-verification. Key differences from Solid 1 that affect this codebase:
+The app runs Solid 2, the current `latest` tag. These are the Solid 1 → 2
+differences that affect this codebase:
 - `solid-js/store` no longer exists as an export path: `createStore` comes from `solid-js`.
 - The store setter takes a single draft callback instead of a path:
   `setState((state) => { state.resources.wood = 12 })` replaces
@@ -100,7 +99,30 @@ verification. Key differences from Solid 1 that affect this codebase:
   successor is `@solidjs/router`.
 - The Solid 2 bundle is larger than Solid 1's: 36.63 kB → 53.31 kB gzip for this app.
   That is the framework, not the app — Solid 2's `createStore` is built on the
-  `@solidjs/signals` core. See `SOLID2_MIGRATION.md` §7 for the measurements.
+  `@solidjs/signals` core.
+
+### Tooltips and Settings
+- `src/components/ui/Tooltip.tsx` is the only tooltip implementation. Wrap the
+  trigger in `<Tooltip content="..." placement="top|right|bottom|left">`.
+- The trigger wrapper is `display: contents`, so it does not change the layout of
+  its parent. Because the wrapper then has no box of its own, the tooltip measures
+  its anchor with a `Range` over the wrapper's contents. Do not swap the wrapper
+  back to a plain `inline-flex`: it re-breaks the flex layout of every row it
+  is put in.
+- The bubble is rendered through `Portal` into `document.body` and is positioned
+  with `position: fixed`. It flips to the opposite side when the preferred side
+  would overflow the viewport, and is clamped to stay on screen.
+- The delay is app-wide and user-configurable. `useSettings` persists it to
+  `localStorage` under `build-grow:settings`; the default is 250 ms and 0 ms means
+  "show immediately".
+- `useSettings` keeps its signal at module scope so every caller shares one
+  source of truth. Its persistence effect therefore needs `createRoot`, otherwise
+  Solid reports `NO_OWNER_EFFECT`.
+- Tooltips open on hover and on keyboard focus, and close on blur, pointer down,
+  and mouse leave. Keep new triggers keyboard reachable.
+- The Settings tab (`src/components/game/SettingsPanel.tsx`) exposes the delay.
+  Read the stored setting inside JSX, not in the component body, to avoid
+  `STRICT_READ_UNTRACKED`.
 
 ## Linting
 

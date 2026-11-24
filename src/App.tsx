@@ -6,6 +6,8 @@ import ResourcePanel from './components/game/ResourcePanel.js';
 import BuildingGrid from './components/game/BuildingGrid.js';
 import JobPanel from './components/game/JobPanel.js';
 import MarketPanel from './components/game/MarketPanel.js';
+import SettingsPanel from './components/game/SettingsPanel.js';
+import Tooltip from './components/ui/Tooltip.js';
 import type GameEngine from './systems/gameEngine.js';
 import type { GameStateReturnType } from './hooks/useGameState.js';
 
@@ -23,15 +25,20 @@ const ThemeToggle: Component = () => {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <button
-      class="theme-toggle"
-      id="theme-toggle"
-      type="button"
-      onClick={toggleTheme}
-      aria-label={`Switch to ${theme() === 'light' ? 'dark' : 'light'} mode`}
+    <Tooltip
+      content={`Switch to ${theme() === 'light' ? 'dark' : 'light'} mode.`}
+      placement="bottom"
       >
-      <span class="theme-icon">{theme() === 'light' ? '🌙' : '☀️'}</span>
-    </button>
+      <button
+        class="theme-toggle"
+        id="theme-toggle"
+        type="button"
+        onClick={toggleTheme}
+        aria-label={`Switch to ${theme() === 'light' ? 'dark' : 'light'} mode`}
+      >
+        <span class="theme-icon">{theme() === 'light' ? '🌙' : '☀️'}</span>
+      </button>
+    </Tooltip>
   );
 };
 
@@ -40,7 +47,7 @@ const App: Component = () => {
   const { gameEngine, gameState } = useGameLoop();
 
   // Tab management
-  const [activeTab, setActiveTab] = createSignal<'buildings' | 'jobs' | 'market'>('buildings');
+  const [activeTab, setActiveTab] = createSignal<'buildings' | 'jobs' | 'market' | 'settings'>('buildings');
 
   // Exposed for debugging and for the browser verification suite.
   window.gameEngine = gameEngine;
@@ -81,6 +88,12 @@ const App: Component = () => {
             >
               Market
             </button>
+            <button
+              class={`tab ${activeTab() === 'settings' ? 'active' : ''}`}
+              onClick={() => setActiveTab('settings')}
+            >
+              Settings
+            </button>
           </div>
 
           <div class="tab-content">
@@ -102,6 +115,13 @@ const App: Component = () => {
               <h2>Market</h2>
               <div id="market-content">
                 <MarketPanel />
+              </div>
+            </div>
+
+            <div id="settings-tab" class={`tab-pane ${activeTab() === 'settings' ? 'active' : ''}`}>
+              <h2>Settings</h2>
+              <div id="settings-content">
+                <SettingsPanel />
               </div>
             </div>
           </div>
