@@ -182,6 +182,28 @@ downgrading `typescript` to a single version.
 
 ## Development Workflow
 
+### Working Style and Scope Discipline
+- **Do only what was asked.** If the user requests a UI tweak, fix a bug, or add a
+  specific feature, scope the change to exactly that. Do not add extra features,
+  refactor unrelated code, or chase "nice to have" improvements in the same commit.
+- **80/20 rule:** implement the obvious, direct solution to the stated problem.
+  If you see an opportunity for a larger redesign, a speculative feature, or a
+  refactoring that goes beyond the request, **mention it after pushing** as an
+  optional next step — do not bake it into the PR.
+- **Do not break existing working behavior to enable future plans.** If the current
+  code handles a case correctly (even awkwardly), leave it alone unless the user's
+  request directly touches that area.
+- **One concern per commit.** A UI layout change should not silently alter game
+  state shape. A game logic fix should not rearrange CSS. If a change unavoidably
+  touches two concerns, make the connection explicit in the commit message.
+- **Regression safety:** before changing code, verify what currently works (via
+  browser inspection or existing tests). After the change, confirm those same paths
+  still produce the same visible output. If something that worked before is now
+  broken, fix it in the same commit — never push a regression.
+- **State ownership:** the GameEngine is the single writer of game state. Never
+  write state from a component, hook, or store. If a new piece of data is needed,
+  add it to the engine and mirror it out.
+
 ### Typical UI Development Cycle
 1. **Start development server**: Run `npm run dev` to start the development server with hot reloading
 2. **Make UI changes**: Edit HTML/templates, CSS, or TypeScript files as needed
