@@ -57,20 +57,15 @@ body.light-mode header {
 
 .game-content {
   display: flex;
-  gap: 10px;
+  gap: 5px;
   height: calc(100vh - 24px);
-  padding: 10px;
+  padding: 5px;
   flex: 1;
 }
 
 .panel {
-  background-color: #2a2a2a;
-  border-radius: 5px;
+  background-color: transparent;
   padding: 10px;
-}
-
-body.light-mode .panel {
-  background-color: #e0e0e0;
 }
 
 .resources-panel {
@@ -81,11 +76,6 @@ body.light-mode .panel {
   flex: 1;
   display: flex;
   flex-direction: column;
-}
-
-body.light-mode .resources-panel,
-body.light-mode .main-panel {
-  background-color: transparent;
 }
 
 .tabs {
@@ -118,7 +108,6 @@ body.light-mode .main-panel {
   font-size: 1.1rem;
   margin-bottom: 10px;
   padding-bottom: 5px;
-  border-bottom: 1px solid #555;
 }
 
 .building-section {
@@ -129,13 +118,11 @@ body.light-mode .main-panel {
   font-size: 1rem;
   margin-bottom: 10px;
   color: #ffd700;
-  border-bottom: 1px solid #444;
   padding-bottom: 5px;
 }
 
 body.light-mode .section-header {
   color: #b8860b;
-  border-bottom: 1px solid #ccc;
 }
 
 .building-grid {
@@ -269,12 +256,7 @@ body.light-mode .building-progress-text {
   display: flex;
   justify-content: space-between;
   padding: 6px 0;
-  border-bottom: 1px solid #444;
   font-size: 0.9rem;
-}
-
-body.light-mode .resource-item {
-  border-bottom: 1px solid #ccc;
 }
 
 .resource-name {
