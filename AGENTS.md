@@ -243,3 +243,15 @@ When encountering unexpected issues:
    - Run `npm run clean-all`
    - Run `npm install`
    - Restart with `npm run dev`
+
+### Stale Vite dependency cache
+A browser error like `The requested module 'http://localhost:3000/node_modules/.vite/deps/<pkg>.js?v=<hash>'
+doesn't provide an export named: '<name>'` means the browser is running a **stale
+optimized dependency** from `node_modules/.vite`, not the current source. The hash
+in the URL identifies the bundle the browser cached; it no longer matches anything
+Vite has built. Clear it with `npm run clean` and restart the dev server. Check
+`node_modules/.vite/deps/_metadata.json` to see which packages Vite actually
+optimized — a package that appears there but is absent from `package.json` is the
+stale one. This is what a removed Solid 1 package such as `solid-js-store` looks
+like after the Solid 2 migration; the current `solid-js` does not export
+`SetStoreFunction` and never did need to.
