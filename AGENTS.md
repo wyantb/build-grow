@@ -27,6 +27,58 @@
 - Main Content: Tabbed interface (Buildings, Jobs, Actions)
 - Responsive design that adapts to screen width
 
+## Development Workflow
+
+### Working Style and Scope Discipline
+- **Do only what was asked.** If the user requests a UI tweak, fix a bug, or add a
+  specific feature, scope the change to exactly that. Do not add extra features,
+  refactor unrelated code, or chase "nice to have" improvements in the same commit.
+- **80/20 rule:** implement the obvious, direct solution to the stated problem.
+  If you see an opportunity for a larger redesign, a speculative feature, or a
+  refactoring that goes beyond the request, **mention it after pushing** as an
+  optional next step — do not bake it into the PR.
+- **Do not break existing working behavior to enable future plans.** If the current
+  code handles a case correctly (even awkwardly), leave it alone unless the user's
+  request directly touches that area.
+- **State ownership:** the GameEngine is the single writer of game state. Never
+  write state from a component, hook, or store. If a new piece of data is needed,
+  add it to the engine and mirror it out.
+
+### Typical UI Development Cycle
+1. **Start development server**: Run `npm run dev` to start the development server with hot reloading
+2. **Make UI changes**: Edit HTML/templates, CSS, or TypeScript files as needed
+3. **Test iteratively**: Check changes in the browser (http://localhost:3000) as you work
+4. **Lint the change**: Run `npm run lint` (or `npm run lint:fix` to apply autofixes).
+   The lint must pass before the change is committed.
+5. **Verify build**: Run `npm run build` to ensure production build works correctly
+6. **Commit changes**: Add and commit source files only (not generated files)
+
+### Pre-Push Check (required)
+Before pushing to `main`, the working tree must pass the full gate. Do not push
+with a failing check; fix the cause instead.
+
+```bash
+npm run lint        # ESLint: style + Solid reactivity rules
+npm run typecheck   # tsc --noEmit: type errors
+npm run build       # production bundle must succeed
+```
+
+`npm run check` runs all three in sequence and is the single command to use.
+`npm run lint` is the required pre-push lint gate: **a push that skips it is a
+defect**, because the rules it enforces (semicolons, explicit braces, no trailing
+whitespace, Solid 2 API usage) are exactly the ones that drift silently in a
+codebase without automation.
+
+Rules of the gate:
+- Lint failures are never silenced with inline disables unless the rule is
+  genuinely wrong for the code, and then the disable carries a short reason.
+- `npm run lint:fix` is the first response to a lint failure. Only hand-fix what
+  the autofixer cannot.
+- Solid reactivity rules (`solid/reactivity`, `solid/removed-api`) catch real
+  Solid 2 defects. Fix the code; do not turn the rule off.
+- Do not commit generated output (`dist/`, `node_modules/`).
+
+
 ## Code Organization
 
 ### File Structure
@@ -60,33 +112,6 @@ src/
   the reactivity update, which freezes the UI counters.
 - Verify Solid reactivity **in the browser**. Node resolves `solid-js` to its *server*
   build, where `createEffect` never runs and reactivity tests give false negatives.
-
-### Solid 2 (`solid-js@2.0.3`)
-The app runs Solid 2, the current `latest` tag. These are the Solid 1 → 2
-differences that affect this codebase:
-- `solid-js/store` no longer exists as an export path: `createStore` comes from `solid-js`.
-- The store setter takes a single draft callback instead of a path:
-  `setState((state) => { state.resources.wood = 12 })` replaces
-  `setState('resources', 'wood', 12)`. The `SetStoreFunction` type was removed outright.
-- JSX types and `render` come from `@solidjs/web`, so `tsconfig.json` sets
-  `"jsxImportSource": "@solidjs/web"`. The Vite plugin is `@solidjs/vite-plugin`.
-- `classList` is gone; use `class={{ 'name': boolean }}` instead.
-- `<For>` with `keyed={(item) => key}` passes the child an **Accessor**: read `item().id`.
-  Only `keyed={true}` passes the raw item. Mixing the two forms type-checks but
-  renders `undefined` at runtime, so read every occurrence through the accessor.
-- Solid 2's dev build reports `UNSTABLE_LIST_IDENTITY` when a `<For>` rebuilds rows that
-  are equivalent to the ones they replace. Keep list inputs stable (iterate ids or
-  catalog entries) and read live records inside the row, instead of copying them into
-  the list on every tick.
-- Solid 2's dev build reports `STRICT_READ_UNTRACKED` when a reactive value is read
-  directly in a component body. Move the read into JSX (a tracking scope), or wrap a
-  deliberate one-time snapshot in `untrack()`.
-- Packages pinned to Solid 1 peers (`vite-plugin-solid`, `solid-app-router`,
-  `lucide-solid`, `solid-refresh`) must be dropped. `solid-app-router`'s Solid 2
-  successor is `@solidjs/router`.
-- The Solid 2 bundle is larger than Solid 1's: 36.63 kB → 53.31 kB gzip for this app.
-  That is the framework, not the app — Solid 2's `createStore` is built on the
-  `@solidjs/signals` core.
 
 ### Tooltips and Settings
 - `src/components/ui/Tooltip.tsx` is the only tooltip implementation. Wrap the
@@ -178,65 +203,6 @@ TypeScript 7 ships no JavaScript API, and `typescript-eslint` refuses to run aga
 it (`typescript-eslint does not support TS 7.0`). Running both side by side is the
 officially documented arrangement. Do not "fix" the peer-dependency conflict by
 downgrading `typescript` to a single version.
-
-
-## Development Workflow
-
-### Working Style and Scope Discipline
-- **Do only what was asked.** If the user requests a UI tweak, fix a bug, or add a
-  specific feature, scope the change to exactly that. Do not add extra features,
-  refactor unrelated code, or chase "nice to have" improvements in the same commit.
-- **80/20 rule:** implement the obvious, direct solution to the stated problem.
-  If you see an opportunity for a larger redesign, a speculative feature, or a
-  refactoring that goes beyond the request, **mention it after pushing** as an
-  optional next step — do not bake it into the PR.
-- **Do not break existing working behavior to enable future plans.** If the current
-  code handles a case correctly (even awkwardly), leave it alone unless the user's
-  request directly touches that area.
-- **One concern per commit.** A UI layout change should not silently alter game
-  state shape. A game logic fix should not rearrange CSS. If a change unavoidably
-  touches two concerns, make the connection explicit in the commit message.
-- **Regression safety:** before changing code, verify what currently works (via
-  browser inspection or existing tests). After the change, confirm those same paths
-  still produce the same visible output. If something that worked before is now
-  broken, fix it in the same commit — never push a regression.
-- **State ownership:** the GameEngine is the single writer of game state. Never
-  write state from a component, hook, or store. If a new piece of data is needed,
-  add it to the engine and mirror it out.
-
-### Typical UI Development Cycle
-1. **Start development server**: Run `npm run dev` to start the development server with hot reloading
-2. **Make UI changes**: Edit HTML/templates, CSS, or TypeScript files as needed
-3. **Test iteratively**: Check changes in the browser (http://localhost:3000) as you work
-4. **Lint the change**: Run `npm run lint` (or `npm run lint:fix` to apply autofixes).
-   The lint must pass before the change is committed.
-5. **Verify build**: Run `npm run build` to ensure production build works correctly
-6. **Commit changes**: Add and commit source files only (not generated files)
-
-### Pre-Push Check (required)
-Before pushing to `main`, the working tree must pass the full gate. Do not push
-with a failing check; fix the cause instead.
-
-```bash
-npm run lint        # ESLint: style + Solid reactivity rules
-npm run typecheck   # tsc --noEmit: type errors
-npm run build       # production bundle must succeed
-```
-
-`npm run check` runs all three in sequence and is the single command to use.
-`npm run lint` is the required pre-push lint gate: **a push that skips it is a
-defect**, because the rules it enforces (semicolons, explicit braces, no trailing
-whitespace, Solid 2 API usage) are exactly the ones that drift silently in a
-codebase without automation.
-
-Rules of the gate:
-- Lint failures are never silenced with inline disables unless the rule is
-  genuinely wrong for the code, and then the disable carries a short reason.
-- `npm run lint:fix` is the first response to a lint failure. Only hand-fix what
-  the autofixer cannot.
-- Solid reactivity rules (`solid/reactivity`, `solid/removed-api`) catch real
-  Solid 2 defects. Fix the code; do not turn the rule off.
-- Do not commit generated output (`dist/`, `node_modules/`).
 
 ### Troubleshooting Process
 When encountering unexpected issues:
