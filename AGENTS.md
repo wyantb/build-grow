@@ -53,6 +53,18 @@ src/
 - `npm run clean`: Remove build artifacts
 - `npm run clean-all`: Full clean including node_modules
 
+### Debugging Build Issues
+When encountering build errors like "[UNRESOLVED_ENTRY] Cannot resolve entry module public/index.html":
+1. Run `npm run clean` to remove build artifacts
+2. Delete generated files: `find src -name "*.js" -delete && find src -name "*.d.ts" -delete && find src -name "*.map" -delete`
+3. Rebuild with `npm run build`
+4. If issues persist, check import paths and ensure they match the module resolution requirements (.js extensions)
+
+For TypeScript compilation errors:
+1. Run `npx tsc --noEmit` to check for type errors
+2. Fix import paths (ensure .js extensions for ESM)
+3. Clean and rebuild
+
 ### Testing
 - Manual testing during development
 - Visual verification of UI changes
