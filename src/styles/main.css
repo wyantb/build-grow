@@ -10,39 +10,67 @@ body {
   background-color: #1a1a1a;
   color: #fff;
   min-height: 100vh;
-  padding: 10px;
+  padding: 0;
+  margin: 0;
+}
+
+body.light-mode {
+  background-color: #f0f0f0;
+  color: #333;
 }
 
 .game-container {
-  max-width: 1200px;
+  max-width: 100%;
   margin: 0 auto;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 header {
-  text-align: center;
-  margin-bottom: 10px;
-  padding: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 10px;
   background-color: #333333;
-  border-radius: 5px;
   height: 24px;
+  position: relative;
 }
 
 header h1 {
   font-size: 1.2rem;
   margin: 0;
   line-height: 24px;
+  text-align: center;
+  flex: 1;
+}
+
+.theme-toggle {
+  cursor: pointer;
+  font-size: 1.2rem;
+  z-index: 10;
+}
+
+body.light-mode header {
+  background-color: #ddd;
 }
 
 .game-content {
   display: flex;
   gap: 10px;
-  height: calc(100vh - 40px);
+  height: calc(100vh - 24px);
+  padding: 10px;
+  flex: 1;
 }
 
 .panel {
-  background-color: #333333;
+  background-color: #2a2a2a;
   border-radius: 5px;
   padding: 10px;
+}
+
+body.light-mode .panel {
+  background-color: #e0e0e0;
 }
 
 .resources-panel {
@@ -53,6 +81,11 @@ header h1 {
   flex: 1;
   display: flex;
   flex-direction: column;
+}
+
+body.light-mode .resources-panel,
+body.light-mode .main-panel {
+  background-color: transparent;
 }
 
 .tabs {
@@ -88,6 +121,102 @@ header h1 {
   border-bottom: 1px solid #555;
 }
 
+.building-section {
+  margin-bottom: 20px;
+}
+
+.building-section h3 {
+  font-size: 1rem;
+  margin-bottom: 10px;
+  color: #aaa;
+  border-bottom: 1px solid #444;
+  padding-bottom: 5px;
+}
+
+body.light-mode .building-section h3 {
+  color: #666;
+  border-bottom: 1px solid #ccc;
+}
+
+.building-card {
+  background-color: #333333;
+  border-radius: 5px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+body.light-mode .building-card {
+  background-color: #d0d0d0;
+}
+
+.building-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.building-name {
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.building-description {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  margin: 5px 0;
+}
+
+.building-cost {
+  font-size: 0.8rem;
+  color: #888;
+  margin: 5px 0;
+}
+
+body.light-mode .building-cost {
+  color: #666;
+}
+
+.build-button {
+  background-color: #007acc;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.9rem;
+  margin-top: 8px;
+  width: 100%;
+  transition: background-color 0.2s;
+}
+
+.build-button:hover:not(:disabled) {
+  background-color: #005fa3;
+}
+
+.build-button:disabled {
+  background-color: #555;
+  cursor: not-allowed;
+}
+
+.build-button.constructing {
+  background-color: #007acc;
+  position: relative;
+  color: white;
+}
+
+.build-button.completed {
+  background-color: #4dffb8;
+  color: #000;
+  cursor: default;
+}
+
+body.light-mode .build-button.completed {
+  background-color: #2ecc71;
+  color: #000;
+}
+
 .resource-item {
   display: flex;
   justify-content: space-between;
@@ -96,12 +225,20 @@ header h1 {
   font-size: 0.9rem;
 }
 
+body.light-mode .resource-item {
+  border-bottom: 1px solid #ccc;
+}
+
 .resource-name {
   font-weight: bold;
 }
 
 .resource-value {
   color: #4dffb8;
+}
+
+body.light-mode .resource-value {
+  color: #008000;
 }
 
 .building-item, .job-item {

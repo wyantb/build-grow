@@ -24,6 +24,9 @@ class GameUI {
       <div class="game-container">
         <header>
           <h1>Fantasy Civilization Builder</h1>
+          <div class="theme-toggle" id="theme-toggle">
+            <span class="theme-icon">☀️</span>
+          </div>
         </header>
         
         <div class="game-content">
@@ -36,24 +39,17 @@ class GameUI {
             <div class="tabs">
               <button class="tab active" data-tab="buildings">Buildings</button>
               <button class="tab" data-tab="jobs">Jobs</button>
-              <button class="tab" data-tab="actions">Actions</button>
             </div>
             
             <div class="tab-content">
               <div id="buildings-tab" class="tab-pane active">
                 <h2>Buildings</h2>
                 <div id="buildings-list"></div>
-                <div id="construction-queue"></div>
               </div>
               
               <div id="jobs-tab" class="tab-pane">
                 <h2>Jobs</h2>
                 <div id="jobs-list"></div>
-              </div>
-              
-              <div id="actions-tab" class="tab-pane">
-                <h2>Actions</h2>
-                <div id="available-buildings"></div>
               </div>
             </div>
           </div>
@@ -63,6 +59,7 @@ class GameUI {
     
     this.setupEventListeners();
     this.setupTabNavigation();
+    this.setupThemeToggle();
   }
 
   private setupEventListeners(): void {
@@ -77,6 +74,19 @@ class GameUI {
         this.switchTab(tabName);
       });
     });
+  }
+
+  private setupThemeToggle(): void {
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+      themeToggle.addEventListener('click', () => {
+        document.body.classList.toggle('light-mode');
+        const themeIcon = themeToggle.querySelector('.theme-icon');
+        if (themeIcon) {
+          themeIcon.textContent = document.body.classList.contains('light-mode') ? '🌙' : '☀️';
+        }
+      });
+    }
   }
 
   private switchTab(tabName: string | null): void {
@@ -152,27 +162,139 @@ class GameUI {
   private updateBuildings(state: WorldState): void {
     const buildingsList = document.getElementById('buildings-list');
     if (buildingsList) {
+      // Group buildings by type
+      const housingBuildings = [];
+      const resourceBuildings = [];
+      const commercialBuildings = [];
+      const scienceBuildings = [];
+      
+      // Collect existing buildings
+      const existingBuildings = Object.values(state.buildings);
+      
+      // Define available building types with their costs and descriptions
+      const buildingTypes = [
+        { 
+          id: 'hut', 
+          name: 'Hut', 
+          type: 'housing',
+          description: 'Basic housing for your population',
+          cost: { wood: 20, stone: 10, food: 0, gold: 0 },
+          buildTime: 30
+        },
+        { 
+          id: 'market', 
+          name: 'Market', 
+          type: 'commercial',
+          description: 'Sells resources for money',
+          cost: { wood: 30, stone: 30, food: 15, gold: 0 },
+          buildTime: 60
+        },
+        { 
+          id: 'lumberjack', 
+          name: 'Lumberjack', 
+          type: 'resource',
+          description: 'Produces wood resources',
+          cost: { wood: 25, stone: 15, food: 0, gold: 0 },
+          buildTime: 45
+        },
+        { 
+          id: 'quarry', 
+          name: 'Quarry', 
+          type: 'resource',
+          description: 'Produces stone resources',
+          cost: { wood: 20, stone: 25, food: 0, gold: 0 },
+          buildTime: 45
+        },
+        { 
+          id: 'builder', 
+          name: 'Builder Workshop', 
+          type: 'science',
+          description: 'Allows construction of advanced buildings',
+          cost: { wood: 50, stone: 30, food: 20, gold: 0 },
+          buildTime: 120
+        }
+      ];
+      
+      // Create building sections
       let buildingsHTML = '';
       
-      Object.values(state.buildings).forEach((building: any) => {
-        buildingsHTML += `
-          <div class="building-item ${building.built ? 'completed' : 'constructing'}">
-            <div class="building-header">
-              <span class="building-name">${building.name}</span>
-              ${!building.built ? `<span class="building-progress">${building.constructionProgress.toFixed(0)}%</span>` : ''}
-            </div>
-            <div class="building-description">${building.description}</div>
-            ${!building.built ? `
-              <div class="progress-bar">
-                <div class="progress-fill" style="width: ${building.constructionProgress}%"></div>
-              </div>
-            ` : ''}
-          </div>
-        `;
+      // Housing section
+      buildingsHTML += '<div class="building-section"><h3>Housing</h3>';
+      buildingTypes.filter(b => b.type === 'housing').forEach(buildingType => {
+        const existingBuilding = existingBuildings.find((b: any) => b.id === buildingType.id);
+        buildingsHTML += this.createBuildingCard(buildingType, existingBuilding, state.resources);
       });
+      buildingsHTML += '</div>';
       
-      buildingsList.innerHTML = buildingsHTML || '<p>No buildings constructed yet.</p>';
+      // Resource section
+      buildingsHTML += '<div class="building-section"><h3>Resource Production</h3>';
+      buildingTypes.filter(b => b.type === 'resource').forEach(buildingType => {
+        const existingBuilding = existingBuildings.find((b: any) => b.id === buildingType.id);
+        buildingsHTML += this.createBuildingCard(buildingType, existingBuilding, state.resources);
+      });
+      buildingsHTML += '</div>';
+      
+      // Commercial section
+      buildingsHTML += '<div class="building-section"><h3>Commercial</h3>';
+      buildingTypes.filter(b => b.type === 'commercial').forEach(buildingType => {
+        const existingBuilding = existingBuildings.find((b: any) => b.id === buildingType.id);
+        buildingsHTML += this.createBuildingCard(buildingType, existingBuilding, state.resources);
+      });
+      buildingsHTML += '</div>';
+      
+      // Science section
+      buildingsHTML += '<div class="building-section"><h3>Science</h3>';
+      buildingTypes.filter(b => b.type === 'science').forEach(buildingType => {
+        const existingBuilding = existingBuildings.find((b: any) => b.id === buildingType.id);
+        buildingsHTML += this.createBuildingCard(buildingType, existingBuilding, state.resources);
+      });
+      buildingsHTML += '</div>';
+      
+      buildingsList.innerHTML = buildingsHTML;
+      
+      // Add event listeners to build buttons
+      this.setupBuildingButtons();
     }
+  }
+  
+  private createBuildingCard(buildingType: any, existingBuilding: any, resources: any): string {
+    const canAfford = resources.wood >= buildingType.cost.wood && 
+                      resources.stone >= buildingType.cost.stone && 
+                      resources.food >= buildingType.cost.food && 
+                      resources.gold >= buildingType.cost.gold;
+    
+    let cardHTML = `
+      <div class="building-card">
+        <div class="building-header">
+          <span class="building-name">${buildingType.name}</span>
+        </div>
+        <div class="building-description">${buildingType.description}</div>
+        <div class="building-cost">
+          Cost: ${buildingType.cost.wood > 0 ? `Wood: ${buildingType.cost.wood} ` : ''}
+                ${buildingType.cost.stone > 0 ? `Stone: ${buildingType.cost.stone} ` : ''}
+                ${buildingType.cost.food > 0 ? `Food: ${buildingType.cost.food} ` : ''}
+                ${buildingType.cost.gold > 0 ? `Gold: ${buildingType.cost.gold} ` : ''}
+        </div>
+    `;
+    
+    if (existingBuilding) {
+      if (existingBuilding.built) {
+        cardHTML += `<button class="build-button completed" disabled>Built</button>`;
+      } else {
+        const progressPercent = existingBuilding.constructionProgress;
+        cardHTML += `
+          <button class="build-button constructing" disabled style="position: relative;">
+            Building... ${progressPercent.toFixed(0)}%
+            <div class="progress-overlay" style="position: absolute; top: 0; left: 0; height: 100%; background: rgba(0, 122, 204, 0.3); width: ${progressPercent}%;"></div>
+          </button>
+        `;
+      }
+    } else {
+      cardHTML += `<button class="build-button" id="build-${buildingType.id}" ${!canAfford ? 'disabled' : ''}>Build</button>`;
+    }
+    
+    cardHTML += `</div>`;
+    return cardHTML;
   }
 
   private updateJobs(state: WorldState): void {
@@ -197,59 +319,29 @@ class GameUI {
   }
 
   private updateAvailableActions(_state: WorldState): void {
-    const actionsContainer = document.getElementById('available-buildings');
-    if (actionsContainer) {
-      actionsContainer.innerHTML = `
-        <div class="action-buttons">
-          <button id="build-hut" class="action-button">Build Hut (20 Wood, 10 Stone)</button>
-          <button id="build-market" class="action-button">Build Market (30 Wood, 30 Stone, 15 Food)</button>
-          <button id="build-lumberjack" class="action-button">Build Lumberjack (25 Wood, 15 Stone)</button>
-          <button id="build-quarry" class="action-button">Build Quarry (20 Wood, 25 Stone)</button>
-          <button id="build-builder" class="action-button">Build Builder Workshop (50 Wood, 30 Stone, 20 Food)</button>
-        </div>
-      `;
-      
-      // Add event listeners to buttons
-      this.setupActionButtons();
-    }
+    // Actions are now integrated into the buildings tab, so this is no longer needed
   }
 
-  private setupActionButtons(): void {
-    const buildHutBtn = document.getElementById('build-hut');
-    const buildMarketBtn = document.getElementById('build-market');
-    const buildLumberjackBtn = document.getElementById('build-lumberjack');
-    const buildQuarryBtn = document.getElementById('build-quarry');
-    const buildBuilderBtn = document.getElementById('build-builder');
-
-    if (buildHutBtn) {
-      buildHutBtn.addEventListener('click', () => {
-        this.engine.addBuilding('hut', { wood: 20, stone: 10, food: 0, gold: 0 });
+  private setupBuildingButtons(): void {
+    const buildingButtons = document.querySelectorAll('[id^="build-"]');
+    buildingButtons.forEach(button => {
+      const buildingId = button.id.replace('build-', '');
+      button.addEventListener('click', () => {
+        // Get the cost for this building type
+        const buildingCosts: Record<string, any> = {
+          'hut': { wood: 20, stone: 10, food: 0, gold: 0 },
+          'market': { wood: 30, stone: 30, food: 15, gold: 0 },
+          'lumberjack': { wood: 25, stone: 15, food: 0, gold: 0 },
+          'quarry': { wood: 20, stone: 25, food: 0, gold: 0 },
+          'builder': { wood: 50, stone: 30, food: 20, gold: 0 }
+        };
+        
+        const cost = buildingCosts[buildingId];
+        if (cost) {
+          this.engine.addBuilding(buildingId, cost);
+        }
       });
-    }
-
-    if (buildMarketBtn) {
-      buildMarketBtn.addEventListener('click', () => {
-        this.engine.addBuilding('market', { wood: 30, stone: 30, food: 15, gold: 0 });
-      });
-    }
-
-    if (buildLumberjackBtn) {
-      buildLumberjackBtn.addEventListener('click', () => {
-        this.engine.addBuilding('lumberjack', { wood: 25, stone: 15, food: 0, gold: 0 });
-      });
-    }
-
-    if (buildQuarryBtn) {
-      buildQuarryBtn.addEventListener('click', () => {
-        this.engine.addBuilding('quarry', { wood: 20, stone: 25, food: 0, gold: 0 });
-      });
-    }
-
-    if (buildBuilderBtn) {
-      buildBuilderBtn.addEventListener('click', () => {
-        this.engine.addBuilding('builder', { wood: 50, stone: 30, food: 20, gold: 0 });
-      });
-    }
+    });
   }
 }
 
