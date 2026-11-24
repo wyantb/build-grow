@@ -19,7 +19,7 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  tooltipDelay: DEFAULT_TOOLTIP_DELAY
+  tooltipDelay: DEFAULT_TOOLTIP_DELAY,
 };
 
 const clamp = (value: number): number => {
@@ -54,7 +54,7 @@ const readStoredSettings = (): Partial<Settings> => {
 
 const [settings, setSettings] = createSignal<Settings>({
   ...DEFAULT_SETTINGS,
-  ...readStoredSettings()
+  ...readStoredSettings(),
 });
 
 // The persistence effect lives at module scope, so it needs a root to own it.
@@ -70,7 +70,7 @@ createRoot(() => {
         // Storage can be unavailable (private mode, disabled cookies); the
         // setting still applies for this session.
       }
-    }
+    },
   );
 });
 
@@ -89,7 +89,7 @@ export const useSettings = () => {
     settings,
     tooltipDelay,
     setTooltipDelay,
-    resetSettings
+    resetSettings,
   };
 };
 

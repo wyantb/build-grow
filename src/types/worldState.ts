@@ -6,7 +6,7 @@ export const ResourceSchema = z.object({
   wood: z.number(),
   stone: z.number(),
   food: z.number(),
-  gold: z.number()
+  gold: z.number(),
 });
 
 export type Resource = z.infer<typeof ResourceSchema>;
@@ -20,7 +20,7 @@ export const JobSchema = z.object({
   capacity: z.number(), // 0 = uncapped
   canDefault: z.boolean(),
   production: ResourceSchema, // per tick
-  consumption: ResourceSchema // per tick (e.g. food per worker)
+  consumption: ResourceSchema, // per tick (e.g. food per worker)
 });
 
 export type Job = z.infer<typeof JobSchema>;
@@ -33,7 +33,7 @@ export const BuildingSchema = z.object({
   cost: ResourceSchema,
   buildTime: z.number(), // in ticks
   built: z.boolean(),
-  constructionProgress: z.number() // 0-100
+  constructionProgress: z.number(), // 0-100
 });
 
 export type Building = z.infer<typeof BuildingSchema>;
@@ -47,10 +47,10 @@ export const SpeciesSchema = z.object({
     strength: z.number(),
     intelligence: z.number(),
     agility: z.number(),
-    magic: z.number()
+    magic: z.number(),
   }),
   growthRate: z.number(),
-  resourceConsumption: z.number()
+  resourceConsumption: z.number(),
 });
 
 // Additional fantasy species
@@ -62,10 +62,10 @@ export const FantasySpeciesSchema = z.object({
     strength: z.number(),
     intelligence: z.number(),
     agility: z.number(),
-    magic: z.number()
+    magic: z.number(),
   }),
   growthRate: z.number(),
-  resourceConsumption: z.number()
+  resourceConsumption: z.number(),
 });
 
 export type FantasySpecies = z.infer<typeof FantasySpeciesSchema>;
@@ -85,7 +85,7 @@ export const WorldStateSchema = z.object({
   unlockedBuildings: z.array(z.string()),
   unlockedJobs: z.array(z.string()),
   gameTime: z.number(), // in seconds
-  defaultJob: z.string() // id of the job new workers go to
+  defaultJob: z.string(), // id of the job new workers go to
 });
 
 export type WorldState = z.infer<typeof WorldStateSchema>;
@@ -99,11 +99,11 @@ export const createInitialState = (): WorldState => {
       wood: 250,
       stone: 250,
       food: 500,
-      gold: 0
+      gold: 0,
     },
     population: 5,
     jobs: Object.fromEntries(
-      Object.entries(JOBS).map(([id, job]) => [id, { ...job, workers: 0 }])
+      Object.entries(JOBS).map(([id, job]) => [id, { ...job, workers: 0 }]),
     ),
     buildings: {},
     buildingCounts: {},
@@ -115,15 +115,15 @@ export const createInitialState = (): WorldState => {
         strength: 5,
         intelligence: 5,
         agility: 5,
-        magic: 2
+        magic: 2,
       },
       growthRate: 1.0,
-      resourceConsumption: 1.0
+      resourceConsumption: 1.0,
     },
     unlockedBuildings: ['hut', 'market', 'lumberjack', 'quarry', 'builder'],
     unlockedJobs: ['settler'],
     gameTime: 0,
-    defaultJob: 'unemployed'
+    defaultJob: 'unemployed',
   };
 
   // Put initial population in the default job

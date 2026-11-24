@@ -89,14 +89,14 @@ const Tooltip: Component<TooltipProps> = (props) => {
       top: 'bottom',
       bottom: 'top',
       left: 'right',
-      right: 'left'
+      right: 'left',
     };
 
     const fits: Record<TooltipPlacement, boolean> = {
       top: anchor.top - size.height - GAP >= EDGE_PADDING,
       bottom: anchor.bottom + size.height + GAP <= viewportHeight - EDGE_PADDING,
       left: anchor.left - size.width - GAP >= EDGE_PADDING,
-      right: anchor.right + size.width + GAP <= viewportWidth - EDGE_PADDING
+      right: anchor.right + size.width + GAP <= viewportWidth - EDGE_PADDING,
     };
 
     // Flip to the opposite side when the preferred side does not fit.

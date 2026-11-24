@@ -20,7 +20,7 @@ export const useGameState = () => {
     wood: 0,
     stone: 0,
     food: 0,
-    gold: 0
+    gold: 0,
   });
 
   // Set resource rates from external source (game engine)
@@ -182,7 +182,7 @@ export const useGameState = () => {
     gameEngine,
     mirrorEngineState,
     // Expose the raw state for debugging
-    rawState: state
+    rawState: state,
   };
 };
 

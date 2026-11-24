@@ -48,7 +48,7 @@ class MarketSystem {
       wood: { buy: 1, sell: 0.5 },
       stone: { buy: 1.2, sell: 0.6 },
       food: { buy: 0.8, sell: 0.4 },
-      gold: { buy: 1, sell: 1 } // Gold trades 1:1
+      gold: { buy: 1, sell: 1 }, // Gold trades 1:1
     };
   }
 

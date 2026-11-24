@@ -14,7 +14,7 @@ const MarketPanel: Component = () => {
       { resource: 'wood', price: 0.8, trend: 'up' },
       { resource: 'stone', price: 1.2, trend: 'down' },
       { resource: 'food', price: 0.5, trend: 'up' },
-      { resource: 'gold', price: 1.0, trend: 'down' }
+      { resource: 'gold', price: 1.0, trend: 'down' },
     ];
   };
 

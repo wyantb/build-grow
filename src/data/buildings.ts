@@ -21,7 +21,7 @@ export const BUILDING_TYPES: BuildingType[] = [
     cost: { wood: 20, stone: 10, food: 0, gold: 0 },
     buildTime: 30,
     effect: 'Provides housing for citizens.',
-    category: 'Residential Block'
+    category: 'Residential Block',
   },
   {
     id: 'market',
@@ -30,7 +30,7 @@ export const BUILDING_TYPES: BuildingType[] = [
     cost: { wood: 30, stone: 30, food: 15, gold: 0 },
     buildTime: 60,
     effect: 'Provides 1 merchant job and enables resource trading.',
-    category: 'Commercial District'
+    category: 'Commercial District',
   },
   {
     id: 'lumberjack',
@@ -39,7 +39,7 @@ export const BUILDING_TYPES: BuildingType[] = [
     cost: { wood: 25, stone: 15, food: 0, gold: 0 },
     buildTime: 45,
     effect: 'Provides work for lumberjacks and increases wood production.',
-    category: 'Industrial Park'
+    category: 'Industrial Park',
   },
   {
     id: 'quarry',
@@ -48,7 +48,7 @@ export const BUILDING_TYPES: BuildingType[] = [
     cost: { wood: 20, stone: 25, food: 0, gold: 0 },
     buildTime: 45,
     effect: 'Provides work for quarry workers and increases stone production.',
-    category: 'Industrial Park'
+    category: 'Industrial Park',
   },
   {
     id: 'builder',
@@ -57,8 +57,8 @@ export const BUILDING_TYPES: BuildingType[] = [
     cost: { wood: 50, stone: 30, food: 20, gold: 0 },
     buildTime: 120,
     effect: 'Allows construction of advanced buildings.',
-    category: 'Industrial Park'
-  }
+    category: 'Industrial Park',
+  },
 ];
 
 const buildingTypesById = new Map(BUILDING_TYPES.map((type) => [type.id, type]));
@@ -69,7 +69,7 @@ export const getBuildingType = (id: string): BuildingType | undefined => buildin
 export const BUILDING_CATEGORY_ORDER: BuildingCategory[] = [
   'Residential Block',
   'Commercial District',
-  'Industrial Park'
+  'Industrial Park',
 ];
 
 /** Cost multiplier per existing building of the same type. */
@@ -89,7 +89,7 @@ export function getScaledCost(cost: Resource, count: number): Resource {
     wood: Math.ceil(cost.wood * factor),
     stone: Math.ceil(cost.stone * factor),
     food: Math.ceil(cost.food * factor),
-    gold: Math.ceil(cost.gold * factor)
+    gold: Math.ceil(cost.gold * factor),
   };
 }
 

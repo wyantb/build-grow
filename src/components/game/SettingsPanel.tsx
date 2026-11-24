@@ -4,7 +4,7 @@ import {
   DEFAULT_TOOLTIP_DELAY,
   MAX_TOOLTIP_DELAY,
   MIN_TOOLTIP_DELAY,
-  useSettings
+  useSettings,
 } from '../../hooks/useSettings.js';
 
 const SettingsPanel: Component = () => {

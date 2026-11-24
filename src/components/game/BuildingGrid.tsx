@@ -5,7 +5,7 @@ import Tooltip from '../ui/Tooltip.js';
 import {
   BUILDING_CATEGORY_ORDER,
   getScaledCost,
-  getScaledBuildTime
+  getScaledBuildTime,
 } from '../../data/buildings.js';
 import type { BuildingType, BuildingCategory } from '../../data/buildings.js';
 import type { Resource } from '../../types/worldState.js';

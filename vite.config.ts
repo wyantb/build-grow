@@ -5,9 +5,9 @@ export default defineConfig({
   plugins: [solidPlugin()],
   build: {
     outDir: 'dist',
-    emptyOutDir: true
+    emptyOutDir: true,
   },
   server: {
-    port: 3000
-  }
+    port: 3000,
+  },
 });

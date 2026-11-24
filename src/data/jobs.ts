@@ -16,7 +16,7 @@ export const JOBS: Record<string, Omit<Job, 'workers'>> = {
     capacity: 0, // uncapped
     canDefault: true,
     production: { wood: 0, stone: 0, food: 0.025, gold: 0 },
-    consumption: DEFAULT_CONSUMPTION
+    consumption: DEFAULT_CONSUMPTION,
   },
   settler: {
     id: 'settler',
@@ -26,7 +26,7 @@ export const JOBS: Record<string, Omit<Job, 'workers'>> = {
     canDefault: true,
     // Per tick (5 ticks/sec): 0.5/5=0.1 wood, 0.2/5=0.04 stone, 0.1/5=0.02 food
     production: { wood: 0.1, stone: 0.04, food: 0.01, gold: 0 },
-    consumption: DEFAULT_CONSUMPTION
+    consumption: DEFAULT_CONSUMPTION,
   },
   lumberjack: {
     id: 'lumberjack',
@@ -36,7 +36,7 @@ export const JOBS: Record<string, Omit<Job, 'workers'>> = {
     canDefault: false,
     // 5 wood/s → 1.0/tick
     production: { wood: 1.0, stone: 0, food: 0, gold: 0 },
-    consumption: DEFAULT_CONSUMPTION
+    consumption: DEFAULT_CONSUMPTION,
   },
   quarrier: {
     id: 'quarrier',
@@ -46,7 +46,7 @@ export const JOBS: Record<string, Omit<Job, 'workers'>> = {
     canDefault: false,
     // 4 stone/s → 0.8/tick
     production: { wood: 0, stone: 0.8, food: 0, gold: 0 },
-    consumption: DEFAULT_CONSUMPTION
+    consumption: DEFAULT_CONSUMPTION,
   },
   merchant: {
     id: 'merchant',
@@ -55,8 +55,8 @@ export const JOBS: Record<string, Omit<Job, 'workers'>> = {
     capacity: 0, // set dynamically from buildings
     canDefault: false,
     production: ZERO,
-    consumption: DEFAULT_CONSUMPTION
-  }
+    consumption: DEFAULT_CONSUMPTION,
+  },
 };
 
 // Building type id → job id mapping.
@@ -64,7 +64,7 @@ export const JOBS: Record<string, Omit<Job, 'workers'>> = {
 export const BUILDING_JOB_MAP: Record<string, string> = {
   lumberjack: 'lumberjack',
   quarry: 'quarrier',
-  market: 'merchant'
+  market: 'merchant',
 };
 
 // Food consumed per population point per tick (0.05 food/s / 5 ticks = 0.01)

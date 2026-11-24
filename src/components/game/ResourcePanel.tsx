@@ -8,23 +8,23 @@ const RESOURCE_ROWS = [
   {
     key: 'wood',
     label: 'Wood',
-    description: 'Wood is the basic building material. Used for construction and upkeep.'
+    description: 'Wood is the basic building material. Used for construction and upkeep.',
   },
   {
     key: 'stone',
     label: 'Stone',
-    description: 'Stone is mined for sturdy buildings and fortifications.'
+    description: 'Stone is mined for sturdy buildings and fortifications.',
   },
   {
     key: 'food',
     label: 'Food',
-    description: 'Food keeps your population fed. A shortage stalls growth.'
+    description: 'Food keeps your population fed. A shortage stalls growth.',
   },
   {
     key: 'gold',
     label: 'Gold',
-    description: 'Gold pays for trade and unlocks the market.'
-  }
+    description: 'Gold pays for trade and unlocks the market.',
+  },
 ] as const;
 
 const ResourcePanel: Component = () => {
@@ -51,7 +51,7 @@ const ResourcePanel: Component = () => {
               <span class={{
                 'resource-rate': true,
                 'positive': rates()[row.key] >= 0,
-                'negative': rates()[row.key] < 0
+                'negative': rates()[row.key] < 0,
               }}>
                 {rates()[row.key] >= 0 ? '+' : ''}{formatNumber(rates()[row.key])}/s
               </span>

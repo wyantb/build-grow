@@ -22,6 +22,6 @@ export const useGameLoop = () => {
 
   return {
     gameEngine,
-    gameState
+    gameState,
   };
 };

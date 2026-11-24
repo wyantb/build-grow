@@ -42,7 +42,7 @@ export const useTheme = () => {
         // Storage can be unavailable (private mode, disabled cookies); the theme
         // still applies for this session.
       }
-    }
+    },
   );
 
   const toggleTheme = () => {

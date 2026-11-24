@@ -5,7 +5,7 @@ import vite from '@typpi/eslint-plugin-vite';
 
 export default tseslint.config(
   {
-    ignores: ['dist/**', 'node_modules/**', 'coverage/**']
+    ignores: ['dist/**', 'node_modules/**', 'coverage/**'],
   },
 
   js.configs.recommended,
@@ -16,12 +16,12 @@ export default tseslint.config(
     files: ['**/*.{ts,tsx}'],
     plugins: {
       solid,
-      vite
+      vite,
     },
     languageOptions: {
       parserOptions: {
-        ecmaFeatures: { jsx: true }
-      }
+        ecmaFeatures: { jsx: true },
+      },
     },
     rules: {
       ...solid.configs.recommended.rules,
@@ -50,8 +50,8 @@ export default tseslint.config(
       'solid/no-react-deps': 'error',
       'solid/no-react-specific-props': 'error',
       'solid/self-closing-comp': 'error',
-      'solid/style-prop': 'error'
-    }
+      'solid/style-prop': 'error',
+    },
   },
 
   {
@@ -65,16 +65,16 @@ export default tseslint.config(
         {
           argsIgnorePattern: '^_',
           varsIgnorePattern: '^_',
-          caughtErrorsIgnorePattern: '^_'
-        }
+          caughtErrorsIgnorePattern: '^_',
+        },
       ],
-      '@typescript-eslint/no-explicit-any': 'error'
-    }
+      '@typescript-eslint/no-explicit-any': 'error',
+    },
   },
 
   {
     files: ['**/*.{js,mjs,cjs}'],
-    ...tseslint.configs.disableTypeChecked
+    ...tseslint.configs.disableTypeChecked,
   },
 
   {
@@ -83,8 +83,8 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         ecmaVersion: 'latest',
-        sourceType: 'module'
-      }
+        sourceType: 'module',
+      },
     },
     rules: {
       // Semicolons required.
@@ -106,7 +106,7 @@ export default tseslint.config(
       quotes: ['error', 'single', { avoidEscape: true, allowTemplateLiterals: true }],
 
       // Commas.
-      'comma-dangle': ['error', 'never'],
+      'comma-dangle': ['error', 'always-multiline'],
       'comma-style': ['error', 'last'],
 
       // Control statements: single-line bodies are allowed, multi-line bodies
@@ -129,14 +129,14 @@ export default tseslint.config(
         {
           SwitchCase: 1,
           VariableDeclarator: 1,
-          ignoredNodes: ['TemplateLiteral *', 'JSXElement *', 'JSXElement > *']
-        }
+          ignoredNodes: ['TemplateLiteral *', 'JSXElement *', 'JSXElement > *'],
+        },
       ],
 
       // Padding and blank lines.
       'padding-line-between-statements': [
         'error',
-        { blankLine: 'always', prev: '*', next: 'return' }
+        { blankLine: 'always', prev: '*', next: 'return' },
       ],
       'no-multiple-empty-lines': ['error', { max: 1, maxBOF: 0, maxEOF: 0 }],
 
@@ -149,16 +149,16 @@ export default tseslint.config(
       // No leftover debugging. `console.info` is allowed for intentional
       // game-event logging; `console.log` is not.
       'no-console': ['error', { allow: ['info', 'warn', 'error'] }],
-      'no-debugger': 'error'
-    }
+      'no-debugger': 'error',
+    },
   },
 
   {
     // The Vite config is a Node file, not browser code.
     files: ['vite.config.ts'],
     rules: {
-      'no-console': 'off'
-    }
+      'no-console': 'off',
+    },
   },
   {
     // Build scripts run in Node, so they get the Node globals.
@@ -166,11 +166,11 @@ export default tseslint.config(
     languageOptions: {
       globals: {
         console: 'readonly',
-        process: 'readonly'
-      }
+        process: 'readonly',
+      },
     },
     rules: {
-      'no-console': 'off'
-    }
-  }
+      'no-console': 'off',
+    },
+  },
 );

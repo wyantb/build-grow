@@ -41,7 +41,7 @@ class GameEngine {
       if (!Number.isNaN(idx)) {
         this.buildingInstanceCounter[buildingTypeId] = Math.max(
           this.buildingInstanceCounter[buildingTypeId] ?? 0,
-          idx + 1
+          idx + 1,
         );
       }
     }
@@ -195,7 +195,7 @@ class GameEngine {
       cost: buildingCost,
       buildTime,
       built: false,
-      constructionProgress: 0
+      constructionProgress: 0,
     };
 
     this.notify();
@@ -292,7 +292,7 @@ class GameEngine {
       wood: (this.state.resources.wood - this.previousResources.wood) * ticksPerSecond,
       stone: (this.state.resources.stone - this.previousResources.stone) * ticksPerSecond,
       food: (this.state.resources.food - this.previousResources.food) * ticksPerSecond,
-      gold: (this.state.resources.gold - this.previousResources.gold) * ticksPerSecond
+      gold: (this.state.resources.gold - this.previousResources.gold) * ticksPerSecond,
     };
   }
 
