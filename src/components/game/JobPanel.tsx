@@ -94,7 +94,7 @@ const JobPanel: Component = () => {
                   {'\u2039'}
                 </button>
               </Tooltip>
-              {job().canDefault && !isDefaultJob(job().id) && (
+              {job().canDefault && !isDefaultJob(job().id) ? (
                 <Tooltip content="Set as default job" placement="top">
                   <button
                     class="job-btn job-btn-default"
@@ -103,6 +103,10 @@ const JobPanel: Component = () => {
                     D
                   </button>
                 </Tooltip>
+              ) : (
+                <div class="job-btn job-btn-default" aria-hidden="true">
+                  {'\u00A0'}
+                </div>
               )}
               <Tooltip content={addWorkersTooltip(job().id, 1)} placement="top">
                 <button
