@@ -60,6 +60,25 @@ src/
 - Verify Solid reactivity **in the browser**. Node resolves `solid-js` to its *server*
   build, where `createEffect` never runs and reactivity tests give false negatives.
 
+### Solid 2 (target: `solid-js@2.0.3`)
+Solid 2 is GA and the current `latest` tag. See `SOLID2_MIGRATION.md` for the full plan.
+Key differences from Solid 1 that affect this codebase:
+- `solid-js/store` no longer exists as an export path: `createStore` comes from `solid-js`.
+- The store setter takes a single draft callback instead of a path:
+  `setState((state) => { state.resources.wood = 12 })` replaces
+  `setState('resources', 'wood', 12)`. The `SetStoreFunction` type was removed outright.
+- JSX types and `render` come from `@solidjs/web`, so `tsconfig.json` sets
+  `"jsxImportSource": "@solidjs/web"`. The Vite plugin is `@solidjs/vite-plugin`.
+- `classList` is gone; use `class={{ 'name': boolean }}` instead.
+- `<For>` with `keyed={(item) => key}` passes the child an **Accessor**: read `item().id`.
+- Solid 2's dev build reports `UNSTABLE_LIST_IDENTITY` when a `<For>` rebuilds rows that
+  are equivalent to the ones they replace. Keep list inputs stable (iterate ids or
+  catalog entries) and read live records inside the row, instead of copying them into
+  the list on every tick.
+- Packages pinned to Solid 1 peers (`vite-plugin-solid`, `solid-app-router`,
+  `lucide-solid`, `solid-refresh`) must be dropped. `solid-app-router`'s Solid 2
+  successor is `@solidjs/router`.
+
 
 ## Development Workflow
 
