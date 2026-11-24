@@ -1,40 +1,40 @@
-import { For, createMemo } from 'solid-js';
+import { For, createMemo, Show } from 'solid-js';
 import type { Component } from 'solid-js';
 import { getGameState } from '../../hooks/useGameState.js';
-import { formatNumber } from '../../utils/formatNumber.js';
 import Tooltip from '../ui/Tooltip.js';
+import {
+  BUILDING_CATEGORY_ORDER,
+  getScaledCost,
+  getScaledBuildTime
+} from '../../data/buildings.js';
+import type { BuildingType, BuildingCategory } from '../../data/buildings.js';
 import type { Resource } from '../../types/worldState.js';
-import type { BuildingType } from '../../data/buildings.js';
 
 const BuildingGrid: Component = () => {
   const gameState = getGameState();
 
-  // The unlocked catalog is stable, so the list keeps its identity across
-  // ticks. Construction state is read reactively inside the row instead of
-  // being copied into the list, which would rebuild every row each tick.
-  const buildings = createMemo(() => gameState.getBuildingCatalog());
+  // Group buildings by category
+  const buildingsByCategory = createMemo(() => {
+    const catalog = gameState.getBuildingCatalog();
+    const groups: Map<BuildingCategory, BuildingType[]> = new Map();
 
-  // Format cost for display
-  const formatCost = (cost: Resource): string => {
-    const costs = [];
-    if (cost.wood > 0) {costs.push(`${formatNumber(cost.wood)} Wood`);}
-    if (cost.stone > 0) {costs.push(`${formatNumber(cost.stone)} Stone`);}
-    if (cost.food > 0) {costs.push(`${formatNumber(cost.food)} Food`);}
-    if (cost.gold > 0) {costs.push(`${formatNumber(cost.gold)} Gold`);}
+    for (const category of BUILDING_CATEGORY_ORDER) {
+      const buildings = catalog.filter((b) => b.category === category);
+      if (buildings.length > 0) {
+        groups.set(category, buildings);
+      }
+    }
 
-    return costs.join(', ');
-  };
+    return groups;
+  });
 
-  // Check if player can afford a building
-  const canAffordBuilding = (building: BuildingType): boolean => {
+  const canAfford = (cost: Resource): boolean => {
     const resources = gameState.getResources();
 
-    return (
-      resources.wood >= building.cost.wood
-      && resources.stone >= building.cost.stone
-      && resources.food >= building.cost.food
-      && resources.gold >= building.cost.gold
-    );
+    return resources.wood >= cost.wood
+      && resources.stone >= cost.stone
+      && resources.food >= cost.food
+      && resources.gold >= cost.gold;
   };
 
   // Build a building
@@ -44,54 +44,77 @@ const BuildingGrid: Component = () => {
 
   return (
     <div class="building-grid">
-      <For each={buildings()} keyed={(type) => type.id}>
-        {(type) => {
-          const construction = () => gameState.getBuildings()[type().id];
+      <For each={BUILDING_CATEGORY_ORDER}>
+        {(category) => {
+          const group = buildingsByCategory().get(category);
 
           return (
-            <div class={`building-card ${construction()?.built ? 'built' : 'unbuilt'}`}>
-              <Tooltip
-                content={
-                  <>
-                    <span class="tooltip-title">{type().name}</span>
-                    <span class="tooltip-detail">{type().effect}</span>
-                  </>
-                }
-                placement="top"
-              >
-                <h3>{type().name}</h3>
-              </Tooltip>
-              <p>{type().description}</p>
-              <div class="building-cost">
-                Cost: {formatCost(type().cost)}
-              </div>
-              <div class="building-time">
-                Time: {type().buildTime}s
-              </div>
-              {construction() && !construction()?.built && (
-                <div class="construction-progress">
-                  Progress: {construction()?.constructionProgress}%
+            <Show when={group && group.length > 0}>
+              <div class="building-category">
+                <h3 class="category-heading">{category}</h3>
+                <div class="building-list">
+                  <For each={group!} keyed={(type) => type.id}>
+                    {(type) => {
+                      const count = () => gameState.getBuildingCounts()[type().id] ?? 0;
+                      const scaledCost = () => getScaledCost(type().cost, count());
+                      const scaledTime = () => getScaledBuildTime(type().buildTime, count());
+                      const affordable = () => canAfford(scaledCost());
+
+                      return (
+                        <Tooltip
+                          content={
+                            <div class="tooltip-building">
+                              <div class="tooltip-description">{type().description}</div>
+                              <div class="tooltip-divider" />
+                              <div class="tooltip-costs">
+                                <Show when={scaledCost().wood > 0}>
+                                  <span class={`cost ${!affordable() && scaledCost().wood > gameState.getResources().wood ? 'cost-unaffordable' : ''}`}>
+                                    {scaledCost().wood} wood
+                                  </span>
+                                </Show>
+                                <Show when={scaledCost().stone > 0}>
+                                  <span class={`cost ${!affordable() && scaledCost().stone > gameState.getResources().stone ? 'cost-unaffordable' : ''}`}>
+                                    {scaledCost().stone} stone
+                                  </span>
+                                </Show>
+                                <Show when={scaledCost().food > 0}>
+                                  <span class={`cost ${!affordable() && scaledCost().food > gameState.getResources().food ? 'cost-unaffordable' : ''}`}>
+                                    {scaledCost().food} food
+                                  </span>
+                                </Show>
+
+                                <Show when={scaledCost().gold > 0}>
+                                  <span class={`cost ${!affordable() && scaledCost().gold > gameState.getResources().gold ? 'cost-unaffordable' : ''}`}>
+                                    {scaledCost().gold}g
+                                  </span>
+                                </Show>
+                              </div>
+                              <div class="tooltip-divider" />
+                              <div class="tooltip-effects">{type().effect}</div>
+                              <div class="tooltip-divider" />
+                              <div class="tooltip-build-time">Build time: {scaledTime()}s</div>
+                            </div>
+                          }
+                          placement="top"
+                        >
+
+                          <button
+                            class={`building-btn ${!affordable() ? 'building-btn-unaffordable' : ''}`}
+                            disabled={!affordable()}
+                            onClick={() => buildBuilding(type().id)}
+                          >
+                            <span class="building-name">{type().name}</span>
+                            <Show when={count() > 0}>
+                              <span class="building-count">{count()}</span>
+                            </Show>
+                          </button>
+                        </Tooltip>
+                      );
+                    }}
+                  </For>
                 </div>
-              )}
-              <Tooltip
-                content={
-                  construction()?.built
-                    ? 'This building is complete.'
-                    : canAffordBuilding(type())
-                      ? 'Click to start construction.'
-                      : 'Not enough resources yet.'
-                }
-                placement="top"
-              >
-                <button
-                  class="build-button"
-                  disabled={construction()?.built || !canAffordBuilding(type())}
-                  onClick={() => buildBuilding(type().id)}
-                >
-                  {construction()?.built ? 'Built' : 'Build'}
-                </button>
-              </Tooltip>
-            </div>
+              </div>
+            </Show>
           );
         }}
       </For>

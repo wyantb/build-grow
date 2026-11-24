@@ -48,19 +48,6 @@ src/
 - Components should be modular and reusable
 - State management through GameEngine events
 
-### Known gap: styles were not carried over from the vanilla-UI era
-The Solid refactor rewrote every component, but `src/styles/main.css` was never
-updated to match. The stylesheet still targets the old markup:
-- Components render `.building-card`, `.job-card`, `.market-panel`,
-  `.construction-progress`, `.worker-button`, ... but **none of those selectors
-  exist in the CSS**, so cards render as unstyled text.
-- Conversely the CSS still defines the old `.building-item`, `.job-row`,
-  `.resource-item`, `.rate-item` ... which no component emits.
-- `AGENTS.md` requires a mobile layout where Resources also becomes a tab, but
-  the `.mobile-tabs` CSS exists with **no matching markup** in `App.tsx`.
-
-Restoring the visual design is a separate, dedicated project.
-
 ### SolidJS / TypeScript Conventions
 - `verbatimModuleSyntax` is on: type-only imports must use `import type`, otherwise they
   survive into the bundle and break at runtime (e.g. `SetStoreFunction`, `Component`).

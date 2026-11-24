@@ -76,6 +76,7 @@ export const WorldStateSchema = z.object({
   population: z.number(),
   jobs: z.record(z.string(), JobSchema),
   buildings: z.record(z.string(), BuildingSchema),
+  buildingCounts: z.record(z.string(), z.number()), // built count per building type
   species: SpeciesSchema,
   unlockedBuildings: z.array(z.string()),
   unlockedJobs: z.array(z.string()),
@@ -105,6 +106,7 @@ export const createInitialState = (): WorldState => ({
     }
   },
   buildings: {},
+  buildingCounts: {},
   species: {
     id: 'human',
     name: 'Human',

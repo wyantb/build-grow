@@ -1,6 +1,6 @@
 import { createInitialState } from '../types/worldState.js';
 import type { WorldState, Resource } from '../types/worldState.js';
-import { getBuildingType } from '../data/buildings.js';
+import { getBuildingType, getScaledCost, getScaledBuildTime } from '../data/buildings.js';
 import MarketSystem from './marketSystem.js';
 
 class GameEngine {
@@ -91,7 +91,7 @@ class GameEngine {
 
   // Process building construction
   private processBuildingConstruction(): void {
-    Object.values(this.state.buildings).forEach((building) => {
+    for (const [buildingId, building] of Object.entries(this.state.buildings)) {
       if (!building.built && building.constructionProgress < 100) {
         // Buildings take time to construct
         building.constructionProgress += 10; // 10% per tick for quick testing
@@ -100,11 +100,15 @@ class GameEngine {
           building.constructionProgress = 100;
           building.built = true;
 
+          // Increment count for this building type
+          this.state.buildingCounts[buildingId]
+            = (this.state.buildingCounts[buildingId] ?? 0) + 1;
+
           // Apply building effects when completed
-          this.applyBuildingEffects(building.id);
+          this.applyBuildingEffects(buildingId);
         }
       }
-    });
+    }
   }
 
   // Apply building effects when completed
@@ -136,7 +140,11 @@ class GameEngine {
       return false; // Unknown building type
     }
 
-    const buildingCost = cost ?? buildingType.cost;
+    const count = this.state.buildingCounts[buildingId] ?? 0;
+
+    // Use provided cost or calculate scaled cost
+    const buildingCost = cost ?? getScaledCost(buildingType.cost, count);
+    const buildTime = getScaledBuildTime(buildingType.buildTime, count);
 
     // Check if player has enough resources
     if (this.state.resources.wood < buildingCost.wood
@@ -158,7 +166,7 @@ class GameEngine {
       name: buildingType.name,
       description: buildingType.description,
       cost: buildingCost,
-      buildTime: buildingType.buildTime,
+      buildTime,
       built: false,
       constructionProgress: 0
     };

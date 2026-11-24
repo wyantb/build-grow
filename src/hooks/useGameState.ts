@@ -67,6 +67,11 @@ export const useGameState = () => {
           state.buildings[buildingId] = { ...building };
         }
       }
+
+      // Mirror building counts
+      for (const [id, count] of Object.entries(engineState.buildingCounts)) {
+        state.buildingCounts[id] = count;
+      }
     });
   };
 
@@ -167,6 +172,7 @@ export const useGameState = () => {
   const getJobs = () => state.jobs;
   const getBuildings = () => state.buildings;
   const getGameTime = () => state.gameTime;
+  const getBuildingCounts = () => state.buildingCounts;
 
   // Building catalog for the unlocked building types
   const getBuildingCatalog = (): BuildingType[] =>
@@ -181,6 +187,7 @@ export const useGameState = () => {
     getJobs,
     getBuildings,
     getGameTime,
+    getBuildingCounts,
     getResourceRates,
     setResourceRates: setResourceRatesExternal,
     getBuildingCatalog,
