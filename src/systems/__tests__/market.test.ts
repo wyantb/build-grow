@@ -108,6 +108,36 @@ describe('Market allocation', () => {
     expect(engine.getFreeMarketTrades('sell')).toBe(0);
   });
 
+  it('raises an order by a step of five', () => {
+    const engine = new GameEngine(marketWorld({
+      workers: { merchant: 5 },
+    }));
+
+    expect(engine.setMarketAllocation('sell', 'wood', 5)).toBe(true);
+    expect(engine.getMarketOrders().sells['wood']).toBe(5);
+    expect(engine.getFreeMarketTrades('sell')).toBe(0);
+  });
+
+  it('raises an order by a step of one on top of a larger order', () => {
+    const engine = new GameEngine(marketWorld({
+      workers: { merchant: 6 },
+    }));
+
+    expect(engine.setMarketAllocation('sell', 'wood', 5)).toBe(true);
+    expect(engine.setMarketAllocation('sell', 'wood', 6)).toBe(true);
+    expect(engine.getMarketOrders().sells['wood']).toBe(6);
+  });
+
+  it('refuses a step of five when fewer trades are free', () => {
+    const engine = new GameEngine(marketWorld({
+      workers: { merchant: 4 },
+    }));
+
+    expect(engine.setMarketAllocation('sell', 'wood', 5)).toBe(false);
+    expect(engine.getMarketOrders().sells['wood']).toBeUndefined();
+    expect(engine.getFreeMarketTrades('sell')).toBe(4);
+  });
+
   it('releases an order when the quantity drops to zero', () => {
     const engine = new GameEngine(marketWorld({
       workers: { merchant: 2 },
@@ -173,6 +203,93 @@ describe('Market allocation', () => {
     // Stone is the bottom-most resource among the remaining tradables.
     expect(engine.getMarketOrders().buys['stone']).toBeUndefined();
     expect(engine.getMarketOrders().buys['wood']).toBe(1);
+  });
+});
+
+describe('Market order direction', () => {
+  it('cancels the sale when the same resource is bought', () => {
+    const engine = new GameEngine(marketWorld({
+      workers: { merchant: 2 },
+    }));
+    engine.setMarketAllocation('sell', 'wood', 1);
+
+    expect(engine.setMarketAllocation('buy', 'wood', 1)).toBe(true);
+
+    // A resource is bought or sold per tick, never both.
+    expect(engine.getMarketOrders().buys['wood']).toBe(1);
+    expect(engine.getMarketOrders().sells['wood']).toBeUndefined();
+  });
+
+  it('cancels the buy when the same resource is sold', () => {
+    const engine = new GameEngine(marketWorld({
+      workers: { merchant: 2 },
+    }));
+    engine.setMarketAllocation('buy', 'wood', 1);
+
+    expect(engine.setMarketAllocation('sell', 'wood', 1)).toBe(true);
+
+    expect(engine.getMarketOrders().sells['wood']).toBe(1);
+    expect(engine.getMarketOrders().buys['wood']).toBeUndefined();
+  });
+
+  it('frees the trade the cancelled order held', () => {
+    const engine = new GameEngine(marketWorld());
+    engine.setMarketAllocation('sell', 'wood', 1);
+    expect(engine.getFreeMarketTrades('sell')).toBe(0);
+
+    engine.setMarketAllocation('buy', 'wood', 1);
+
+    // The sale gave up its trade, so the merchant can sell again.
+    expect(engine.getFreeMarketTrades('sell')).toBe(1);
+    expect(engine.getFreeMarketTrades('buy')).toBe(0);
+  });
+
+  it('frees every trade a cancelled multi-unit order held', () => {
+    const engine = new GameEngine(marketWorld({
+      workers: { merchant: 3 },
+    }));
+    engine.setMarketAllocation('sell', 'wood', 3);
+    expect(engine.getFreeMarketTrades('sell')).toBe(0);
+
+    engine.setMarketAllocation('buy', 'wood', 1);
+
+    // The whole sale gave up its three trades.
+    expect(engine.getFreeMarketTrades('sell')).toBe(3);
+    expect(engine.getMarketOrders().sells['wood']).toBeUndefined();
+    expect(engine.getMarketOrders().buys['wood']).toBe(1);
+  });
+
+  it('leaves the orders for other resources alone', () => {
+    const engine = new GameEngine(marketWorld({
+      workers: { merchant: 3 },
+    }));
+    engine.setMarketAllocation('sell', 'wood', 1);
+    engine.setMarketAllocation('sell', 'stone', 1);
+
+    engine.setMarketAllocation('buy', 'wood', 1);
+
+    expect(engine.getMarketOrders().sells['stone']).toBe(1);
+    expect(engine.getMarketOrders().sells['wood']).toBeUndefined();
+  });
+
+  it('clears the buy and the sell order for a resource', () => {
+    const engine = new GameEngine(marketWorld({
+      workers: { merchant: 2 },
+    }));
+    engine.setMarketAllocation('buy', 'wood', 1);
+    engine.setMarketAllocation('sell', 'stone', 1);
+
+    expect(engine.clearMarketAllocation('wood')).toBe(true);
+
+    expect(engine.getMarketOrders().buys['wood']).toBeUndefined();
+    expect(engine.getMarketOrders().sells['stone']).toBe(1);
+    expect(engine.getFreeMarketTrades('buy')).toBe(2);
+  });
+
+  it('rejects clearing a resource that cannot be traded', () => {
+    const engine = new GameEngine(marketWorld());
+
+    expect(engine.clearMarketAllocation('gold' as never)).toBe(false);
   });
 });
 

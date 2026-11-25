@@ -180,6 +180,26 @@ export const useGameState = () => {
   };
 
   const getMarketOrders = () => state.market;
+
+  /**
+   * Release the buy and the sell order for `resource`.
+   *
+   * The resource stops being traded and the trades both orders held are
+   * freed.
+   */
+  const clearMarketAllocation = (resource: MarketResource): boolean => {
+    const cleared = gameEngine.clearMarketAllocation(resource);
+    if (!cleared) {
+      console.error(`Could not clear the market orders for ${resource}`);
+
+      return false;
+    }
+
+    mirrorEngineState();
+
+    return true;
+  };
+
   const isMarketBuilt = () => (state.buildingCounts['market'] ?? 0) > 0;
 
   /**
@@ -256,6 +276,7 @@ export const useGameState = () => {
     getMarketOrders,
     isMarketBuilt,
     setMarketAllocation,
+    clearMarketAllocation,
     getMerchantCount,
     getFreeMarketTrades,
     getMarketTickRates,

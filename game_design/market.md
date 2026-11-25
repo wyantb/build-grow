@@ -52,6 +52,10 @@ outside of allocating orders.
   uses that merchant's only buy trade. Raising it to 2 wood needs a second
   merchant.
 - **Setting a quantity to zero releases the order** and frees its trades.
+- **A resource is bought or sold per tick, never both.** Placing an order in
+  one direction releases the order for the same resource in the other
+  direction. Buying 1 wood while selling 1 wood leaves a single buy order for
+  wood; the sale is cancelled. The trade the cancelled order held is freed.
 - **Removing a merchant removes its trades.** Sales are trimmed first, then
   buys. Within a direction the trade comes off the bottom-most resource that
   holds one:
@@ -92,15 +96,29 @@ jobs panels:
 |--------|---------|
 | Name | The resource name |
 | Current Buy Price | The buy price in gold, e.g. `0.75g` |
-| Actions | The buy and sell allocation controls |
+| Sell / Buy Count | The sell and buy allocation controls |
 
 - There is **no trend column**, no "your amount" column, and no gold row.
-- The Actions column holds the allocation controls for that resource: a buy
-  order and a sell order, each shown as the per-tick quantity with buttons
-  to raise and lower it. These are allocation controls, not one-off trades:
-  the quantity keeps being traded every tick until it is changed. Raising a
-  quantity consumes a trade, so the button is disabled when the merchants
-  have none left.
+- The Sell / Buy Count column holds the allocation controls for that
+  resource. Reading left to right, the row shows:
+
+  | Control | Effect |
+  |---------|--------|
+  | `--` | Increase the sell count by 5 |
+  | `-` | Increase the sell count by 1 |
+  | sell count | The number of units sold per tick |
+  | `0` | Set the buy and the sell count to 0 |
+  | buy count | The number of units bought per tick |
+  | `+` | Increase the buy count by 1 |
+  | `++` | Increase the buy count by 5 |
+
+- These are allocation controls, not one-off trades: the quantity keeps being
+  traded every tick until it is changed. Raising a quantity consumes a trade,
+  so the button is disabled when the merchants do not have enough free
+  trades for the whole step.
+- The `0` button is disabled when there is nothing to clear.
+- Because a resource is bought or sold, never both, raising the buy count
+  cancels the sell count for that resource and the other way round.
 
 ## Rates
 

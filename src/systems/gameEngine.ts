@@ -349,6 +349,22 @@ class GameEngine {
     return this.marketSystem.getFreeTrades(action);
   }
 
+  /**
+   * Release the buy and the sell order for `resource`.
+   *
+   * The resource stops being traded and the trades both orders held are
+   * freed.
+   */
+  clearMarketAllocation(resource: MarketResource): boolean {
+    const cleared = this.marketSystem.clearAllocations(resource);
+
+    if (cleared) {
+      this.notify();
+    }
+
+    return cleared;
+  }
+
   /** The price the player pays to buy one unit of `resource`. */
   getBuyPrice(resource: MarketResource): number {
     return this.marketSystem.getBuyPrice(resource);

@@ -118,6 +118,9 @@ class MarketSystem {
    * opening a new one does. When no trade is available the allocation is
    * refused rather than silently trimmed, so the UI can tell the player why
    * nothing happened.
+   *
+   * A resource is bought or sold per tick, never both, so an allocation in
+   * one direction releases the order in the other.
    */
   setAllocation(action: MarketAction, resource: MarketResource, count: number): boolean {
     if (!MARKET_RESOURCES.includes(resource)) {return false;}
@@ -125,7 +128,6 @@ class MarketSystem {
 
     const allocations = this.state.market[ALLOCATION_KEY[action]];
     const current = allocations[resource] ?? 0;
-    if (count === current) {return true;}
 
     // Releasing an order always frees its trades.
     if (count === 0) {
@@ -140,7 +142,36 @@ class MarketSystem {
 
     allocations[resource] = count;
 
+    this.releaseOppositeAllocation(action, resource);
+
     return true;
+  }
+
+  /**
+   * Release the buy and the sell order for `resource`.
+   *
+   * The resource stops being traded and the trades both orders held are
+   * freed.
+   */
+  clearAllocations(resource: MarketResource): boolean {
+    if (!MARKET_RESOURCES.includes(resource)) {return false;}
+
+    delete this.state.market.buys[resource];
+    delete this.state.market.sells[resource];
+
+    return true;
+  }
+
+  /**
+   * Release the order that runs in the opposite direction for `resource`.
+   *
+   * A resource is either bought or sold per tick, never both, so an order in
+   * one direction gives up the order in the other.
+   */
+  private releaseOppositeAllocation(action: MarketAction, resource: MarketResource): void {
+    const oppositeKey = action === 'buy' ? 'sells' : 'buys';
+
+    delete this.state.market[oppositeKey][resource];
   }
 
   /**

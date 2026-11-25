@@ -797,12 +797,12 @@ body.light-mode .market-count {
   background-color: #444;
   color: white;
   border: 1px solid #555;
-  padding: 3px 8px;
+  padding: 3px 6px;
   border-radius: 3px;
   cursor: pointer;
   font-weight: bold;
   font-size: 0.85rem;
-  min-width: 40px;
+  min-width: 28px;
 }
 
 body.light-mode .market-btn {
@@ -824,8 +824,47 @@ body.light-mode .market-btn:hover:not(:disabled) {
   cursor: not-allowed;
 }
 
-.market-btn-minus {
-  min-width: 24px;
+/* Market step buttons. Selling and buying sit on either side of the zero
+   button, so the row reads as one control strip. */
+.market-btn-sell {
+  color: #ffb3b3;
+}
+
+body.light-mode .market-btn-sell {
+  color: #b00000;
+}
+
+.market-btn-buy {
+  color: #b3e6ff;
+}
+
+body.light-mode .market-btn-buy {
+  color: #0066a1;
+}
+
+.market-btn-clear {
+  color: #ffd700;
+  min-width: 28px;
+}
+
+body.light-mode .market-btn-clear {
+  color: #b8860b;
+}
+
+.market-count-sell {
+  color: #ffb3b3;
+}
+
+body.light-mode .market-count-sell {
+  color: #b00000;
+}
+
+.market-count-buy {
+  color: #b3e6ff;
+}
+
+body.light-mode .market-count-buy {
+  color: #0066a1;
 }
 
 .market-note {
