@@ -113,11 +113,41 @@ const MarketPanel: Component = () => {
   /**
    * True when a step adjustment can be applied to `resource`.
    *
-   * We can always adjust as long as we have merchants, because we're just
-   * changing a number on a scale - the engine handles capacity internally.
+   * Checks if we have enough merchant capacity to make the adjustment.
+   * Buttons are enabled/disabled based on available merchant capacity:
+   * - 1 sell, no merchants available: sell side is all disabled, 0 and buy side is enabled
+   * - 2 buy, 3 merchants available: all trade buttons everywhere available
+   * - 0 buy/sell, 1 merchant available: both sell and buy sides enabled
+   * - 0 buy/sell, 0 merchants available: both sell and buy sides disabled
    */
-  const canAdjust = (_resource: MarketResource, _step: number): boolean => {
-    return merchants() > 0;
+  const canAdjust = (resource: MarketResource, step: number): boolean => {
+    if (merchants() <= 0) {
+      return false;
+    }
+
+    const currentBuy = buyCount(resource);
+    const currentSell = sellCount(resource);
+
+    // Calculate what the new net position would be
+    const netPosition = currentBuy - currentSell;
+    const newNetPosition = netPosition + step;
+
+    // Calculate how many trades we'd need for the new position
+    const tradesNeeded = Math.abs(newNetPosition);
+
+    // Calculate current total trades being used
+    const currentTrades = currentBuy + currentSell;
+
+    // If we're reducing trades or keeping the same number, we can always do it
+    if (tradesNeeded <= currentTrades) {
+      return true;
+    }
+
+    // We're increasing trades, check if we have enough capacity
+    const freeTrades = gameState.getFreeMarketTrades('buy'); // buy and sell capacity are the same
+    const additionalTradesNeeded = tradesNeeded - currentTrades;
+
+    return freeTrades >= additionalTradesNeeded;
   };
 
   return (
