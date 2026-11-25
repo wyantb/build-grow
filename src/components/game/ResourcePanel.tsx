@@ -1,7 +1,7 @@
 import { createMemo, For } from 'solid-js';
 import type { Component } from 'solid-js';
 import { getGameState } from '../../hooks/useGameState.js';
-import { formatNumber } from '../../utils/formatNumber.js';
+import { formatExact, formatNumber } from '../../utils/formatNumber.js';
 import Tooltip from '../ui/Tooltip.js';
 
 const RESOURCE_ROWS = [
@@ -46,7 +46,11 @@ const ResourcePanel: Component = () => {
             <Tooltip content={row.description} placement="right">
               <span class="resource-name">{row.label}</span>
             </Tooltip>
-            <span class="resource-amount">{formatNumber(gameState.getResources()[row.key])}</span>
+            <Tooltip content={formatExact(gameState.getResources()[row.key])} placement="right">
+              <span class="resource-amount" tabindex="0">
+                {formatNumber(gameState.getResources()[row.key])}
+              </span>
+            </Tooltip>
             <Tooltip content={`Changes by ${formatNumber(rates()[row.key])} per second.`} placement="right">
               <span class={{
                 'resource-rate': true,

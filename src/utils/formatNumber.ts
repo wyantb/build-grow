@@ -49,3 +49,37 @@ export const formatScientific = (num: number): string => {
   // Always use scientific notation for consistency
   return isNegative ? '-' + absNum.toExponential(2) : absNum.toExponential(2);
 };
+
+// The exact formatters, one per locale. Building a formatter resolves the
+// locale and costs far more than formatting with it, so they are cached.
+const exactFormatters = new Map<string | undefined, Intl.NumberFormat>();
+
+const getExactFormatter = (locale?: string): Intl.NumberFormat => {
+  const cached = exactFormatters.get(locale);
+
+  if (cached) {
+    return cached;
+  }
+
+  const formatter = new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+
+  exactFormatters.set(locale, formatter);
+
+  return formatter;
+};
+
+/**
+ * Format a number exactly, with grouping separators and at most two decimals.
+ *
+ * This is the counterpart to `formatNumber`, which shortens a number to a
+ * short form. Use this where the exact value matters, such as in a tooltip
+ * that explains a shortened number.
+ *
+ * The browser's own locale is used unless one is given, so the separators
+ * match what the player expects.
+ */
+export const formatExact = (num: number, locale?: string): string =>
+  getExactFormatter(locale).format(num);
