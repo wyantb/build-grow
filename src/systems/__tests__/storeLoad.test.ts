@@ -83,6 +83,63 @@ describe('the store after a load', () => {
   });
 });
 
+describe('the store unlocked lists', () => {
+  it('keeps the unlocked buildings of the loaded world', () => {
+    const gameState = getGameState();
+
+    gameState.gameEngine.loadState(createTestWorld({
+      unlockedBuildings: ['hut', 'market'],
+    }));
+    gameState.replaceEngineState();
+
+    expect(gameState.getBuildingCatalog().map((type) => type.id).sort())
+      .toEqual(['hut', 'market']);
+  });
+
+  it('keeps the same array when a load does not change the unlocks', () => {
+    const gameState = getGameState();
+    const before = gameState.state.unlockedBuildings;
+
+    gameState.gameEngine.loadState(createTestWorld());
+    gameState.replaceEngineState();
+
+    expect(gameState.state.unlockedBuildings).toBe(before);
+  });
+
+  it('adds an unlocked building the loaded world has', () => {
+    const gameState = getGameState();
+
+    gameState.gameEngine.loadState(createTestWorld({
+      unlockedBuildings: ['hut', 'market'],
+    }));
+    gameState.replaceEngineState();
+
+    gameState.gameEngine.loadState(createTestWorld({
+      unlockedBuildings: ['hut', 'market', 'caravanserai'],
+    }));
+    gameState.replaceEngineState();
+
+    expect(gameState.getBuildingCatalog().map((type) => type.id).sort())
+      .toEqual(['caravanserai', 'hut', 'market']);
+  });
+
+  it('drops an unlocked building the loaded world does not have', () => {
+    const gameState = getGameState();
+
+    gameState.gameEngine.loadState(createTestWorld({
+      unlockedBuildings: ['hut', 'market', 'caravanserai'],
+    }));
+    gameState.replaceEngineState();
+
+    gameState.gameEngine.loadState(createTestWorld({
+      unlockedBuildings: ['hut'],
+    }));
+    gameState.replaceEngineState();
+
+    expect(gameState.getBuildingCatalog().map((type) => type.id)).toEqual(['hut']);
+  });
+});
+
 describe('the store trade capacity', () => {
   it('counts the caravanserai into the capacity it reports', () => {
     const gameState = getGameState();

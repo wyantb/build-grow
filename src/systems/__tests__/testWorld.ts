@@ -9,6 +9,8 @@ export interface WorldOverrides {
   workers?: Record<string, number>;
   /** Completed buildings, by building type id. */
   buildings?: string[];
+  /** Building types the player has unlocked. */
+  unlockedBuildings?: string[];
   /** Per-tick market buy orders, by resource. */
   marketBuys?: Partial<Record<MarketResource, number>>;
   /** Per-tick market sell orders, by resource. */
@@ -67,6 +69,10 @@ export function createTestWorld(overrides: WorldOverrides = {}): WorldState {
     };
     state.buildings[key] = building;
     state.buildingCounts[buildingId] = (state.buildingCounts[buildingId] ?? 0) + 1;
+  }
+
+  if (overrides.unlockedBuildings) {
+    state.unlockedBuildings = [...overrides.unlockedBuildings];
   }
 
   if (overrides.marketBuys) {

@@ -44,15 +44,13 @@ const BuildingGrid: Component = () => {
   return (
     <div class="building-grid">
       <For each={BUILDING_CATEGORY_ORDER}>
-        {(category) => {
-          const group = buildingsByCategory().get(category);
-
-          return (
-            <Show when={group && group.length > 0}>
+        {(category) => (
+          <Show when={buildingsByCategory().get(category)}>
+            {(group) => (
               <div class="building-category">
                 <h3 class="category-heading">{category}</h3>
                 <div class="building-list">
-                  <For each={group!} keyed={(type) => type.id}>
+                  <For each={group()} keyed={(type) => type.id}>
                     {(type) => {
                       const count = () => gameState.getBuildingCounts()[type().id] ?? 0;
                       const scaledCost = () => getScaledCost(type().cost, count());
@@ -110,9 +108,9 @@ const BuildingGrid: Component = () => {
                   </For>
                 </div>
               </div>
-            </Show>
-          );
-        }}
+            )}
+          </Show>
+        )}
       </For>
     </div>
   );

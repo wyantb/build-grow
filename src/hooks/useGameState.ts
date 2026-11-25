@@ -10,6 +10,26 @@ import type { MarketAction, MarketFlow } from '../systems/marketSystem.js';
 import { getPopulationCapacity as getCapacityFromHuts } from '../systems/population.js';
 import GameEngine from '../systems/gameEngine.js';
 
+/**
+ * Bring a store array in line with a plain array, in place.
+ *
+ * The store tracks the items of an array, so replacing the array with a fresh
+ * copy makes every reader of it re-run, even when the items did not change.
+ * Writing the items onto the array the store already holds notifies only the
+ * indices that actually moved.
+ */
+const syncArray = (target: string[], source: string[]): void => {
+  source.forEach((item, index) => {
+    if (target[index] !== item) {
+      target[index] = item;
+    }
+  });
+
+  if (target.length > source.length) {
+    target.splice(source.length, target.length - source.length);
+  }
+};
+
 // Create a game state store with proper typing
 export const useGameState = () => {
   // The engine owns the authoritative game state; the store mirrors it
@@ -129,8 +149,8 @@ export const useGameState = () => {
       }
 
       state.buildingCounts = { ...engineState.buildingCounts };
-      state.unlockedBuildings = [...engineState.unlockedBuildings];
-      state.unlockedJobs = [...engineState.unlockedJobs];
+      syncArray(state.unlockedBuildings, engineState.unlockedBuildings);
+      syncArray(state.unlockedJobs, engineState.unlockedJobs);
 
       state.market.buys = { ...engineState.market.buys };
       state.market.sells = { ...engineState.market.sells };
