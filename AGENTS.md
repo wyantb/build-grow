@@ -11,110 +11,10 @@ before modifying the systems it describes:
 | Jobs | `game_design/jobs.md` | Job types, production rates, capacity, defaults |
 | Market | `game_design/market.md` | Tick-based orders, merchant trade capacity, prices, rates |
 
-When implementing or refactoring features that touch buildings or jobs, read
+When implementing or refactoring features that touch buildings, jobs, markets etc read
 the matching doc first and keep the implementation consistent with it. If the
 doc and code drift, fix the doc or the code — but do not change both in
 uncoordinated commits.
-
-## Buildings
-
-- **A building may grant no job slot.** The Caravanserai is the first one. It
-  boosts trade capacity instead of adding a worker, so it has no entry in
-  `BUILDING_JOB_MAP` (`src/data/jobs.ts`). `GameEngine.applyBuildingEffects`
-  already skips a building with no job mapping, so a job-less building needs
-  no special handling in the engine.
-- **`buildingCounts` counts completed buildings only.** It is incremented when
-  construction reaches 100%, so a building under construction grants nothing.
-  Any effect keyed off a building count therefore starts only once the
-  building is finished.
-
-## Saves
-
-- **A save written before a building existed does not list it.** On load,
-  `deserializePayload` merges the saved `unlockedBuildings` with the ones a
-  new game starts with. A building that has to be unlocked during play is not
-  in the starting set, so the merge never hands one out early.
-- **`GAME_VERSION` gates compatibility.** Bump it in `src/systems/gameVersion.ts`
-  when a change could affect a saved world, such as a balance change to a job
-  or a building. A different major version refuses the save; a different minor
-  version loads it with a warning.
-
-## Resource Rates
-
-- **Rates are derived, never measured.** A resource's rate is the net
-  per-tick change summed over staffed jobs (and market orders), multiplied by
-  the tick frequency (5). Never compute a rate from a before/after snapshot of
-  the resource amounts: that lags a tick behind, folds one-off events such as
-  building costs into the rate, and drifts in floating point.
-- **Market rates show what actually settles.** The engine plans the tick's
-  trades from the current state and applies that same plan, so a buy that
-  cannot be paid for never appears as realized flow. The gold figure in the
-  market panel and the gold rate in the resources panel must agree.
-- **The market panel shows the gold rate per second.** It reads
-  `GameEngine.getMarketRates()`, which holds the market's own contribution
-  only. Do not mix job production into it: a job that makes gold later must
-  not change this figure.
-- **The engine is the single source for rates.** `GameEngine.getTickRates()`
-  and `getResourceRates()` are authoritative. The store mirrors them; it never
-  recomputes them from mirrored state.
-- **Quantities the UI shows come from the engine too.** The units bought and
-  sold per second come from `GameEngine.getMarketFlow()`, not from a price
-  multiplied by an allocation count in the component.
-
-## Persistence
-
-The game autosaves to local storage every 60 seconds, and also when the tab is
-hidden or closed. Settings → Data holds the manual controls.
-
-- **The save holds gameplay state only.** Job rates, building costs and every
-  other value that comes from `src/data/` are left out, so a balance change
-  applies to an old save instead of being frozen inside it. The catalog is
-  read back in on load; a job or building the catalog no longer knows about is
-  skipped with a warning.
-- **Save times are stored as ISO and shown as local time.** The envelope keeps
-  `savedAt` in ISO, and `formatDateTime` in `src/utils/` renders it with the
-  browser's locale plus the UTC offset of that moment, so the reading says
-  which zone it belongs to.
-- **The encoding is gzip + base64.** `CompressionStream` and
-  `DecompressionStream` do the work, so there is no compression dependency.
-  The stored value carries a `BG1:` prefix that names the encoding.
-- **Saves carry two versions.** `saveVersion` is the format of the save
-  payload; `gameVersion` is the build of the game that wrote it. A different
-  major game version is refused; a different minor version loads with a
-  warning.
-- **The engine is the single writer.** A load replaces the engine's world and
-  then replaces the store's subtrees, so nothing from the old world survives.
-  Use `replaceEngineState`, not `mirrorEngineState`, after a load: the mirror
-  only adds and updates, and would leave stale building instances behind.
-- **`useSaveSystem()` is called once**, from the component that owns the game
-  loop. Components that only need the buttons use `useSaveActions()`, so the
-  autosave timer is never started twice.
-- **Migrations live in `saveSystem.ts`.** The chain is empty today because the
-  format has only ever had one version. Add a step when the format changes.
-- **Save operations are serialized.** `runExclusive` in `useSaveSystem.ts`
-  puts every save, load, export and import on one queue, so two operations
-  never overlap. The `busy` signal counts the operations that are queued or
-  running, and the Settings controls stay disabled while it is on.
-- **A hard reset empties the world, not the save.** It replaces the world with
-  a fresh one and holds the autosave until the player saves or loads by hand,
-  so an autosave cannot write the empty world over a game they might want
-  back.
-
-See `tech_debt.md` for the known limits: compression needs a browser with the
-Compression Streams API, and it falls back to the main thread when a worker
-cannot be started.
-
-## Calendar and Pause
-
-- **The calendar is presentation, not a game concept.** `src/systems/calendar.ts`
-  turns the elapsed game time into a season and a day for the header. It
-  defaults to 4 seasons of 30 days at 60 seconds a day, but the game has no
-  rules that depend on seasons or days, so these are parameters to change, not
-  mechanics to build around.
-- **Pausing holds the clock, not the engine.** The pause preference lives in
-  `useSettings` and is persisted with the other preferences. `useGameLoop`
-  stops the game clock while it is on, so the world does not move under the
-  player. The engine itself keeps running; a load or a reset still works.
 
 ## UI Design Principles
 
@@ -147,6 +47,10 @@ cannot be started.
 - **Do not break existing working behavior to enable future plans.** If the current
   code handles a case correctly (even awkwardly), leave it alone unless the user's
   request directly touches that area.
+- **Do not debate yourself on core game logic interpretation.** If you notice an
+  ambiguity in the given spec, stop and ask the prompter for more examples to resolve
+  the ambiguity. If you've looped with yourself 5 or 6 times on how a topic works,
+  that's an additional sign to stop and ask the prompter.
 
 ### Commands and Pre-Push Check (required)
 
@@ -177,13 +81,74 @@ Rules of the gate:
 2. **Run the automated checks**: `npm run check` runs lint, typecheck, tests,
    and the build in one command. This is the fast feedback loop, and it
    catches nearly everything.
-3. **Verify in the browser, once, and only if the change is visible or
-   interactive**: run `npm run dev` and look at http://localhost:3000. Confirm
-   the element appears, is reachable, and is laid out correctly. Do not verify
-   arithmetic here; that belongs in Vitest. Keep it short and non-exhaustive.
-4. **Commit**: source files only, not generated files.
-5. **Offer followup ideas**, after pushing, of ideas that violated 80/20 rules
-   from earlier, only as final output/text offered to the human reviewer.
+3. **Commit**: source files only, not generated files.
+4. **Offer followup ideas**, after pushing, of ideas that violated 80/20 rules
+   from earlier, only as final output/text offered to the human reviewer. Ask
+   if manual testing of the UI should be performed at all.
+
+
+## Resource Rates
+
+- **Rates are derived, never measured.** A resource's rate is the net
+  per-tick change summed over staffed jobs (and market orders), multiplied by
+  the tick frequency (5). Never compute a rate from a before/after snapshot of
+  the resource amounts: that lags a tick behind, folds one-off events such as
+  building costs into the rate, and drifts in floating point.
+- **Market rates show what actually settles.** The engine plans the tick's
+  trades from the current state and applies that same plan, so a buy that
+  cannot be paid for never appears as realized flow. The gold figure in the
+  market panel and the gold rate in the resources panel must agree.
+- **The engine is the single source for rates.** `GameEngine.getTickRates()`
+  and `getResourceRates()` are authoritative. The store mirrors them; it never
+  recomputes them from mirrored state.
+
+## Persistence / Saves
+
+The game autosaves to local storage every 60 seconds, and also when the tab is
+hidden or closed. Settings → Data holds the manual controls.
+
+- **The save holds gameplay state only.** Job rates, building costs and every
+  other value that comes from `src/data/` are left out, so a balance change
+  applies to an old save instead of being frozen inside it. The catalog is
+  read back in on load; a job or building the catalog no longer knows about is
+  skipped with a warning.
+- **The encoding is gzip + base64.** `CompressionStream` and
+  `DecompressionStream` do the work, so there is no compression dependency.
+  The stored value carries a `BG1:` prefix that names the encoding.
+- **Saves carry two versions.** `saveVersion` is the format of the save
+  payload; `gameVersion` is the build of the game that wrote it. A different
+  major game version is refused; a different minor version loads with a
+  warning.
+- **The engine is the single writer.** A load replaces the engine's world and
+  then replaces the store's subtrees, so nothing from the old world survives.
+  Use `replaceEngineState`, not `mirrorEngineState`, after a load: the mirror
+  only adds and updates, and would leave stale building instances behind.
+- **`useSaveSystem()` is called once**, from the component that owns the game
+  loop. Components that only need the buttons use `useSaveActions()`, so the
+  autosave timer is never started twice.
+- **Migrations live in `saveSystem.ts`.** The chain is empty today because the
+  format has only ever had one version. Add a step when the format changes.
+- **Save operations are serialized.** `runExclusive` in `useSaveSystem.ts`
+  puts every save, load, export and import on one queue, so two operations
+  never overlap. The `busy` signal counts the operations that are queued or
+  running, and the Settings controls stay disabled while it is on.
+- **A hard reset empties the world, not the save.** It replaces the world with
+  a fresh one and holds the autosave until the player saves or loads by hand,
+  so an autosave cannot write the empty world over a game they might want
+  back.
+- **A save written before a building existed does not list it.** On load,
+  `deserializePayload` merges the saved `unlockedBuildings` with the ones a
+  new game starts with. A building that has to be unlocked during play is not
+  in the starting set, so the merge never hands one out early.
+- **`GAME_VERSION` gates compatibility.** Bump it in `src/systems/gameVersion.ts`
+  when a change could affect a saved world, such as a balance change to a job
+  or a building. A different major version refuses the save; a different minor
+  version loads it with a warning.
+
+
+See `tech_debt.md` for the known limits: compression needs a browser with the
+Compression Streams API, and it falls back to the main thread when a worker
+cannot be started.
 
 ## Testing
 
@@ -191,23 +156,15 @@ Rules of the gate:
 Anything with a rule, a rate, a capacity, or a settlement order belongs in
 `src/systems/__tests__/`, asserted against the engine rather than the UI.
 
-- **Do not test math by clicking.** Resource rates, market settlement, and
+- **Do not test math by UI clicking.** Resource rates, market settlement, and
   capacity limits are engine rules; assert them in Vitest. Reading a
   computed number off the screen is not a test.
 - **Reach a game state through the engine, not through clicks.** Build a
   market, assign merchants, or set up any other world through
   `createTestWorld` overrides rather than clicking through the tabs.
-- **UI checks are optional and should be brief.** Check visibility at most:
+- **UI checks are optional and must be brief.** Check visibility at most:
   that a tab or pane appears when its condition is met, and that a control
   is present.
-- **If a UI check takes more than about a minute, stop.** It usually means
-  the state is hard to reach by hand, which is a signal to build in-repo
-  tooling (a test world helper, a seed or debug hook) instead of clicking
-  through the game.
-- **One exception: Solid reactivity needs a browser.** Node resolves
-  `solid-js` to its server build, where `createEffect` never runs, so
-  reactivity bugs do not reproduce under Vitest. See
-  `### SolidJS / TypeScript Conventions`.
 
 Writing engine tests:
 - The engine takes an optional `WorldState` in its constructor, so a test
@@ -257,7 +214,8 @@ src/
   Passing the engine's own nested object hits Solid's identity check
   (`setProperty` returns early when `state[property] === value`) and silently skips
   the reactivity update, which freezes the UI counters.
-- Verify Solid reactivity **in the browser** — see `## Testing`.
+- When we have complex UI/state changes, ask if the Solid reactivity should be tested
+  **in the browser** — see `## Testing`.
 
 ### Tooltips and Settings
 - `src/components/ui/Tooltip.tsx` is the only tooltip implementation. Wrap the
