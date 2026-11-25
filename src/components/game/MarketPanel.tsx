@@ -113,8 +113,9 @@ const MarketPanel: Component = () => {
   /**
    * True when a step adjustment can be applied to `resource`.
    *
-   * Enforces that with limited merchants, we can only trade in one direction at a time.
-   * Buttons are enabled/disabled based on available merchant capacity:
+   * Enforces that total trades cannot exceed merchant count.
+   * Each merchant provides one trade position capacity.
+   * Buttons are enabled/disabled based on available trade positions:
    * - 1 sell, no merchants available: sell side is all disabled, 0 and buy side is enabled
    * - 2 buy, 3 merchants available: all trade buttons everywhere available
    * - 0 buy/sell, 1 merchant available: both sell and buy sides enabled
@@ -128,49 +129,48 @@ const MarketPanel: Component = () => {
     const currentBuy = buyCount(resource);
     const currentSell = sellCount(resource);
 
-    // Calculate what the new net position would be
+    // Calculate current total trades being maintained
+    const currentTotalTrades = Object.values(orders().buys).reduce((sum, count) => sum + count, 0)
+                              + Object.values(orders().sells).reduce((sum, count) => sum + count, 0);
+
+    // Calculate what the new net position would be for this resource
     const netPosition = currentBuy - currentSell;
     const newNetPosition = netPosition + step;
 
-    // Determine the current trading direction
-    const hasCurrentBuys = Object.values(orders().buys).some(count => count > 0);
-    const hasCurrentSells = Object.values(orders().sells).some(count => count > 0);
+    // Calculate how many trades this resource would need after adjustment
+    const currentResourceTrades = currentBuy + currentSell;
+    const newResourceTrades = Math.abs(newNetPosition);
 
-    // If we're currently trading in one direction and trying to switch to the other
-    if ((hasCurrentBuys && !hasCurrentSells && newNetPosition < 0)
-        || (hasCurrentSells && !hasCurrentBuys && newNetPosition > 0)) {
-      // Check if we have enough capacity for the switch
-      const tradesNeeded = Math.abs(newNetPosition);
-      const freeTrades = gameState.getFreeMarketTrades(newNetPosition > 0 ? 'buy' : 'sell');
-      const additionalTradesNeeded = tradesNeeded - (currentBuy + currentSell);
+    // Calculate the new total trades (current total minus this resource's current trades plus this resource's new trades)
+    const newTotalTrades = currentTotalTrades - currentResourceTrades + newResourceTrades;
 
-      return freeTrades >= additionalTradesNeeded;
-    }
-
-    // If we're staying in the same direction or going to zero, check normally
-    const tradesNeeded = Math.abs(newNetPosition);
-    const currentTrades = currentBuy + currentSell;
-
-    // If we're reducing trades or keeping the same number, we can always do it
-    if (tradesNeeded <= currentTrades) {
-      return true;
-    }
-
-    // We're increasing trades, check if we have enough capacity
-    // Determine which direction we're increasing
-    const direction = newNetPosition > 0 ? 'buy' : 'sell';
-    const freeTrades = gameState.getFreeMarketTrades(direction);
-    const additionalTradesNeeded = tradesNeeded - currentTrades;
-
-    return freeTrades >= additionalTradesNeeded;
+    // Check if we have enough capacity
+    return newTotalTrades <= merchants();
   };
 
   return (
     <div class="market-panel">
       <div class="market-summary">
-        <span>
-          Merchants: <strong>{merchants()}</strong>
-        </span>
+        <Tooltip
+          content={
+            <div>
+              Trade Capacity: {merchants()} (from {merchants()} merchant{merchants() !== 1 ? 's' : ''})
+              <hr />
+              Buying:
+              <For each={Object.entries(orders().buys)}>{([resource, count]) =>
+                count > 0 ? <div>{count} {resource} (costs {formatNumber(getBuyPrice(resource as MarketResource) * count)}/s)</div> : null}</For>
+              --
+              Selling:
+              <For each={Object.entries(orders().sells)}>{([resource, count]) =>
+                count > 0 ? <div>{count} {resource} (gains {formatNumber(getSellPrice(resource as MarketResource) * count)}/s)</div> : null}</For>
+            </div>
+          }
+          placement="top"
+        >
+          <span>
+            Trades Maintained: <strong>{Object.values(orders().buys).reduce((sum, count) => sum + count, 0) + Object.values(orders().sells).reduce((sum, count) => sum + count, 0)}/{merchants()}</strong>
+          </span>
+        </Tooltip>
         <span>
           Gold/tick: <strong class={goldPerTick() >= 0 ? 'positive' : 'negative'}>
             {goldPerTick() >= 0 ? '+' : ''}{formatNumber(goldPerTick())}
