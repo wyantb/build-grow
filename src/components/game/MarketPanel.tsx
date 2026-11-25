@@ -46,25 +46,23 @@ const MarketPanel: Component = () => {
     gameState.getFreeMarketTrades(action);
 
   /**
-   * True when `step` units cannot be added to an order in `action`.
+   * Adjust the order for `resource` by `step` units per tick.
    *
-   * Every unit of an order occupies one of the merchants' trades, so adding
-   * to an order always needs that many free trades, whether it opens an
-   * order or raises the quantity of an existing one.
+   * Positive steps increase buys or decrease sells.
+   * Negative steps increase sells or decrease buys.
    */
-  const atCapacity = (action: MarketAction, step: number): boolean =>
-    freeTrades(action) < step;
+  const adjust = (resource: MarketResource, step: number): void => {
+    const currentBuy = buyCount(resource);
+    const currentSell = sellCount(resource);
 
-  /**
-   * Add `step` units per tick to the order for `resource`.
-   *
-   * The engine releases the order running in the other direction, so a
-   * resource is never bought and sold at the same time.
-   */
-  const raise = (action: MarketAction, resource: MarketResource, step: number): void => {
-    const current = action === 'buy' ? buyCount(resource) : sellCount(resource);
-
-    gameState.setMarketAllocation(action, resource, current + step);
+    // If we're increasing buys or decreasing sells, use the buy action
+    if (step > 0) {
+      gameState.setMarketAllocation('buy', resource, currentBuy + step);
+    } else if (step < 0) {
+      // If we're increasing sells or decreasing buys, use the sell action
+      gameState.setMarketAllocation('sell', resource, currentSell - step);
+    }
+    // step === 0 does nothing
   };
 
   /** Release the buy and the sell order for `resource`. */
@@ -72,33 +70,73 @@ const MarketPanel: Component = () => {
     gameState.clearMarketAllocation(resource);
   };
 
-  const stepTooltip = (action: MarketAction, resource: MarketResource, step: number): string => {
+  const stepTooltip = (resource: MarketResource, step: number): string => {
     const label = MARKET_RESOURCE_INFO[resource].label;
-    const verb = action === 'buy' ? 'Buy' : 'Sell';
+    const verb = step > 0 ? 'Buy' : 'Sell';
+    const absStep = Math.abs(step);
 
     if (merchants() <= 0) {
       return `No merchants available. Assign a worker to the Merchant job to ${verb.toLowerCase()} ${label}.`;
     }
 
-    const free = freeTrades(action);
-    if (free < step) {
+    // Check if we can actually make this adjustment
+    const currentBuy = buyCount(resource);
+    const currentSell = sellCount(resource);
+
+    if (step > 0) {
+      // Increasing buys - check if we have free buy trades or can convert sells
+      const free = freeTrades('buy');
+      if (free >= absStep || currentSell >= absStep) {
+        return `${verb} ${absStep} ${label} per tick.`;
+      }
+
       const capacity = getTradeCapacity(merchants());
 
-      return `No trade left. ${merchants()} merchant${merchants() === 1 ? '' : 's'} carr${merchants() === 1 ? 'ies' : 'y'} ${capacity} ${action} trade${capacity === 1 ? '' : 's'} per tick.`;
+      return `No trade left. ${merchants()} merchant${merchants() === 1 ? '' : 's'} carr${merchants() === 1 ? 'ies' : 'y'} ${capacity} buy trade${capacity === 1 ? '' : 's'} per tick.`;
+    } if (step < 0) {
+      // Increasing sells - check if we have free sell trades or can convert buys
+      const free = freeTrades('sell');
+      if (free >= absStep || currentBuy >= absStep) {
+        return `${verb} ${absStep} ${label} per tick.`;
+      }
+
+      const capacity = getTradeCapacity(merchants());
+
+      return `No trade left. ${merchants()} merchant${merchants() === 1 ? '' : 's'} carr${merchants() === 1 ? 'ies' : 'y'} ${capacity} sell trade${capacity === 1 ? '' : 's'} per tick.`;
     }
 
-    const opposite = action === 'buy' ? sellCount(resource) : buyCount(resource);
-    const cancels = opposite > 0
-      ? ` Cancels the ${action === 'buy' ? 'sell' : 'buy'} order.`
-      : '';
-
-    return `${verb} ${step} ${label} per tick. ${free} trade${free === 1 ? '' : 's'} left.${cancels}`;
+    return `No change.`;
   };
 
   const clearTooltip = (resource: MarketResource): string => {
     const label = MARKET_RESOURCE_INFO[resource].label;
 
     return `Stop trading ${label}. Sets the buy and the sell count to 0.`;
+  };
+
+  /**
+   * True when a step adjustment can be applied to `resource`.
+   */
+  const canAdjust = (resource: MarketResource, step: number): boolean => {
+    if (merchants() <= 0) {return false;}
+
+    const currentBuy = buyCount(resource);
+    const currentSell = sellCount(resource);
+    const absStep = Math.abs(step);
+
+    if (step > 0) {
+      // Increasing buys - check if we have free buy trades or can convert sells
+      const free = freeTrades('buy');
+
+      return free >= absStep || currentSell >= absStep;
+    } if (step < 0) {
+      // Increasing sells - check if we have free sell trades or can convert buys
+      const free = freeTrades('sell');
+
+      return free >= absStep || currentBuy >= absStep;
+    }
+
+    return false;
   };
 
   return (
@@ -139,11 +177,11 @@ const MarketPanel: Component = () => {
                 <div class="market-action-group">
                   <For each={[...SELL_STEPS]}>
                     {(entry) => (
-                      <Tooltip content={stepTooltip('sell', resource, entry.step)} placement="top">
+                      <Tooltip content={stepTooltip(resource, -entry.step)} placement="top">
                         <button
                           class="market-btn market-btn-sell"
-                          onClick={() => raise('sell', resource, entry.step)}
-                          disabled={atCapacity('sell', entry.step)}
+                          onClick={() => adjust(resource, -entry.step)}
+                          disabled={!canAdjust(resource, -entry.step)}
                         >
                           {entry.label}
                         </button>
@@ -171,11 +209,11 @@ const MarketPanel: Component = () => {
                   </span>
                   <For each={[...BUY_STEPS]}>
                     {(entry) => (
-                      <Tooltip content={stepTooltip('buy', resource, entry.step)} placement="top">
+                      <Tooltip content={stepTooltip(resource, entry.step)} placement="top">
                         <button
                           class="market-btn market-btn-buy"
-                          onClick={() => raise('buy', resource, entry.step)}
-                          disabled={atCapacity('buy', entry.step)}
+                          onClick={() => adjust(resource, entry.step)}
+                          disabled={!canAdjust(resource, entry.step)}
                         >
                           {entry.label}
                         </button>
