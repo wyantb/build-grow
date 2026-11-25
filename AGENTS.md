@@ -31,9 +31,62 @@ uncoordinated commits.
   and `getResourceRates()` are authoritative. The store mirrors them; it never
   recomputes them from mirrored state.
 
+## Persistence
+
+The game autosaves to local storage every 60 seconds, and also when the tab is
+hidden or closed. Settings → Data holds the manual controls.
+
+- **The save holds gameplay state only.** Job rates, building costs and every
+  other value that comes from `src/data/` are left out, so a balance change
+  applies to an old save instead of being frozen inside it. The catalog is
+  read back in on load; a job or building the catalog no longer knows about is
+  skipped with a warning.
+- **The encoding is gzip + base64.** `CompressionStream` and
+  `DecompressionStream` do the work, so there is no compression dependency.
+  The stored value carries a `BG1:` prefix that names the encoding.
+- **Saves carry two versions.** `saveVersion` is the format of the save
+  payload; `gameVersion` is the build of the game that wrote it. A different
+  major game version is refused; a different minor version loads with a
+  warning.
+- **The engine is the single writer.** A load replaces the engine's world and
+  then replaces the store's subtrees, so nothing from the old world survives.
+  Use `replaceEngineState`, not `mirrorEngineState`, after a load: the mirror
+  only adds and updates, and would leave stale building instances behind.
+- **`useSaveSystem()` is called once**, from the component that owns the game
+  loop. Components that only need the buttons use `useSaveActions()`, so the
+  autosave timer is never started twice.
+- **Migrations live in `saveSystem.ts`.** The chain is empty today because the
+  format has only ever had one version. Add a step when the format changes.
+- **Save operations are serialized.** `runExclusive` in `useSaveSystem.ts`
+  puts every save, load, export and import on one queue, so two operations
+  never overlap. The `busy` signal counts the operations that are queued or
+  running, and the Settings controls stay disabled while it is on.
+- **A hard reset empties the world, not the save.** It replaces the world with
+  a fresh one and holds the autosave until the player saves or loads by hand,
+  so an autosave cannot write the empty world over a game they might want
+  back.
+
+See `tech_debt.md` for the known limits: compression needs a browser with the
+Compression Streams API, and it falls back to the main thread when a worker
+cannot be started.
+
+## Calendar and Pause
+
+- **The calendar is presentation, not a game concept.** `src/systems/calendar.ts`
+  turns the elapsed game time into a season and a day for the header. It
+  defaults to 4 seasons of 30 days at 60 seconds a day, but the game has no
+  rules that depend on seasons or days, so these are parameters to change, not
+  mechanics to build around.
+- **Pausing holds the clock, not the engine.** The pause preference lives in
+  `useSettings` and is persisted with the other preferences. `useGameLoop`
+  stops the game clock while it is on, so the world does not move under the
+  player. The engine itself keeps running; a load or a reset still works.
+
 ## UI Design Principles
 
 - Keep UI compact with a minimal header (max 24px height).
+- The header holds three columns: game name and theme toggle | season, day and
+  the play/pause button | the game version.
 - Resources always listed on the left column.
 - Main section body uses tabbed navigation (Buildings, Jobs, Market, Settings).
 - Mobile responsive design:

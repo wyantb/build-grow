@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { JOBS } from '../data/jobs.js';
 import { MARKET_RESOURCES } from '../data/market.js';
+import { GAME_VERSION } from '../systems/gameVersion.js';
 
 // Define the basic resource schema
 export const ResourceSchema = z.object({
@@ -110,7 +111,7 @@ export type WorldState = z.infer<typeof WorldStateSchema>;
 // Create initial state
 export const createInitialState = (): WorldState => {
   const initialState: WorldState = {
-    version: '1.0.0',
+    version: GAME_VERSION,
     tick: 0,
     resources: {
       wood: 250,

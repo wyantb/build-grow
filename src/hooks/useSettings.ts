@@ -16,10 +16,19 @@ export const MAX_TOOLTIP_DELAY = 2000;
 
 export interface Settings {
   tooltipDelay: number;
+  /**
+   * True when the game clock is held still.
+   *
+   * This is a preference rather than part of the world: pausing does not
+   * change the game, it only stops the clock, so it lives with the other
+   * preferences instead of in a save.
+   */
+  paused: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   tooltipDelay: DEFAULT_TOOLTIP_DELAY,
+  paused: false,
 };
 
 const clamp = (value: number): number => {
@@ -44,9 +53,18 @@ const readStoredSettings = (): Partial<Settings> => {
       return {};
     }
 
-    const { tooltipDelay } = parsed as Partial<Settings>;
+    const { tooltipDelay, paused } = parsed as Partial<Settings>;
+    const settings: Partial<Settings> = {};
 
-    return typeof tooltipDelay === 'number' ? { tooltipDelay: clamp(tooltipDelay) } : {};
+    if (typeof tooltipDelay === 'number') {
+      settings.tooltipDelay = clamp(tooltipDelay);
+    }
+
+    if (typeof paused === 'boolean') {
+      settings.paused = paused;
+    }
+
+    return settings;
   } catch {
     return {};
   }
@@ -81,6 +99,16 @@ export const useSettings = () => {
     setSettings((current) => ({ ...current, tooltipDelay: clamp(milliseconds) }));
   };
 
+  const isPaused = (): boolean => settings().paused;
+
+  const setPaused = (paused: boolean) => {
+    setSettings((current) => ({ ...current, paused }));
+  };
+
+  const togglePaused = () => {
+    setSettings((current) => ({ ...current, paused: !current.paused }));
+  };
+
   const resetSettings = () => {
     setSettings({ ...DEFAULT_SETTINGS });
   };
@@ -89,6 +117,9 @@ export const useSettings = () => {
     settings,
     tooltipDelay,
     setTooltipDelay,
+    isPaused,
+    setPaused,
+    togglePaused,
     resetSettings,
   };
 };

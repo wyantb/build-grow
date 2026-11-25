@@ -6,9 +6,22 @@ import {
   MIN_TOOLTIP_DELAY,
   useSettings,
 } from '../../hooks/useSettings.js';
+import { AUTOSAVE_INTERVAL_MS, useSaveActions } from '../../hooks/useSaveSystem.js';
 
 const SettingsPanel: Component = () => {
   const { settings, setTooltipDelay, resetSettings } = useSettings();
+  const {
+    lastSavedAt,
+    saveStatus,
+    autosaveSuspended,
+    busy,
+    saveNow,
+    loadNow,
+    exportToFile,
+    importFromFile,
+    deleteSave,
+    hardReset,
+  } = useSaveActions();
 
   // The draft holds what the user typed, so a partially typed value (e.g. "2")
   // does not fight the user while they are still editing it. It stays
@@ -16,6 +29,10 @@ const SettingsPanel: Component = () => {
   // setting.
   const [draft, setDraft] = createSignal<string | undefined>(undefined);
   const [error, setError] = createSignal('');
+
+  // The hard reset takes two clicks, so a stray click cannot throw the world
+  // away. The first click arms it; the second one does it.
+  const [resetArmed, setResetArmed] = createSignal(false);
 
   // Read inside JSX, which is a tracking scope. Reading it in the component
   // body would trip Solid's STRICT_READ_UNTRACKED diagnostic.
@@ -54,6 +71,15 @@ const SettingsPanel: Component = () => {
     resetSettings();
     setDraft(undefined);
     setError('');
+  };
+
+  const armReset = () => {
+    setResetArmed(true);
+  };
+
+  const confirmReset = () => {
+    hardReset();
+    setResetArmed(false);
   };
 
   return (
@@ -102,6 +128,142 @@ const SettingsPanel: Component = () => {
             Reset to default
           </button>
         </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>Data</h3>
+
+        <p class="settings-intro">
+          The game saves itself to this browser every {AUTOSAVE_INTERVAL_MS / 1000} seconds.
+          You can also save by hand, move a game between browsers with a file, or start over.
+        </p>
+
+        <div class="settings-row">
+          <span class="settings-label">Last saved</span>
+          <span class="settings-value">{lastSavedAt() ?? 'Not saved yet'}</span>
+        </div>
+
+        <div class="settings-actions">
+          <button
+            class="settings-button"
+            type="button"
+            disabled={busy()}
+            onClick={() => void saveNow()}
+          >
+            Save now
+          </button>
+
+          <button
+            class="settings-button"
+            type="button"
+            disabled={busy()}
+            onClick={() => void loadNow()}
+          >
+            Load saved game
+          </button>
+
+          <button
+            class="settings-button"
+            type="button"
+            disabled={busy()}
+            onClick={() => void exportToFile()}
+          >
+            Export to file
+          </button>
+
+          <label class={{ 'settings-button': true, 'settings-file-button': true, 'settings-button-disabled': busy() }}>
+            Import from file
+            <input
+              id="save-file-input"
+              class="settings-file-input"
+              type="file"
+              accept=".gz,.json,application/gzip,application/json"
+              disabled={busy()}
+              onChange={(event) => {
+                const file = event.currentTarget.files?.[0];
+
+                if (file) {
+                  void importFromFile(file);
+                }
+
+                event.currentTarget.value = '';
+              }}
+            />
+          </label>
+
+          <button class="settings-button settings-button-danger" type="button" onClick={deleteSave}>
+            Delete saved game
+          </button>
+        </div>
+
+        <Show when={saveStatus()}>
+          {(status) => (
+            <p
+              class={`settings-status settings-status-${status().kind}`}
+              role="status"
+            >
+              {status().text}
+            </p>
+          )}
+        </Show>
+
+        <p class="settings-help">
+          Loading a saved game replaces the world you are playing now. Exporting writes a
+          compressed file you can keep or move to another browser; importing reads it back.
+        </p>
+      </div>
+
+      <div class="settings-section">
+        <h3>Hard reset</h3>
+
+        <p class="settings-intro">
+          Start the world over from nothing. The saved game is kept, so you can load it back
+          if you change your mind.
+        </p>
+
+        <Show
+          when={resetArmed()}
+          fallback={
+            <div class="settings-actions">
+              <button
+                class="settings-button settings-button-danger"
+                type="button"
+                onClick={armReset}
+              >
+                Hard reset
+              </button>
+            </div>
+          }
+        >
+          <div class="settings-actions">
+            <button
+              class="settings-button settings-button-danger"
+              type="button"
+              onClick={confirmReset}
+            >
+              Really hard reset?
+            </button>
+
+            <button
+              class="settings-button"
+              type="button"
+              onClick={() => setResetArmed(false)}
+            >
+              Cancel
+            </button>
+          </div>
+
+          <p class="settings-help">
+            This empties the world you are playing. The saved game stays in this browser
+            until you save over it.
+          </p>
+        </Show>
+
+        <Show when={autosaveSuspended()}>
+          <p class="settings-status settings-status-warning" role="status">
+            The autosave is on hold until you save or load by hand.
+          </p>
+        </Show>
       </div>
     </div>
   );

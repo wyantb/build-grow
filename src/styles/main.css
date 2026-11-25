@@ -37,12 +37,91 @@ header {
   position: relative;
 }
 
+.header-left {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.header-center {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 header h1 {
   font-size: 1.2rem;
   margin: 0;
   line-height: 24px;
-  text-align: center;
-  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-date {
+  font-size: 0.8rem;
+  color: #ccc;
+  white-space: nowrap;
+}
+
+body.light-mode .header-date {
+  color: #555;
+}
+
+.header-version {
+  font-size: 0.75rem;
+  color: #888;
+  white-space: nowrap;
+}
+
+body.light-mode .header-version {
+  color: #666;
+}
+
+.pause-toggle {
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid #555;
+  border-radius: 3px;
+  background-color: #444;
+  color: inherit;
+  line-height: 1;
+  font-size: 0.7rem;
+}
+
+.pause-toggle:hover {
+  background-color: #4d9de0;
+  border-color: #4d9de0;
+}
+
+body.light-mode .pause-toggle {
+  background-color: #ccc;
+  border-color: #999;
+  color: #333;
+}
+
+body.light-mode .pause-toggle:hover {
+  background-color: #4d9de0;
+  border-color: #4d9de0;
+  color: #fff;
 }
 
 .theme-toggle {
@@ -1032,6 +1111,18 @@ body.light-mode .settings-help {
   border-color: #4d9de0;
 }
 
+.settings-button:disabled,
+.settings-button-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.settings-button:disabled:hover,
+.settings-button-disabled:hover {
+  background-color: #444;
+  border-color: #555;
+}
+
 body.light-mode .settings-button {
   background-color: #ddd;
   color: #333;
@@ -1042,5 +1133,86 @@ body.light-mode .settings-button:hover {
   background-color: #4d9de0;
   border-color: #4d9de0;
   color: #fff;
+}
+
+/* Data section */
+.settings-value {
+  font-size: 0.85rem;
+  color: #aaa;
+}
+
+body.light-mode .settings-value {
+  color: #555;
+}
+
+.settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.settings-button-danger {
+  border-color: #7a3b36;
+  color: #e0a19c;
+}
+
+body.light-mode .settings-button-danger {
+  border-color: #b06058;
+  color: #8c2f28;
+}
+
+.settings-button-danger:hover {
+  background-color: #a03a33;
+  border-color: #a03a33;
+  color: #fff;
+}
+
+/* The file input is hidden; the label acts as the button. */
+.settings-file-button {
+  position: relative;
+  overflow: hidden;
+  display: inline-block;
+}
+
+.settings-file-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.settings-file-input:focus-visible + .settings-file-button,
+.settings-file-button:focus-within {
+  outline: 2px solid #4d9de0;
+  outline-offset: 1px;
+}
+
+.settings-status {
+  font-size: 0.8rem;
+  margin-top: 10px;
+}
+
+.settings-status-info {
+  color: #6fbf73;
+}
+
+.settings-status-warning {
+  color: #e0b341;
+}
+
+.settings-status-error {
+  color: #e74c3c;
+}
+
+body.light-mode .settings-status-info {
+  color: #2e7d32;
+}
+
+body.light-mode .settings-status-warning {
+  color: #8a6d00;
+}
+
+body.light-mode .settings-status-error {
+  color: #c62828;
 }
 

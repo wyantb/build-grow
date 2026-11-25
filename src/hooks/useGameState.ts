@@ -87,6 +87,77 @@ export const useGameState = () => {
     setMarketTickRates(gameEngine.getMarketTickRates());
   };
 
+  /**
+   * Mirror the engine state into the reactive store, replacing whole
+   * subtrees instead of updating them in place.
+   *
+   * The normal mirror only adds and updates, so a building that a loaded save
+   * no longer has would stay in the store forever. A load replaces the
+   * subtrees outright, which drops the stale entries.
+   */
+  const replaceEngineState = () => {
+    const engineState = gameEngine.getState();
+
+    setState((state) => {
+      state.tick = engineState.tick;
+      state.gameTime = engineState.gameTime;
+      state.population = engineState.population;
+      state.defaultJob = engineState.defaultJob;
+
+      state.resources.wood = engineState.resources.wood;
+      state.resources.stone = engineState.resources.stone;
+      state.resources.food = engineState.resources.food;
+      state.resources.gold = engineState.resources.gold;
+
+      state.jobs = {};
+      for (const [jobId, job] of Object.entries(engineState.jobs)) {
+        state.jobs[jobId] = {
+          ...job,
+          production: { ...job.production },
+          consumption: { ...job.consumption },
+        };
+      }
+
+      state.buildings = {};
+      for (const [instanceKey, building] of Object.entries(engineState.buildings)) {
+        state.buildings[instanceKey] = {
+          ...building,
+          cost: { ...building.cost },
+        };
+      }
+
+      state.buildingCounts = { ...engineState.buildingCounts };
+      state.unlockedBuildings = [...engineState.unlockedBuildings];
+      state.unlockedJobs = [...engineState.unlockedJobs];
+
+      state.market.buys = { ...engineState.market.buys };
+      state.market.sells = { ...engineState.market.sells };
+    });
+
+    setMarketTickRates(gameEngine.getMarketTickRates());
+  };
+
+  /**
+   * Load a world into the game.
+   *
+   * The engine takes the state as the authoritative one, and the store is
+   * replaced to match, so no part of the previous world survives.
+   */
+  const loadState = (newState: WorldState) => {
+    gameEngine.loadState(newState);
+    replaceEngineState();
+  };
+
+  /**
+   * Throw the world away and start a new one.
+   *
+   * The store is replaced to match, so no part of the old world survives.
+   */
+  const resetState = () => {
+    gameEngine.resetState();
+    replaceEngineState();
+  };
+
   // Building management
   const buildBuilding = (buildingId: string) => {
     const buildingType = getBuildingType(buildingId);
@@ -282,6 +353,9 @@ export const useGameState = () => {
     getMarketTickRates,
     gameEngine,
     mirrorEngineState,
+    replaceEngineState,
+    loadState,
+    resetState,
     // Expose the raw state for debugging
     rawState: state,
   };
@@ -297,4 +371,14 @@ export const getGameState = () => {
   }
 
   return gameStateInstance;
+};
+
+/**
+ * Throw away the shared game state, so the next `getGameState` builds a new
+ * one.
+ *
+ * Tests use this to start from a clean world. The game itself never calls it.
+ */
+export const resetGameState = (): void => {
+  gameStateInstance = null;
 };

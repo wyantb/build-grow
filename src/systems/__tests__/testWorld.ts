@@ -44,8 +44,16 @@ export function createTestWorld(overrides: WorldOverrides = {}): WorldState {
     job.workers = workers;
   }
 
+  // Each building of a type needs its own instance key, the same way the
+  // engine numbers them. Two huts are `hut-0` and `hut-1`, not `hut-0` twice.
+  const instanceCounters: Record<string, number> = {};
+
   for (const buildingId of overrides.buildings ?? []) {
-    const key = `${buildingId}-0`;
+    const index = instanceCounters[buildingId] ?? 0;
+
+    instanceCounters[buildingId] = index + 1;
+
+    const key = `${buildingId}-${index}`;
     const building: Building = {
       id: buildingId,
       name: buildingId,

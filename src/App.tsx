@@ -1,13 +1,13 @@
 import { createSignal, createMemo } from 'solid-js';
 import type { Component } from 'solid-js';
 import { useGameLoop } from './hooks/useGameLoop.js';
-import { useTheme } from './hooks/useTheme.js';
+import { useSaveSystem } from './hooks/useSaveSystem.js';
+import GameHeader from './components/game/GameHeader.js';
 import ResourcePanel from './components/game/ResourcePanel.js';
 import BuildingGrid from './components/game/BuildingGrid.js';
 import JobPanel from './components/game/JobPanel.js';
 import MarketPanel from './components/game/MarketPanel.js';
 import SettingsPanel from './components/game/SettingsPanel.js';
-import Tooltip from './components/ui/Tooltip.js';
 import type GameEngine from './systems/gameEngine.js';
 import type { GameStateReturnType } from './hooks/useGameState.js';
 
@@ -21,30 +21,12 @@ declare global {
 // A separate component so the theme signal is read inside JSX, which is a
 // tracking scope. Reading it directly in a component body is a
 // STRICT_READ_UNTRACKED diagnostic in Solid 2.
-const ThemeToggle: Component = () => {
-  const { theme, toggleTheme } = useTheme();
-
-  return (
-    <Tooltip
-      content={`Switch to ${theme() === 'light' ? 'dark' : 'light'} mode.`}
-      placement="bottom"
-      >
-      <button
-        class="theme-toggle"
-        id="theme-toggle"
-        type="button"
-        onClick={toggleTheme}
-        aria-label={`Switch to ${theme() === 'light' ? 'dark' : 'light'} mode`}
-      >
-        <span class="theme-icon">{theme() === 'light' ? '🌙' : '☀️'}</span>
-      </button>
-    </Tooltip>
-  );
-};
-
 const App: Component = () => {
   // Initialize game state and loop
   const { gameEngine, gameState } = useGameLoop();
+
+  // Start the autosave loop and restore the last save.
+  useSaveSystem();
 
   // Tab management
   const [activeTab, setActiveTab] = createSignal<'buildings' | 'jobs' | 'market' | 'settings'>('buildings');
@@ -59,8 +41,7 @@ const App: Component = () => {
   return (
     <div class="game-container">
       <header>
-        <h1>Fantasy Civilization Builder</h1>
-        <ThemeToggle />
+        <GameHeader />
       </header>
 
       <div class="game-content">

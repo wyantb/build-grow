@@ -69,13 +69,6 @@ const ResourcePanel: Component = () => {
         <span class="resource-amount">{gameState.getPopulation()}</span>
         <span class="resource-rate">-</span>
       </div>
-      <div class="resource-row">
-        <Tooltip content="Elapsed game time, in seconds." placement="right">
-          <span class="resource-name">Time</span>
-        </Tooltip>
-        <span class="resource-amount">{gameState.getGameTime().toFixed(0)}s</span>
-        <span class="resource-rate">-</span>
-      </div>
     </div>
   );
 };

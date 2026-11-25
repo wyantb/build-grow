@@ -17,6 +17,7 @@ class GameEngine {
   private marketSystem: MarketSystem;
   private listeners = new Set<() => void>();
   private buildingInstanceCounter: Record<string, number> = {};
+  private loadEpoch = 0;
 
   constructor(initialState?: WorldState) {
     this.state = initialState ?? createInitialState();
@@ -65,6 +66,50 @@ class GameEngine {
   // Get current game state
   getState(): WorldState {
     return { ...this.state };
+  }
+
+  /**
+   * Replace the world with a loaded one.
+   *
+   * The market system holds a reference to the state object, so it is rebuilt
+   * rather than reused. Job capacities and the building instance counter are
+   * recalculated from the loaded state, because both are derived values that
+   * a save does not carry.
+   */
+  loadState(state: WorldState): void {
+    this.state = state;
+    this.marketSystem = new MarketSystem(this.state);
+
+    this.buildingInstanceCounter = {};
+    this.recalculateJobCapacities();
+
+    // A load replaces the world, so anything that captured the old one is
+    // now stale.
+    this.loadEpoch++;
+
+    this.notify();
+  }
+
+  /**
+   * A counter that changes whenever the world is replaced.
+   *
+   * A save reads the epoch before it starts writing and compares it
+   * afterwards. A change in between means the world was replaced while the
+   * save was in flight, so what it wrote belongs to a world that no longer
+   * exists.
+   */
+  getLoadEpoch(): number {
+    return this.loadEpoch;
+  }
+
+  /**
+   * Throw the world away and start a new one.
+   *
+   * The saved game is left alone, so a player who resets by accident can
+   * still load the old world back.
+   */
+  resetState(): void {
+    this.loadState(createInitialState());
   }
 
   // Start the game loop
