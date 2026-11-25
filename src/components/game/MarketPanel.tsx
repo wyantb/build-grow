@@ -8,10 +8,8 @@ import {
   MARKET_RESOURCES,
   getBuyPrice,
   getSellPrice,
-  getTradeCapacity,
 } from '../../data/market.js';
 import type { MarketResource } from '../../data/market.js';
-import type { MarketAction } from '../../systems/marketSystem.js';
 
 /** The steps offered on the sell side of a row, in the order they are shown. */
 const SELL_STEPS = [
@@ -42,27 +40,39 @@ const MarketPanel: Component = () => {
   const buyCount = (resource: MarketResource): number => orders().buys[resource] ?? 0;
   const sellCount = (resource: MarketResource): number => orders().sells[resource] ?? 0;
 
-  const freeTrades = (action: MarketAction): number =>
-    gameState.getFreeMarketTrades(action);
-
   /**
-   * Adjust the order for `resource` by `step` units per tick.
+   * Adjust the net order for `resource` by `step` units per tick.
    *
-   * Positive steps increase buys or decrease sells.
-   * Negative steps increase sells or decrease buys.
+   * Positive steps increase net buys or decrease net sells.
+   * Negative steps increase net sells or decrease net buys.
+   *
+   * Examples:
+   * - Sell count is 1, click +1 buy -> net becomes 0 (1 sell - 1 buy = 0)
+   * - Sell count is 2, click +1 buy -> net becomes 1 sell (2 sell - 1 buy = 1 sell)
+   * - Buy count is 2, click -5 sell -> net becomes 3 sell (2 buy - 5 sell = 3 sell)
+   * - Net is 0, click +1 buy -> net becomes 1 buy
+   * - Net is 1 sell, click +5 buy -> net becomes 4 buy (5 buy - 1 sell = 4 buy)
    */
   const adjust = (resource: MarketResource, step: number): void => {
     const currentBuy = buyCount(resource);
     const currentSell = sellCount(resource);
 
-    // If we're increasing buys or decreasing sells, use the buy action
-    if (step > 0) {
-      gameState.setMarketAllocation('buy', resource, currentBuy + step);
-    } else if (step < 0) {
-      // If we're increasing sells or decreasing buys, use the sell action
-      gameState.setMarketAllocation('sell', resource, currentSell - step);
+    // Calculate net position: positive = buy, negative = sell
+    const netPosition = currentBuy - currentSell;
+    const newNetPosition = netPosition + step;
+
+    if (newNetPosition > 0) {
+      // Positive net = buy
+      gameState.setMarketAllocation('buy', resource, newNetPosition);
+      gameState.setMarketAllocation('sell', resource, 0);
+    } else if (newNetPosition < 0) {
+      // Negative net = sell
+      gameState.setMarketAllocation('buy', resource, 0);
+      gameState.setMarketAllocation('sell', resource, Math.abs(newNetPosition));
+    } else {
+      // Zero net = clear both
+      gameState.clearMarketAllocation(resource);
     }
-    // step === 0 does nothing
   };
 
   /** Release the buy and the sell order for `resource`. */
@@ -73,39 +83,25 @@ const MarketPanel: Component = () => {
   const stepTooltip = (resource: MarketResource, step: number): string => {
     const label = MARKET_RESOURCE_INFO[resource].label;
     const verb = step > 0 ? 'Buy' : 'Sell';
-    const absStep = Math.abs(step);
 
     if (merchants() <= 0) {
       return `No merchants available. Assign a worker to the Merchant job to ${verb.toLowerCase()} ${label}.`;
     }
 
-    // Check if we can actually make this adjustment
+    // Calculate what the new net position would be
     const currentBuy = buyCount(resource);
     const currentSell = sellCount(resource);
+    const netPosition = currentBuy - currentSell;
+    const newNetPosition = netPosition + step;
 
-    if (step > 0) {
-      // Increasing buys - check if we have free buy trades or can convert sells
-      const free = freeTrades('buy');
-      if (free >= absStep || currentSell >= absStep) {
-        return `${verb} ${absStep} ${label} per tick.`;
-      }
-
-      const capacity = getTradeCapacity(merchants());
-
-      return `No trade left. ${merchants()} merchant${merchants() === 1 ? '' : 's'} carr${merchants() === 1 ? 'ies' : 'y'} ${capacity} buy trade${capacity === 1 ? '' : 's'} per tick.`;
-    } if (step < 0) {
-      // Increasing sells - check if we have free sell trades or can convert buys
-      const free = freeTrades('sell');
-      if (free >= absStep || currentBuy >= absStep) {
-        return `${verb} ${absStep} ${label} per tick.`;
-      }
-
-      const capacity = getTradeCapacity(merchants());
-
-      return `No trade left. ${merchants()} merchant${merchants() === 1 ? '' : 's'} carr${merchants() === 1 ? 'ies' : 'y'} ${capacity} sell trade${capacity === 1 ? '' : 's'} per tick.`;
+    if (newNetPosition > 0) {
+      return `Set net position to ${newNetPosition} buy${newNetPosition > 1 ? 's' : ''} per tick.`;
+    } if (newNetPosition < 0) {
+      return `Set net position to ${Math.abs(newNetPosition)} sell${Math.abs(newNetPosition) > 1 ? 's' : ''} per tick.`;
     }
 
-    return `No change.`;
+    return `Set net position to 0 (no trading).`;
+
   };
 
   const clearTooltip = (resource: MarketResource): string => {
@@ -116,27 +112,12 @@ const MarketPanel: Component = () => {
 
   /**
    * True when a step adjustment can be applied to `resource`.
+   *
+   * We can always adjust as long as we have merchants, because we're just
+   * changing a number on a scale - the engine handles capacity internally.
    */
-  const canAdjust = (resource: MarketResource, step: number): boolean => {
-    if (merchants() <= 0) {return false;}
-
-    const currentBuy = buyCount(resource);
-    const currentSell = sellCount(resource);
-    const absStep = Math.abs(step);
-
-    if (step > 0) {
-      // Increasing buys - check if we have free buy trades or can convert sells
-      const free = freeTrades('buy');
-
-      return free >= absStep || currentSell >= absStep;
-    } if (step < 0) {
-      // Increasing sells - check if we have free sell trades or can convert buys
-      const free = freeTrades('sell');
-
-      return free >= absStep || currentBuy >= absStep;
-    }
-
-    return false;
+  const canAdjust = (_resource: MarketResource, _step: number): boolean => {
+    return merchants() > 0;
   };
 
   return (
