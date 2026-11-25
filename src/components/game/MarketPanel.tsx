@@ -113,7 +113,7 @@ const MarketPanel: Component = () => {
   /**
    * True when a step adjustment can be applied to `resource`.
    *
-   * Checks if we have enough merchant capacity to make the adjustment.
+   * Enforces that with limited merchants, we can only trade in one direction at a time.
    * Buttons are enabled/disabled based on available merchant capacity:
    * - 1 sell, no merchants available: sell side is all disabled, 0 and buy side is enabled
    * - 2 buy, 3 merchants available: all trade buttons everywhere available
@@ -132,10 +132,23 @@ const MarketPanel: Component = () => {
     const netPosition = currentBuy - currentSell;
     const newNetPosition = netPosition + step;
 
-    // Calculate how many trades we'd need for the new position
-    const tradesNeeded = Math.abs(newNetPosition);
+    // Determine the current trading direction
+    const hasCurrentBuys = Object.values(orders().buys).some(count => count > 0);
+    const hasCurrentSells = Object.values(orders().sells).some(count => count > 0);
 
-    // Calculate current total trades being used
+    // If we're currently trading in one direction and trying to switch to the other
+    if ((hasCurrentBuys && !hasCurrentSells && newNetPosition < 0)
+        || (hasCurrentSells && !hasCurrentBuys && newNetPosition > 0)) {
+      // Check if we have enough capacity for the switch
+      const tradesNeeded = Math.abs(newNetPosition);
+      const freeTrades = gameState.getFreeMarketTrades(newNetPosition > 0 ? 'buy' : 'sell');
+      const additionalTradesNeeded = tradesNeeded - (currentBuy + currentSell);
+
+      return freeTrades >= additionalTradesNeeded;
+    }
+
+    // If we're staying in the same direction or going to zero, check normally
+    const tradesNeeded = Math.abs(newNetPosition);
     const currentTrades = currentBuy + currentSell;
 
     // If we're reducing trades or keeping the same number, we can always do it
@@ -144,7 +157,9 @@ const MarketPanel: Component = () => {
     }
 
     // We're increasing trades, check if we have enough capacity
-    const freeTrades = gameState.getFreeMarketTrades('buy'); // buy and sell capacity are the same
+    // Determine which direction we're increasing
+    const direction = newNetPosition > 0 ? 'buy' : 'sell';
+    const freeTrades = gameState.getFreeMarketTrades(direction);
     const additionalTradesNeeded = tradesNeeded - currentTrades;
 
     return freeTrades >= additionalTradesNeeded;
