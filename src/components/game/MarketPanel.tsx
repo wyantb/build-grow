@@ -156,13 +156,21 @@ const MarketPanel: Component = () => {
             <div>
               Trade Capacity: {merchants()} (from {merchants()} merchant{merchants() !== 1 ? 's' : ''})
               <hr />
-              Buying:
-              <For each={Object.entries(orders().buys)}>{([resource, count]) =>
-                count > 0 ? <div>{count} {resource} (costs {formatNumber(getBuyPrice(resource as MarketResource) * count)}/s)</div> : null}</For>
-              --
-              Selling:
-              <For each={Object.entries(orders().sells)}>{([resource, count]) =>
-                count > 0 ? <div>{count} {resource} (gains {formatNumber(getSellPrice(resource as MarketResource) * count)}/s)</div> : null}</For>
+              {Object.values(orders().buys).some(count => count > 0) && (
+                <>
+                  Buying:
+                  <For each={Object.entries(orders().buys)}>{([resource, count]) =>
+                    count > 0 ? <div>{count} {resource} (costs {formatNumber(getBuyPrice(resource as MarketResource) * count)}/s)</div> : null}</For>
+                </>
+              )}
+              {Object.values(orders().buys).some(count => count > 0) && Object.values(orders().sells).some(count => count > 0) && <br />}
+              {Object.values(orders().sells).some(count => count > 0) && (
+                <>
+                  Selling:
+                  <For each={Object.entries(orders().sells)}>{([resource, count]) =>
+                    count > 0 ? <div>{count} {resource} (gains {formatNumber(getSellPrice(resource as MarketResource) * count)}/s)</div> : null}</For>
+                </>
+              )}
             </div>
           }
           placement="top"
