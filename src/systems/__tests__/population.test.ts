@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import GameEngine from '../gameEngine.js';
 import {
-  BASE_GROWTH_CHANCE,
+  BIRTH_CHANCE_BONUS,
   GROWTH_INTERVAL_SECONDS,
   GROWTH_INTERVAL_TICKS,
+  MAX_BIRTH_CHANCE,
+  MIN_BIRTH_CHANCE,
+  POPULATION_PER_BONUS,
   POPULATION_PER_HUT,
   getBirthChance,
   getMeanGrowthSeconds,
@@ -162,35 +165,59 @@ describe('population growth', () => {
 
 describe('the growth rate', () => {
   it('takes twenty seconds on average at the starting population', () => {
-    expect(BASE_GROWTH_CHANCE).toBe(0.25);
+    expect(MIN_BIRTH_CHANCE).toBe(0.25);
     expect(GROWTH_INTERVAL_SECONDS).toBe(5);
     expect(getMeanGrowthSeconds(5)).toBeCloseTo(20, 10);
   });
 
   it('grows faster as the population grows', () => {
-    expect(getBirthChance(10)).toBeGreaterThan(getBirthChance(5));
-    expect(getBirthChance(100)).toBeGreaterThan(getBirthChance(10));
+    // The rate is flat inside a step, so it only rises at a step boundary.
+    expect(getBirthChance(40)).toBeGreaterThan(getBirthChance(39));
+    expect(getBirthChance(80)).toBeGreaterThan(getBirthChance(79));
+    expect(getBirthChance(100)).toBeGreaterThan(getBirthChance(79));
   });
 
-  it('grows logarithmically, so a bigger population is not proportionally faster', () => {
-    // Doubling the population raises the birth rate by less than the rate
-    // itself.
-    const chanceAt5 = getBirthChance(5);
-    const chanceAt10 = getBirthChance(10);
-    const chanceAt20 = getBirthChance(20);
+  it('stays at the minimum until the population reaches a step', () => {
+    expect(getBirthChance(1)).toBeCloseTo(MIN_BIRTH_CHANCE, 10);
+    expect(getBirthChance(5)).toBeCloseTo(MIN_BIRTH_CHANCE, 10);
+    expect(getBirthChance(39)).toBeCloseTo(MIN_BIRTH_CHANCE, 10);
 
-    expect(chanceAt10 / chanceAt5).toBeLessThan(2);
-    expect(chanceAt20 / chanceAt10).toBeLessThan(2);
-
-    // The ratio itself shrinks as the population grows, which is what a
-    // logarithmic curve does.
-    expect(chanceAt20 / chanceAt10).toBeLessThan(chanceAt10 / chanceAt5);
+    // The fortieth person is the first one that earns a bonus.
+    expect(getBirthChance(40)).toBeCloseTo(MIN_BIRTH_CHANCE + BIRTH_CHANCE_BONUS, 10);
   });
 
-  it('never grows faster than one person per interval', () => {
-    expect(getBirthChance(1000)).toBeLessThanOrEqual(1);
+  it('adds one bonus for every step of forty people', () => {
+    expect(POPULATION_PER_BONUS).toBe(40);
+
+    expect(getBirthChance(40)).toBeCloseTo(0.26, 10);
+    expect(getBirthChance(80)).toBeCloseTo(0.27, 10);
+    expect(getBirthChance(120)).toBeCloseTo(0.28, 10);
+    expect(getBirthChance(400)).toBeCloseTo(0.35, 10);
+    expect(getBirthChance(1000)).toBeCloseTo(0.50, 10);
+  });
+
+  it('holds the rate steady between two steps', () => {
+    expect(getBirthChance(40)).toBe(getBirthChance(79));
+    expect(getBirthChance(80)).toBe(getBirthChance(119));
+  });
+
+  it('caps at one birth per interval', () => {
+    expect(MAX_BIRTH_CHANCE).toBe(1);
+    expect(getBirthChance(3000)).toBe(1);
+    expect(getBirthChance(3001)).toBe(1);
     expect(getBirthChance(100000)).toBe(1);
     expect(getMeanGrowthSeconds(100000)).toBeCloseTo(GROWTH_INTERVAL_SECONDS, 10);
+  });
+
+  it('reaches the cap at the population the bonus fills it', () => {
+    // The minimum plus 75 bonuses of 1% is 100%.
+    const capPopulation = POPULATION_PER_BONUS * Math.round(
+      (MAX_BIRTH_CHANCE - MIN_BIRTH_CHANCE) / BIRTH_CHANCE_BONUS,
+    );
+
+    expect(capPopulation).toBe(3000);
+    expect(getBirthChance(capPopulation - 1)).toBeLessThan(MAX_BIRTH_CHANCE);
+    expect(getBirthChance(capPopulation)).toBe(MAX_BIRTH_CHANCE);
   });
 
   it('grows no slower as the population shrinks', () => {
@@ -198,8 +225,10 @@ describe('the growth rate', () => {
     expect(getBirthChance(0)).toBe(0);
   });
 
-  it('settles at the base rate for the starting population', () => {
-    expect(getBirthChance(5)).toBeCloseTo(BASE_GROWTH_CHANCE, 10);
+  it('never grows faster than one person per interval', () => {
+    for (const population of [1, 40, 400, 3000, 100000]) {
+      expect(getBirthChance(population)).toBeLessThanOrEqual(MAX_BIRTH_CHANCE);
+    }
   });
 });
 

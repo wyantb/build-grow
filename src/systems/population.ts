@@ -5,10 +5,10 @@
  * growth rule is a geometric trial: every so often the world rolls against
  * the chance of a birth, and a birth adds one person.
  *
- * The chance of a birth grows with the size of the population, on a
- * logarithmic curve. A larger civilization reproduces faster, but not in
- * proportion to its size: the curve flattens out, so doubling the
- * population does not double the birth rate.
+ * The chance of a birth grows in steps with the size of the population. A
+ * larger civilization reproduces faster, but not in proportion to its size:
+ * each step of 40 people adds the same 1%, so doubling the population never
+ * doubles the birth rate.
  */
 
 import { TICKS_PER_SECOND } from './ticks.js';
@@ -20,29 +20,34 @@ export const POPULATION_PER_HUT = 5;
 export const GROWTH_INTERVAL_TICKS = 25;
 
 /**
- * The chance of a birth at the starting population, per growth interval.
+ * The chance of a birth at the smallest populations, per growth interval.
  *
  * With a roll every 5 seconds and a mean wait of 20 seconds, the chance is
  * one in four.
  */
-export const BASE_GROWTH_CHANCE = 0.25;
+export const MIN_BIRTH_CHANCE = 0.25;
 
 /**
- * The population the base chance applies to.
+ * How many people share one step of the birth rate.
  *
- * The growth curve is measured from here, so the starting population gets
- * exactly the base chance.
+ * Every population this size adds one step to the birth rate.
  */
-export const BASE_POPULATION = 5;
+export const POPULATION_PER_BONUS = 40;
 
 /**
- * How fast the growth rate climbs with the population.
+ * What one step of the birth rate adds.
  *
- * The chance of a birth is `BASE_GROWTH_CHANCE * (1 + GROWTH_SCALE *
- * ln(population / BASE_POPULATION))`, so this is the share of the base chance
- * that each factor of e adds to the birth rate.
+ * The chance of a birth is `MIN_BIRTH_CHANCE + BIRTH_CHANCE_BONUS *
+ * floor(population / POPULATION_PER_BONUS)`.
  */
-export const GROWTH_SCALE = 0.5;
+export const BIRTH_CHANCE_BONUS = 0.01;
+
+/**
+ * The highest chance of a birth.
+ *
+ * The population can never grow faster than one person per interval.
+ */
+export const MAX_BIRTH_CHANCE = 1;
 
 /** The seconds one growth interval lasts. */
 export const GROWTH_INTERVAL_SECONDS = GROWTH_INTERVAL_TICKS / TICKS_PER_SECOND;
@@ -58,19 +63,19 @@ export const getPopulationCapacity = (hutCount: number): number =>
 /**
  * The chance of a birth in one growth interval, for a given population.
  *
- * The curve is logarithmic, so the birth rate rises with the population but
- * ever more slowly. The chance is capped at 1, so the population can never
- * grow faster than one person per interval.
+ * The rate is flat at the minimum until the population reaches a step, then
+ * it rises by one bonus at a time. The chance is capped, so the population
+ * can never grow faster than one person per interval.
  */
 export const getBirthChance = (population: number): number => {
   if (population <= 0) {
     return 0;
   }
 
-  const growth = 1 + GROWTH_SCALE * Math.log(population / BASE_POPULATION);
-  const chance = BASE_GROWTH_CHANCE * Math.max(0, growth);
+  const steps = Math.floor(population / POPULATION_PER_BONUS);
+  const chance = MIN_BIRTH_CHANCE + steps * BIRTH_CHANCE_BONUS;
 
-  return Math.min(1, chance);
+  return Math.min(MAX_BIRTH_CHANCE, chance);
 };
 
 /**
