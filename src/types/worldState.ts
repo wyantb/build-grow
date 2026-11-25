@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { JOBS } from '../data/jobs.js';
 import { MARKET_RESOURCES } from '../data/market.js';
-import { SPECIES, STARTING_SPECIES_IDS } from '../data/species.js';
+import { DEFAULT_SPECIES_ID, SPECIES, STARTING_SPECIES_IDS } from '../data/species.js';
 import { GAME_VERSION } from '../systems/gameVersion.js';
 
 // Define the basic resource schema
@@ -68,13 +68,20 @@ export type Building = z.infer<typeof BuildingSchema>;
  * A species living in the world.
  *
  * The roster holds the stats of the creatures that are here, which is what
- * decides how well they work.
+ * decides how well they work, and how many of them there are.
  */
 export const SpeciesSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string(),
   stats: StatsSchema,
+  /**
+   * How many of this species are in the world.
+   *
+   * The people working a job are counted in the job, so this counts the
+   * whole species, employed or not.
+   */
+  count: z.number(),
 });
 
 export type Species = z.infer<typeof SpeciesSchema>;
@@ -154,6 +161,7 @@ export const createInitialState = (): WorldState => {
         name: species.name,
         description: species.description,
         stats: { ...species.baseStats },
+        count: 0,
       }]),
     ),
     unlockedBuildings: ['hut', 'market', 'caravanserai', 'lumberjack', 'quarry', 'farm'],
@@ -170,7 +178,14 @@ export const createInitialState = (): WorldState => {
   const defaultJobRef = initialState.jobs[initialState.defaultJob];
   if (defaultJobRef) {
     defaultJobRef.workers = initialState.population;
-    defaultJobRef.species = { human: initialState.population };
+    defaultJobRef.species = { [DEFAULT_SPECIES_ID]: initialState.population };
+  }
+
+  // The roster counts the whole population, which is all of one species
+  // when a world starts.
+  const startingSpecies = initialState.species[DEFAULT_SPECIES_ID];
+  if (startingSpecies) {
+    startingSpecies.count = initialState.population;
   }
 
   return initialState;

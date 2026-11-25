@@ -75,6 +75,13 @@ export const SavePayloadSchema = z.object({
       charisma: z.number(),
       manaSensitivity: z.number(),
     }),
+    /**
+     * How many of this species are in the world.
+     *
+     * A save written before the roster counted its species does not have
+     * this, so it is optional and defaults to none.
+     */
+    count: z.number().optional(),
   })).optional(),
   buildings: z.record(z.string(), SavedBuildingSchema),
   buildingCounts: z.record(z.string(), z.number()),

@@ -273,6 +273,12 @@ class GameEngine {
       this.addSpecies(defaultJob, 1, DEFAULT_SPECIES_ID);
     }
 
+    // The roster counts the child too.
+    const species = this.state.species[DEFAULT_SPECIES_ID];
+    if (species) {
+      species.count++;
+    }
+
     console.info(`A child is born. Population is now ${this.state.population}.`);
   }
 
@@ -347,48 +353,40 @@ class GameEngine {
     const job = this.state.jobs[jobId];
     if (!job) {return false;}
 
-    const totalAssigned = Object.values(this.state.jobs)
-      .reduce((sum, j) => sum + j.workers, 0);
-    const available = Math.max(0, this.state.population - totalAssigned);
-
     if (count > 0) {
       // Room in job (0 capacity = unlimited)
       const roomInJob = job.capacity > 0
         ? Math.max(0, job.capacity - job.workers)
         : Infinity;
 
-      // Determine how many workers can be moved
-      let canMove = Math.min(available, roomInJob);
+      // How many people of this species the world has that are not working
+      // a job yet. The unassigned people live in the default job, and the
+      // people in no job at all have not found work.
+      const defaultJob = this.state.jobs[this.state.defaultJob];
+      const unassigned = defaultJob?.species[speciesId] ?? 0;
+      const free = Math.max(
+        0,
+        (this.state.species[speciesId]?.count ?? 0) - unassigned - this.getWorking(speciesId),
+      );
+      const availableOfSpecies = free + unassigned;
 
-      // If no available population, try to pull from the default job
-      if (canMove <= 0) {
-        const defaultJob = this.state.jobs[this.state.defaultJob];
-        if (defaultJob) {
-          // Only people of the requested species can be pulled, because the
-          // people who arrive at the job are of that species.
-          const ofSpecies = defaultJob.species[speciesId] ?? 0;
-          canMove = Math.min(ofSpecies, roomInJob, count);
-        }
-      } else {
-        canMove = Math.min(canMove, count);
-      }
+      // Determine how many workers can be moved
+      const canMove = Math.min(availableOfSpecies, roomInJob, count);
 
       // If still no available workers, nothing to do
       if (canMove <= 0) {return true;}
 
-      // Pull from default job first if needed
-      if (canMove > available) {
-        const fromDefault = canMove - available;
-        const defaultJob = this.state.jobs[this.state.defaultJob];
-        if (defaultJob) {
-          defaultJob.workers = Math.max(0, defaultJob.workers - fromDefault);
-          this.removeSpecies(defaultJob, fromDefault, speciesId);
-        }
-        job.workers += available;
-        job.workers += fromDefault;
-      } else {
-        job.workers += canMove;
+      // The people who are in no job at all are taken first, because they
+      // are not working anything yet.
+      const fromFree = Math.min(canMove, free);
+      const fromDefault = canMove - fromFree;
+
+      if (fromDefault > 0 && defaultJob) {
+        defaultJob.workers = Math.max(0, defaultJob.workers - fromDefault);
+        this.removeSpecies(defaultJob, fromDefault, speciesId);
       }
+
+      job.workers += canMove;
 
       // The people being moved are of the given species.
       this.addSpecies(job, canMove, speciesId);
@@ -419,6 +417,26 @@ class GameEngine {
     this.notify();
 
     return true;
+  }
+
+  /**
+   * How many people of a species are working a job.
+   *
+   * The default job is left out, because the people in it are the ones who
+   * are not working anything yet.
+   */
+  private getWorking(speciesId: string): number {
+    let working = 0;
+
+    for (const job of Object.values(this.state.jobs)) {
+      if (job.id === this.state.defaultJob) {
+        continue;
+      }
+
+      working += job.species[speciesId] ?? 0;
+    }
+
+    return working;
   }
 
   /**

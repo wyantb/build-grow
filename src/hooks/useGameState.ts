@@ -113,6 +113,25 @@ export const useGameState = () => {
         }
       }
 
+      // The roster of species is written in one field at a time, because
+      // handing the store the engine's own object would be skipped by
+      // Solid's identity check.
+      for (const [speciesId, species] of Object.entries(engineState.species)) {
+        if (state.species[speciesId]) {
+          state.species[speciesId].name = species.name;
+          state.species[speciesId].description = species.description;
+          state.species[speciesId].stats.strength = species.stats.strength;
+          state.species[speciesId].stats.dexterity = species.stats.dexterity;
+          state.species[speciesId].stats.constitution = species.stats.constitution;
+          state.species[speciesId].stats.intelligence = species.stats.intelligence;
+          state.species[speciesId].stats.wisdom = species.stats.wisdom;
+          state.species[speciesId].stats.charisma = species.stats.charisma;
+          state.species[speciesId].stats.manaSensitivity = species.stats.manaSensitivity;
+        } else {
+          state.species[speciesId] = { ...species, stats: { ...species.stats } };
+        }
+      }
+
       // Mirror building counts
       for (const [id, count] of Object.entries(engineState.buildingCounts)) {
         state.buildingCounts[id] = count;
@@ -160,6 +179,11 @@ export const useGameState = () => {
           consumption: { ...job.consumption },
           species: { ...job.species },
         };
+      }
+
+      state.species = {};
+      for (const [speciesId, species] of Object.entries(engineState.species)) {
+        state.species[speciesId] = { ...species, stats: { ...species.stats } };
       }
 
       state.buildings = {};

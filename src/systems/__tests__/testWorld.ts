@@ -82,6 +82,7 @@ export function createTestWorld(overrides: WorldOverrides = {}): WorldState {
       name: species.name,
       description: species.description,
       stats: { ...NEUTRAL_STATS },
+      count: 0,
     };
   }
 
@@ -109,6 +110,35 @@ export function createTestWorld(overrides: WorldOverrides = {}): WorldState {
     }
 
     job.species = { [DEFAULT_SPECIES_ID]: job.workers };
+  }
+
+  // The roster counts the whole population. The people in a job are
+  // counted there; the rest have not found work yet and are of the
+  // default species.
+  for (const entry of Object.values(state.species)) {
+    entry.count = 0;
+  }
+
+  for (const job of Object.values(state.jobs)) {
+    for (const [speciesId, count] of Object.entries(job.species)) {
+      const entry = state.species[speciesId];
+
+      if (entry) {
+        entry.count += count;
+      }
+    }
+  }
+
+  const working = Object.values(state.species)
+    .reduce((sum, entry) => sum + entry.count, 0);
+  const withoutWork = Math.max(0, state.population - working);
+
+  if (withoutWork > 0) {
+    const defaultSpecies = state.species[DEFAULT_SPECIES_ID];
+
+    if (defaultSpecies) {
+      defaultSpecies.count += withoutWork;
+    }
   }
 
   // Each building of a type needs its own instance key, the same way the

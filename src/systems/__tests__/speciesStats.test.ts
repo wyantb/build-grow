@@ -314,6 +314,7 @@ describe('a job staffed by more than one species', () => {
         human: { strength: 80, intelligence: 100 },
         elf: { strength: 120, intelligence: 100 },
       },
+      jobSpecies: { unemployed: { human: 1, elf: 1 } },
     }));
 
     // One human and one elf, whose average strength is 100.
@@ -336,6 +337,7 @@ describe('a job staffed by more than one species', () => {
         human: { strength: 100, intelligence: 100 },
         elf: { strength: 60, intelligence: 100 },
       },
+      jobSpecies: { unemployed: { human: 1, elf: 1 } },
     }));
 
     engine.assignWorkers('lumberjack', 1, 'human');
@@ -416,6 +418,212 @@ describe('the species of a job', () => {
 
     expect(engine.getState().jobs['lumberjack']?.species).toEqual({ human: 1, elf: 1 });
     expect(engine.getState().jobs['lumberjack']?.workers).toBe(2);
+  });
+});
+
+describe('the rate the engine reports', () => {
+  it('matches the wood gained over a batch of ticks', () => {
+    const engine = new GameEngine(createTestWorld({
+      population: 5,
+      workers: { unemployed: 4 },
+      buildings: ['lumberjack'],
+      species: { human: { strength: 80, intelligence: 90 } },
+    }));
+
+    engine.assignWorkers('lumberjack', 1);
+
+    const rate = engine.getTickRates().wood;
+    const woodBefore = engine.getState().resources.wood;
+
+    engine.runTicks(50);
+
+    const gained = engine.getState().resources.wood - woodBefore;
+
+    expect(gained).toBeCloseTo(rate * 50, 6);
+  });
+
+  it('matches the food gained over a batch of ticks', () => {
+    const engine = new GameEngine(createTestWorld({
+      population: 5,
+      workers: { unemployed: 4 },
+      buildings: ['farm'],
+      species: { human: { constitution: 120, wisdom: 110 } },
+    }));
+
+    engine.assignWorkers('farmer', 1);
+
+    const rate = engine.getTickRates().food;
+    const foodBefore = engine.getState().resources.food;
+
+    engine.runTicks(50);
+
+    const gained = engine.getState().resources.food - foodBefore;
+
+    expect(gained).toBeCloseTo(rate * 50, 6);
+  });
+
+  it('matches the stone gained over a batch of ticks', () => {
+    const engine = new GameEngine(createTestWorld({
+      population: 5,
+      workers: { unemployed: 4 },
+      buildings: ['quarry'],
+      species: { human: { strength: 130, constitution: 85 } },
+    }));
+
+    engine.assignWorkers('quarrier', 1);
+
+    const rate = engine.getTickRates().stone;
+    const stoneBefore = engine.getState().resources.stone;
+
+    engine.runTicks(50);
+
+    const gained = engine.getState().resources.stone - stoneBefore;
+
+    expect(gained).toBeCloseTo(rate * 50, 6);
+  });
+
+  it('matches the wood gained over a batch of ticks for a mixed job', () => {
+    const engine = new GameEngine(createTestWorld({
+      population: 5,
+      workers: { unemployed: 5 },
+      buildings: ['lumberjack', 'lumberjack'],
+      species: {
+        human: { strength: 80, intelligence: 100 },
+        elf: { strength: 120, intelligence: 100 },
+      },
+      jobSpecies: { unemployed: { human: 3, elf: 2 } },
+    }));
+
+    engine.assignWorkers('lumberjack', 1, 'human');
+    engine.assignWorkers('lumberjack', 1, 'elf');
+
+    const rate = engine.getTickRates().wood;
+    const woodBefore = engine.getState().resources.wood;
+
+    engine.runTicks(50);
+
+    const gained = engine.getState().resources.wood - woodBefore;
+
+    expect(gained).toBeCloseTo(rate * 50, 6);
+  });
+});
+
+describe('the bookkeeping of the species', () => {
+  it('adds up to the worker count of the job', () => {
+    const engine = new GameEngine(createTestWorld({
+      population: 8,
+      workers: { unemployed: 7 },
+      buildings: ['lumberjack', 'lumberjack'],
+      jobSpecies: { unemployed: { human: 4, elf: 3 } },
+    }));
+
+    engine.assignWorkers('lumberjack', 2, 'human');
+    engine.assignWorkers('lumberjack', 1, 'elf');
+
+    const job = engine.getState().jobs['lumberjack'];
+    const counted = Object.values(job?.species ?? {}).reduce((sum, count) => sum + count, 0);
+
+    expect(counted).toBe(job?.workers);
+  });
+
+  it('adds up to the worker count after a removal', () => {
+    const engine = new GameEngine(createTestWorld({
+      population: 8,
+      workers: { unemployed: 7 },
+      buildings: ['lumberjack', 'lumberjack'],
+      jobSpecies: { unemployed: { human: 4, elf: 3 } },
+    }));
+
+    engine.assignWorkers('lumberjack', 2, 'human');
+    engine.assignWorkers('lumberjack', 1, 'elf');
+    engine.assignWorkers('lumberjack', -2);
+
+    const job = engine.getState().jobs['lumberjack'];
+    const counted = Object.values(job?.species ?? {}).reduce((sum, count) => sum + count, 0);
+
+    expect(counted).toBe(job?.workers);
+  });
+
+  it('keeps the population the same when workers move between jobs', () => {
+    const engine = new GameEngine(createTestWorld({
+      population: 6,
+      workers: { unemployed: 5 },
+      buildings: ['lumberjack'],
+    }));
+
+    engine.assignWorkers('lumberjack', 1);
+
+    expect(engine.getState().population).toBe(6);
+
+    const total = Object.values(engine.getState().jobs)
+      .reduce((sum, job) => sum + job.workers, 0);
+
+    expect(total).toBe(6);
+  });
+
+  it('does not assign more workers of a species than the world has', () => {
+    const engine = new GameEngine(createTestWorld({
+      population: 6,
+      workers: { unemployed: 5 },
+      buildings: ['lumberjack', 'lumberjack'],
+      jobSpecies: { unemployed: { human: 5, elf: 1 } },
+    }));
+
+    // There is one elf in the world, so only one can be assigned.
+    engine.assignWorkers('lumberjack', 1, 'elf');
+    engine.assignWorkers('lumberjack', 1, 'elf');
+
+    const job = engine.getState().jobs['lumberjack'];
+
+    expect(job?.species['elf'] ?? 0).toBeLessThanOrEqual(1);
+  });
+
+  it('assigns nobody when the world has nobody of that species', () => {
+    const engine = new GameEngine(createTestWorld({
+      population: 6,
+      workers: { unemployed: 5 },
+      buildings: ['lumberjack', 'lumberjack'],
+      jobSpecies: { unemployed: { human: 5 } },
+    }));
+
+    engine.assignWorkers('lumberjack', 1, 'elf');
+
+    expect(engine.getState().jobs['lumberjack']?.workers).toBe(0);
+    expect(engine.getState().jobs['lumberjack']?.species).toEqual({});
+  });
+});
+
+describe('the roster of species', () => {
+  it('counts the whole population of a new world', () => {
+    const engine = new GameEngine();
+
+    expect(engine.getState().species[DEFAULT_SPECIES_ID]?.count).toBe(5);
+  });
+
+  it('counts a child as a member of the species', () => {
+    const engine = new GameEngine(createTestWorld({
+      population: 4,
+      workers: { unemployed: 4 },
+      buildings: ['hut', 'hut'],
+    }), () => 0);
+
+    engine.runTicks(25);
+
+    expect(engine.getState().population).toBe(5);
+    expect(engine.getState().species[DEFAULT_SPECIES_ID]?.count).toBe(5);
+  });
+
+  it('adds up to the population of the world', () => {
+    const engine = new GameEngine(createTestWorld({
+      population: 6,
+      workers: { unemployed: 4, lumberjack: 2 },
+      buildings: ['lumberjack', 'lumberjack'],
+    }));
+
+    const counted = Object.values(engine.getState().species)
+      .reduce((sum, entry) => sum + entry.count, 0);
+
+    expect(counted).toBe(engine.getState().population);
   });
 });
 

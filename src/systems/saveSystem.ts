@@ -125,7 +125,7 @@ export const serializeState = (state: WorldState): SavePayload => {
   const species: SavePayload['species'] = {};
 
   for (const [speciesId, entry] of Object.entries(state.species)) {
-    species[speciesId] = { stats: { ...entry.stats } };
+    species[speciesId] = { stats: { ...entry.stats }, count: entry.count };
   }
 
   const buildings: SavePayload['buildings'] = {};
@@ -231,6 +231,7 @@ export const deserializePayload = (payload: SavePayload): WorldState => {
       name: catalogSpecies.name,
       description: catalogSpecies.description,
       stats: { ...savedSpecies.stats },
+      count: savedSpecies.count ?? 0,
     };
   }
 
