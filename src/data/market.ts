@@ -37,10 +37,21 @@ export const SELL_PRICE_MULTIPLIER = 0.75;
 export const TRADES_PER_MERCHANT = 1;
 
 /**
- * Total trade positions that `merchantCount` merchants can provide per tick.
+ * Extra trade positions a single merchant gains per caravanserai.
+ *
+ * A caravanserai has no staff of its own; it gives every merchant room for
+ * one more trade.
  */
-export const getTradeCapacity = (merchantCount: number): number =>
-  merchantCount * TRADES_PER_MERCHANT;
+export const TRADES_PER_CARAVANSERAI = 1;
+
+/**
+ * Total trade positions that `merchantCount` merchants can provide per tick.
+ *
+ * Each caravanserai adds a trade position to every merchant, so three
+ * merchants and three caravanserai carry twelve positions.
+ */
+export const getTradeCapacity = (merchantCount: number, caravanseraiCount: number): number =>
+  merchantCount * (TRADES_PER_MERCHANT + caravanseraiCount * TRADES_PER_CARAVANSERAI);
 
 /** Display metadata for the market rows. */
 export const MARKET_RESOURCE_INFO: Record<MarketResource, { label: string; description: string }> = {

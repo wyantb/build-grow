@@ -151,6 +151,31 @@ describe('deserializePayload', () => {
     expect(restored.jobs['obsolete-job']).toBeUndefined();
     expect(restored.buildings['gone-0']).toBeUndefined();
   });
+
+  it('unlocks a building that was added after the save was written', () => {
+    const world = createTestWorld({ buildings: ['hut'] });
+    const payload = serializeState(world);
+
+    // A save from before the caravanserai existed does not list it.
+    payload.unlockedBuildings = payload.unlockedBuildings.filter((id) => id !== 'caravanserai');
+
+    expect(payload.unlockedBuildings).not.toContain('caravanserai');
+
+    const restored = deserializePayload(payload);
+
+    expect(restored.unlockedBuildings).toContain('caravanserai');
+  });
+
+  it('keeps the unlocks a save lists that a new game does not', () => {
+    const world = createTestWorld({ buildings: ['hut'] });
+    const payload = serializeState(world);
+
+    payload.unlockedBuildings = [...payload.unlockedBuildings, 'grand-temple'];
+
+    const restored = deserializePayload(payload);
+
+    expect(restored.unlockedBuildings).toContain('grand-temple');
+  });
 });
 
 describe('save and load round trip', () => {
@@ -305,7 +330,12 @@ describe('version handling', () => {
   it('warns when the save came from a different game version', () => {
     const envelope = createEnvelope(serializeState(createTestWorld()));
 
-    envelope.gameVersion = '1.1.0';
+    // A different minor version of the same major, so the save is compatible
+    // but still worth warning about.
+    const [major, minor] = GAME_VERSION.split('.');
+    const otherVersion = `${major}.${Number(minor) + 1}.0`;
+
+    envelope.gameVersion = otherVersion;
 
     const result = decodeEnvelopeText(JSON.stringify(envelope));
 
@@ -315,7 +345,7 @@ describe('version handling', () => {
       return;
     }
 
-    expect(result.warning).toContain('1.1.0');
+    expect(result.warning).toContain(otherVersion);
     expect(result.warning).toContain(GAME_VERSION);
   });
 

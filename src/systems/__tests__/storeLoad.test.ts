@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { getGameState, resetGameState } from '../../hooks/useGameState.js';
 import { deserializePayload, serializeState } from '../saveSystem.js';
+import { createTestWorld } from './testWorld.js';
 
 beforeEach(() => {
   resetGameState();
@@ -79,5 +80,35 @@ describe('the store after a load', () => {
     gameState.loadState(deserializePayload(saved));
 
     expect(gameState.getGameTime()).toBeCloseTo(savedTime, 5);
+  });
+});
+
+describe('the store trade capacity', () => {
+  it('counts the caravanserai into the capacity it reports', () => {
+    const gameState = getGameState();
+
+    gameState.gameEngine.loadState(createTestWorld({
+      population: 4,
+      workers: { merchant: 2 },
+      buildings: ['market', 'caravanserai', 'caravanserai'],
+    }));
+    gameState.replaceEngineState();
+
+    expect(gameState.getCaravanseraiCount()).toBe(2);
+    expect(gameState.getMarketTradeCapacity()).toBe(6);
+  });
+
+  it('reports the capacity of the merchants alone without a caravanserai', () => {
+    const gameState = getGameState();
+
+    gameState.gameEngine.loadState(createTestWorld({
+      population: 4,
+      workers: { merchant: 2 },
+      buildings: ['market'],
+    }));
+    gameState.replaceEngineState();
+
+    expect(gameState.getCaravanseraiCount()).toBe(0);
+    expect(gameState.getMarketTradeCapacity()).toBe(2);
   });
 });

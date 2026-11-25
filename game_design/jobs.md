@@ -46,3 +46,8 @@ See src/data/jobs.ts
 | Quarry | Quarrier (+1 capacity) |
 | Market | Merchant (+1 capacity) |
 | Builder's Lodge | TBA |
+
+Not every building appears in this table. A building that grants no job slot
+is listed in `game_design/buildings.md` instead. The Caravanserai is one of
+them: it adds no worker, but it gives every merchant an extra trade
+position.

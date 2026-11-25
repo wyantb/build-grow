@@ -206,6 +206,125 @@ describe('Market allocation', () => {
   });
 });
 
+describe('Caravanserai trade capacity', () => {
+  it('gives each merchant one extra trade per caravanserai', () => {
+    const engine = new GameEngine(createTestWorld({
+      population: 6,
+      workers: { merchant: 3 },
+      buildings: ['market', 'caravanserai', 'caravanserai', 'caravanserai'],
+    }));
+
+    // Three merchants, each with one base position plus one per caravanserai.
+    expect(engine.getMerchantCount()).toBe(3);
+    expect(engine.getCaravanseraiCount()).toBe(3);
+    expect(engine.getTradeCapacity()).toBe(12);
+  });
+
+  it('leaves the capacity unchanged without a caravanserai', () => {
+    const engine = new GameEngine(createTestWorld({
+      population: 6,
+      workers: { merchant: 3 },
+      buildings: ['market'],
+    }));
+
+    expect(engine.getCaravanseraiCount()).toBe(0);
+    expect(engine.getTradeCapacity()).toBe(3);
+  });
+
+  it('gives one merchant more capacity per caravanserai', () => {
+    const one = new GameEngine(createTestWorld({
+      population: 2,
+      workers: { merchant: 1 },
+      buildings: ['market', 'caravanserai'],
+    }));
+
+    expect(one.getTradeCapacity()).toBe(2);
+
+    const two = new GameEngine(createTestWorld({
+      population: 2,
+      workers: { merchant: 1 },
+      buildings: ['market', 'caravanserai', 'caravanserai'],
+    }));
+
+    expect(two.getTradeCapacity()).toBe(3);
+  });
+
+  it('scales the capacity with the merchant count', () => {
+    const engine = new GameEngine(createTestWorld({
+      population: 6,
+      workers: { merchant: 5 },
+      buildings: ['market', 'caravanserai', 'caravanserai'],
+    }));
+
+    // Five merchants, each with one base position plus two caravanserai.
+    expect(engine.getTradeCapacity()).toBe(15);
+  });
+
+  it('has no capacity without merchants, however many caravanserai there are', () => {
+    const engine = new GameEngine(createTestWorld({
+      population: 6,
+      workers: { unemployed: 6 },
+      buildings: ['market', 'caravanserai', 'caravanserai', 'caravanserai'],
+    }));
+
+    expect(engine.getMerchantCount()).toBe(0);
+    expect(engine.getTradeCapacity()).toBe(0);
+  });
+
+  it('lets a caravanserai carry an order that the merchants could not', () => {
+    const engine = new GameEngine(createTestWorld({
+      population: 2,
+      workers: { merchant: 1 },
+      buildings: ['market', 'caravanserai'],
+    }));
+
+    // One merchant alone carries one trade; the caravanserai makes room for two.
+    expect(engine.setMarketAllocation('buy', 'wood', 2)).toBe(true);
+    expect(engine.getMarketOrders().buys['wood']).toBe(2);
+    expect(engine.getFreeMarketTrades('buy')).toBe(0);
+  });
+
+  it('refuses an order beyond the capacity the caravanserai provide', () => {
+    const engine = new GameEngine(createTestWorld({
+      population: 2,
+      workers: { merchant: 1 },
+      buildings: ['market', 'caravanserai'],
+    }));
+
+    expect(engine.setMarketAllocation('buy', 'wood', 3)).toBe(false);
+    expect(engine.getMarketOrders().buys['wood']).toBeUndefined();
+    expect(engine.getFreeMarketTrades('buy')).toBe(2);
+  });
+
+  it('gives the extra capacity to the sell side as well', () => {
+    const engine = new GameEngine(createTestWorld({
+      population: 2,
+      workers: { merchant: 1 },
+      buildings: ['market', 'caravanserai'],
+    }));
+
+    expect(engine.setMarketAllocation('sell', 'stone', 2)).toBe(true);
+    expect(engine.getFreeMarketTrades('sell')).toBe(0);
+  });
+
+  it('trims orders that a removed merchant can no longer carry', () => {
+    const engine = new GameEngine(createTestWorld({
+      population: 2,
+      workers: { merchant: 1 },
+      buildings: ['market', 'caravanserai'],
+    }));
+
+    expect(engine.setMarketAllocation('buy', 'wood', 2)).toBe(true);
+
+    // Removing the merchant drops the capacity back to what one merchant
+    // alone can carry, so one trade is given up.
+    engine.assignWorkers('merchant', -1);
+
+    expect(engine.getMerchantCount()).toBe(0);
+    expect(engine.getMarketOrders().buys['wood']).toBeUndefined();
+  });
+});
+
 describe('Market order direction', () => {
   it('cancels the sale when the same resource is bought', () => {
     const engine = new GameEngine(marketWorld({

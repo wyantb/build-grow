@@ -286,6 +286,21 @@ export const useGameState = () => {
   };
 
   /**
+   * Caravanserai that are completed.
+   *
+   * Read from the mirrored store so the count stays reactive.
+   */
+  const getCaravanseraiCount = (): number => state.buildingCounts['caravanserai'] ?? 0;
+
+  /**
+   * Total trade positions the merchants can carry per tick.
+   *
+   * Each caravanserai gives every merchant one more position.
+   */
+  const getMarketTradeCapacity = (): number =>
+    getTradeCapacity(getMerchantCount(), getCaravanseraiCount());
+
+  /**
    * Trades still free for `action`.
    *
    * Every unit of an order occupies one of the merchants' trades, so the
@@ -295,7 +310,7 @@ export const useGameState = () => {
     const orders = action === 'buy' ? state.market.buys : state.market.sells;
     const used = Object.values(orders).reduce((sum, count) => sum + (count ?? 0), 0);
 
-    return Math.max(0, getTradeCapacity(getMerchantCount()) - used);
+    return Math.max(0, getMarketTradeCapacity() - used);
   };
 
   /**
@@ -349,6 +364,8 @@ export const useGameState = () => {
     setMarketAllocation,
     clearMarketAllocation,
     getMerchantCount,
+    getCaravanseraiCount,
+    getMarketTradeCapacity,
     getFreeMarketTrades,
     getMarketTickRates,
     gameEngine,

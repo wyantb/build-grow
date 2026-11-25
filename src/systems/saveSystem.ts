@@ -170,7 +170,15 @@ export const deserializePayload = (payload: SavePayload): WorldState => {
   state.resources = { ...payload.resources };
   state.defaultJob = payload.defaultJob;
   state.buildingCounts = { ...payload.buildingCounts };
-  state.unlockedBuildings = [...payload.unlockedBuildings];
+
+  // A save written before a building existed does not list it, so the saved
+  // unlocks are merged with the ones a new game starts with. A building that
+  // has to be unlocked during play is not in the starting set, so the merge
+  // never hands one out early.
+  state.unlockedBuildings = [...new Set([
+    ...payload.unlockedBuildings,
+    ...state.unlockedBuildings,
+  ])];
   state.unlockedJobs = [...payload.unlockedJobs];
   state.market = {
     buys: { ...payload.market.buys },

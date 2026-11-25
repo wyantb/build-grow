@@ -40,6 +40,15 @@ outside of allocating orders.
   in `src/data/market.ts` is the number of trade positions a single merchant
   provides. It is 1 today, and it is the knob for scaling the number of trade
   positions per merchant later.
+- **Each caravanserai gives every merchant one more trade position.** The
+  total capacity is `merchants × (1 + caravanserai)`. A caravanserai has no
+  staff of its own; it makes room for one more trade per merchant. Three
+  merchants and three caravanserai therefore carry twelve positions, while
+  three merchants on their own carry three. See `game_design/buildings.md`.
+- **The caravanserai count only grows.** A caravanserai cannot be sold or
+  demolished, so the capacity never shrinks on its own. It does shrink when a
+  merchant is removed, because the capacity is computed from the current
+  merchant count.
 - **Every unit of an order occupies one trade position.** An order names a
   resource and a per-tick quantity, and each unit of that quantity uses a trade
   position. One merchant can support one trade position, so "buy 1 wood per
@@ -59,9 +68,11 @@ outside of allocating orders.
   one direction releases the order for the same resource in the other
   direction. Buying 1 wood while selling 1 wood leaves a single buy order for
   wood; the sale is cancelled. The trade the cancelled order held is freed.
-- **Removing a merchant removes one trade position.** The trade position is
-  taken from the bottom-most resource that holds one, regardless of whether
-  it's a buy or sell:
+- **Removing a merchant removes its trade positions.** The capacity is
+  `merchants × (1 + caravanserai)`, so each merchant removed takes
+  `1 + caravanserai` positions with it. The trade position is taken from the
+  bottom-most resource that holds one, regardless of whether it's a buy or
+  sell:
     1. Take one trade position off the **bottom-most** resource that holds one.
        The order is dropped entirely when its last trade position goes.
 - **"Bottom-most"** means the last resource in `MARKET_RESOURCES` order
@@ -101,7 +112,7 @@ jobs panels:
 
 Above the table, the UI shows "Trades Maintained: X/Y" where X is the total
 number of trade positions currently allocated and Y is the total capacity
-from merchants.
+from the merchants and the caravanserai.
 
 - There is **no trend column**, no "your amount" column, and no gold row.
 - The Sell / Buy Count column holds the allocation controls for that

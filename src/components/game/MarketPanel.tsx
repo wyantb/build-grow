@@ -28,6 +28,8 @@ const MarketPanel: Component = () => {
 
   const orders = createMemo(() => gameState.getMarketOrders());
   const merchants = createMemo(() => gameState.getMerchantCount());
+  const capacity = createMemo(() => gameState.getMarketTradeCapacity());
+  const caravanserai = createMemo(() => gameState.getCaravanseraiCount());
 
   /**
    * Gold spent or earned per tick by the market orders.
@@ -113,8 +115,8 @@ const MarketPanel: Component = () => {
   /**
    * True when a step adjustment can be applied to `resource`.
    *
-   * Enforces that total trades cannot exceed merchant count.
-   * Each merchant provides one trade position capacity.
+   * Enforces that total trades cannot exceed the trade capacity.
+   * Each merchant provides one trade position, plus one more per caravanserai.
    * Buttons are enabled/disabled based on available trade positions:
    * - 1 sell, no merchants available: sell side is all disabled, 0 and buy side is enabled
    * - 2 buy, 3 merchants available: all trade buttons everywhere available
@@ -122,7 +124,7 @@ const MarketPanel: Component = () => {
    * - 0 buy/sell, 0 merchants available: both sell and buy sides disabled
    */
   const canAdjust = (resource: MarketResource, step: number): boolean => {
-    if (merchants() <= 0) {
+    if (capacity() <= 0) {
       return false;
     }
 
@@ -145,7 +147,7 @@ const MarketPanel: Component = () => {
     const newTotalTrades = currentTotalTrades - currentResourceTrades + newResourceTrades;
 
     // Check if we have enough capacity
-    return newTotalTrades <= merchants();
+    return newTotalTrades <= capacity();
   };
 
   return (
@@ -154,7 +156,8 @@ const MarketPanel: Component = () => {
         <Tooltip
           content={
             <div>
-              Trade Capacity: {merchants()} (from {merchants()} merchant{merchants() !== 1 ? 's' : ''})
+              Trade Capacity: {capacity()} (from {merchants()} merchant{merchants() !== 1 ? 's' : ''}
+              {caravanserai() > 0 && `, ${caravanserai()} caravanserai${caravanserai() !== 1 ? 's' : ''}`})
               <hr />
               {Object.values(orders().buys).some(count => count > 0) && (
                 <>
@@ -176,7 +179,7 @@ const MarketPanel: Component = () => {
           placement="top"
         >
           <span>
-            Trades Maintained: <strong>{Object.values(orders().buys).reduce((sum, count) => sum + count, 0) + Object.values(orders().sells).reduce((sum, count) => sum + count, 0)}/{merchants()}</strong>
+            Trades Maintained: <strong>{Object.values(orders().buys).reduce((sum, count) => sum + count, 0) + Object.values(orders().sells).reduce((sum, count) => sum + count, 0)}/{capacity()}</strong>
           </span>
         </Tooltip>
         <span>

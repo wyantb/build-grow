@@ -358,6 +358,16 @@ class GameEngine {
     return this.marketSystem.isMarketBuilt();
   }
 
+  /** Caravanserai that are completed. */
+  getCaravanseraiCount(): number {
+    return this.marketSystem.getCaravanseraiCount();
+  }
+
+  /** Total trade positions the merchants can carry per tick, in each direction. */
+  getTradeCapacity(): number {
+    return this.marketSystem.getTradeCapacity();
+  }
+
   /** The current per-tick market orders. */
   getMarketOrders(): MarketOrders {
     return this.marketSystem.getOrders();

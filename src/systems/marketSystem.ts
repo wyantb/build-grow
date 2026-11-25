@@ -65,6 +65,15 @@ class MarketSystem {
     return (this.state.buildingCounts['market'] ?? 0) > 0;
   }
 
+  /**
+   * Caravanserai that are completed.
+   *
+   * Each one gives every merchant an extra trade position.
+   */
+  getCaravanseraiCount(): number {
+    return this.state.buildingCounts['caravanserai'] ?? 0;
+  }
+
   /** The price the player pays to buy one unit of `resource`. */
   getBuyPrice(resource: MarketResource): number {
     return getBuyPrice(resource);
@@ -79,8 +88,9 @@ class MarketSystem {
    * Trades in use for `action`.
    *
    * A merchant offers `TRADES_PER_MERCHANT` trades per tick in each
-   * direction, and every unit of an order consumes one of them, so the total
-   * quantity may never exceed the capacity the merchant count provides.
+   * direction, plus one more for each caravanserai, and every unit of an
+   * order consumes one of them, so the total quantity may never exceed the
+   * capacity the merchants provide.
    */
   getUsedTrades(action: MarketAction): number {
     const allocations = this.state.market[ALLOCATION_KEY[action]];
@@ -93,7 +103,7 @@ class MarketSystem {
 
   /** Total trades per tick the merchants can carry, in each direction. */
   getTradeCapacity(): number {
-    return getTradeCapacity(this.getMerchantCount());
+    return getTradeCapacity(this.getMerchantCount(), this.getCaravanseraiCount());
   }
 
   /** Trades still free for `action`. */
@@ -118,6 +128,9 @@ class MarketSystem {
    * opening a new one does. When no trade is available the allocation is
    * refused rather than silently trimmed, so the UI can tell the player why
    * nothing happened.
+   *
+   * The capacity the merchants provide grows with the caravanserai, so an
+   * order that was refused can become acceptable once one is finished.
    *
    * A resource is bought or sold per tick, never both, so an allocation in
    * one direction releases the order in the other.

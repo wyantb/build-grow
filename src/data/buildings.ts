@@ -33,6 +33,15 @@ export const BUILDING_TYPES: BuildingType[] = [
     category: 'Commercial District',
   },
   {
+    id: 'caravanserai',
+    name: 'Caravanserai',
+    description: 'A trading house on the caravan route. It has no staff of its own, but it gives every merchant room for one more trade.',
+    cost: { wood: 500, stone: 500, food: 0, gold: 0 },
+    buildTime: 300,
+    effect: 'Each Caravanserai gives every merchant 1 extra trade position.',
+    category: 'Commercial District',
+  },
+  {
     id: 'lumberjack',
     name: 'Lumberjack Post',
     description: 'Produces wood resources.',
