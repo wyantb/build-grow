@@ -10,6 +10,7 @@ before modifying the systems it describes:
 | Buildings | `game_design/buildings.md` | Building catalog, costs, job slots, scaling |
 | Jobs | `game_design/jobs.md` | Job types, production rates, capacity, defaults |
 | Market | `game_design/market.md` | Tick-based orders, merchant trade capacity, prices, rates |
+| Population | `game_design/population.md` | Housing capacity, the birth roll, the growth curve |
 
 When implementing or refactoring features that touch buildings, jobs, markets etc read
 the matching doc first and keep the implementation consistent with it. If the

@@ -37,6 +37,14 @@ const localStorageStub = (): Storage => {
 
 let storage: Storage;
 
+/**
+ * A new world starts with one hut, so the counts below include it.
+ *
+ * The starting hut is `hut-0`, so the first hut the player builds is
+ * `hut-1`.
+ */
+const STARTING_HUTS = 1;
+
 beforeEach(() => {
   storage = localStorageStub();
   Object.defineProperty(globalThis, 'localStorage', {
@@ -118,14 +126,15 @@ describe('saving and loading through the game', () => {
     gameState.gameEngine.runTicks(4);
     gameState.mirrorEngineState();
 
-    // The building moved on while the game kept running.
-    expect(gameState.getBuildings()['hut-0']?.constructionProgress).toBe(70);
+    // The building moved on while the game kept running. It is the second
+    // hut, because the world starts with one.
+    expect(gameState.getBuildings()['hut-1']?.constructionProgress).toBe(70);
 
     await loadNow();
 
     // The load puts the construction back to the saved point.
-    expect(gameState.getBuildings()['hut-0']?.constructionProgress).toBe(30);
-    expect(gameState.getBuildings()['hut-0']?.built).toBe(false);
+    expect(gameState.getBuildings()['hut-1']?.constructionProgress).toBe(30);
+    expect(gameState.getBuildings()['hut-1']?.built).toBe(false);
   });
 
   it('drops a building that the saved world does not have', async () => {
@@ -169,12 +178,12 @@ describe('saving and loading through the game', () => {
     gameState.gameEngine.runTicks(20);
     gameState.mirrorEngineState();
 
-    expect(gameState.getBuildingCounts()['hut']).toBe(2);
+    expect(gameState.getBuildingCounts()['hut']).toBe(STARTING_HUTS + 2);
 
     // The load puts the world back to one hut.
     await loadNow();
 
-    expect(gameState.getBuildingCounts()['hut']).toBe(1);
+    expect(gameState.getBuildingCounts()['hut']).toBe(STARTING_HUTS + 1);
 
     // The next autosave must write the loaded world, not the world that was
     // loaded over. A stale save here would undo the load on the next reload.
@@ -192,8 +201,8 @@ describe('saving and loading through the game', () => {
       return;
     }
 
-    expect(decoded.envelope.state.buildingCounts['hut']).toBe(1);
-    expect(Object.keys(decoded.envelope.state.buildings)).toEqual(['hut-0']);
+    expect(decoded.envelope.state.buildingCounts['hut']).toBe(STARTING_HUTS + 1);
+    expect(Object.keys(decoded.envelope.state.buildings)).toEqual(['hut-0', 'hut-1']);
   });
 
   it('leaves the engine, the store and the saved file agreeing', async () => {
@@ -273,8 +282,8 @@ describe('saving and loading through the game', () => {
 
     // The load ran last and read what the save wrote, so the world and the
     // file agree.
-    expect(gameState.getBuildingCounts()['hut']).toBe(2);
-    expect(decoded.envelope.state.buildingCounts['hut']).toBe(2);
+    expect(gameState.getBuildingCounts()['hut']).toBe(STARTING_HUTS + 2);
+    expect(decoded.envelope.state.buildingCounts['hut']).toBe(STARTING_HUTS + 2);
   });
 
   it('runs a load that was asked for first before the save behind it', async () => {
@@ -299,7 +308,7 @@ describe('saving and loading through the game', () => {
 
     await Promise.all([load, save]);
 
-    expect(gameState.getBuildingCounts()['hut']).toBe(1);
+    expect(gameState.getBuildingCounts()['hut']).toBe(STARTING_HUTS + 1);
 
     const stored = storage.getItem(SAVE_STORAGE_KEY);
     const decoded = await decodeEnvelope(stored?.replace('BG1:', '') ?? '');
@@ -310,7 +319,7 @@ describe('saving and loading through the game', () => {
       return;
     }
 
-    expect(decoded.envelope.state.buildingCounts['hut']).toBe(1);
+    expect(decoded.envelope.state.buildingCounts['hut']).toBe(STARTING_HUTS + 1);
   });
 
   it('reports that it is busy while a save or a load runs', async () => {
@@ -337,14 +346,14 @@ describe('saving and loading through the game', () => {
 
     await saveNow();
 
-    expect(gameState.getBuildingCounts()['hut']).toBe(1);
+    expect(gameState.getBuildingCounts()['hut']).toBe(STARTING_HUTS + 1);
 
     hardReset();
 
-    // The world is empty again: no buildings, and the starting resources of
-    // a brand new world.
-    expect(gameState.getBuildingCounts()['hut']).toBeUndefined();
-    expect(gameState.getBuildings()).toEqual({});
+    // The world is a brand new one again: the starting hut and the starting
+    // resources, with the population back at its first value.
+    expect(gameState.getBuildingCounts()['hut']).toBe(STARTING_HUTS);
+    expect(Object.keys(gameState.getBuildings())).toEqual(['hut-0']);
     expect(gameState.getResources().wood).toBe(250);
     expect(gameState.getPopulation()).toBe(5);
   });
@@ -361,12 +370,12 @@ describe('saving and loading through the game', () => {
 
     hardReset();
 
-    expect(gameState.getBuildingCounts()['hut']).toBeUndefined();
+    expect(gameState.getBuildingCounts()['hut']).toBe(STARTING_HUTS);
 
     // The old world comes back.
     await loadNow();
 
-    expect(gameState.getBuildingCounts()['hut']).toBe(1);
+    expect(gameState.getBuildingCounts()['hut']).toBe(STARTING_HUTS + 1);
     expect(gameState.getPopulation()).toBe(5);
   });
 
@@ -395,26 +404,26 @@ describe('saving and loading through the game', () => {
     const gameState = getGameState();
     const { saveNow, loadNow, hardReset } = useSaveActions();
 
-    // A hut that is three ticks into its construction, so nothing is
-    // finished and the world has no buildings to count.
+    // A hut that is three ticks into its construction, so nothing new is
+    // finished and the world has only the starting hut to count.
     gameState.buildBuilding('hut');
     gameState.gameEngine.runTicks(3);
     gameState.mirrorEngineState();
 
-    expect(gameState.getBuildingCounts()['hut']).toBeUndefined();
+    expect(gameState.getBuildingCounts()['hut']).toBe(STARTING_HUTS);
 
     await saveNow();
 
     hardReset();
 
-    expect(gameState.getBuildings()).toEqual({});
+    expect(Object.keys(gameState.getBuildings())).toEqual(['hut-0']);
 
     await loadNow();
 
     // The building is back, still under construction, at the same progress.
-    expect(gameState.getBuildings()['hut-0']?.built).toBe(false);
-    expect(gameState.getBuildings()['hut-0']?.constructionProgress).toBe(30);
-    expect(gameState.getBuildingCounts()['hut']).toBeUndefined();
+    expect(gameState.getBuildings()['hut-1']?.built).toBe(false);
+    expect(gameState.getBuildings()['hut-1']?.constructionProgress).toBe(30);
+    expect(gameState.getBuildingCounts()['hut']).toBe(STARTING_HUTS);
   });
 
   it('writes the save to the browser', async () => {
@@ -485,6 +494,6 @@ describe('saving and loading through the game', () => {
 
     expect(result.ok).toBe(false);
     expect(saveStatus()?.kind).toBe('error');
-    expect(Object.keys(gameState.getBuildings())).toEqual(['hut-0']);
+    expect(Object.keys(gameState.getBuildings())).toEqual(['hut-0', 'hut-1']);
   });
 });

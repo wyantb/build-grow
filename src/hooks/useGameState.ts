@@ -7,6 +7,7 @@ import type { BuildingType } from '../data/buildings.js';
 import { getTradeCapacity } from '../data/market.js';
 import type { MarketResource } from '../data/market.js';
 import type { MarketAction, MarketFlow } from '../systems/marketSystem.js';
+import { getPopulationCapacity as getCapacityFromHuts } from '../systems/population.js';
 import GameEngine from '../systems/gameEngine.js';
 
 // Create a game state store with proper typing
@@ -352,6 +353,15 @@ export const useGameState = () => {
   const getTick = () => state.tick;
   const getResources = () => state.resources;
   const getPopulation = () => state.population;
+
+  /**
+   * The people the huts can hold.
+   *
+   * Read from the mirrored building counts so the figure stays reactive.
+   */
+  const getPopulationCapacity = (): number =>
+    getCapacityFromHuts(state.buildingCounts['hut'] ?? 0);
+
   const getJobs = () => state.jobs;
   const getBuildings = () => state.buildings;
   const getGameTime = () => state.gameTime;
@@ -367,6 +377,7 @@ export const useGameState = () => {
     getTick,
     getResources,
     getPopulation,
+    getPopulationCapacity,
     getJobs,
     getBuildings,
     getGameTime,

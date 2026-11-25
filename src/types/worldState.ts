@@ -123,8 +123,21 @@ export const createInitialState = (): WorldState => {
     jobs: Object.fromEntries(
       Object.entries(JOBS).map(([id, job]) => [id, { ...job, workers: 0 }]),
     ),
-    buildings: {},
-    buildingCounts: {},
+    buildings: {
+      // A new world starts with one hut, so the starting population has
+      // somewhere to live. The hut is finished from the start: it is part of
+      // the world, not something the player builds.
+      'hut-0': {
+        id: 'hut',
+        name: 'Hut',
+        description: 'Basic housing for your population.',
+        cost: { wood: 0, stone: 0, food: 0, gold: 0 },
+        buildTime: 0,
+        built: true,
+        constructionProgress: 100,
+      },
+    },
+    buildingCounts: { hut: 1 },
     species: {
       id: 'human',
       name: 'Human',

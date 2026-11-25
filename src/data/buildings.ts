@@ -20,7 +20,7 @@ export const BUILDING_TYPES: BuildingType[] = [
     description: 'Basic housing for your population.',
     cost: { wood: 20, stone: 10, food: 0, gold: 0 },
     buildTime: 30,
-    effect: 'Provides housing for citizens.',
+    effect: 'Houses 5 people. The population cannot grow past the housing.',
     category: 'Residential Block',
   },
   {

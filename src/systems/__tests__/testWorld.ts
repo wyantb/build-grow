@@ -36,6 +36,11 @@ export function createTestWorld(overrides: WorldOverrides = {}): WorldState {
     job.workers = 0;
   }
 
+  // A new game starts with a hut, but a test world starts with only the
+  // buildings it asks for, so the listed ones are the whole set.
+  state.buildings = {};
+  state.buildingCounts = {};
+
   for (const [jobId, workers] of Object.entries(overrides.workers ?? {})) {
     const job = state.jobs[jobId];
     if (!job) {

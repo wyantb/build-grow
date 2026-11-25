@@ -169,6 +169,11 @@ export const deserializePayload = (payload: SavePayload): WorldState => {
   state.population = payload.population;
   state.resources = { ...payload.resources };
   state.defaultJob = payload.defaultJob;
+
+  // A new game starts with a hut, but a save holds the whole set of
+  // buildings. The saved ones replace the starting ones, so a world that
+  // had no hut does not inherit one.
+  state.buildings = {};
   state.buildingCounts = { ...payload.buildingCounts };
 
   // A save written before a building existed does not list it, so the saved

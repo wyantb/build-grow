@@ -14,6 +14,8 @@ provides job capacity, production bonuses, and unlocks new capabilities.
 - **Buildings have escalating costs.** Each additional building of the same
   type costs 1.35× more and takes 1.25× longer to build.
 - **Buildings are permanent** once completed.
+- **A new game starts with one finished hut.** It is part of the starting
+  world, not something the player builds. See `game_design/population.md`.
 
 ## Building Catalog
 
@@ -21,7 +23,7 @@ See src/data/buildings.ts
 
 | Building | Cost | Build time | Grants | Notes |
 |----------|------|-----------|--------|-------|
-| Hut | 20 wood, 10 stone | 30s | Housing | |
+| Hut | 20 wood, 10 stone | 30s | Housing for 5 | |
 | Market | 30 wood, 30 stone, 15 food | 60s | 1 Merchant slot | Enables the market tab |
 | Caravanserai | 500 wood, 500 stone | 300s | +1 trade per merchant | No job slot of its own |
 | Lumberjack Post | 25 wood, 15 stone | 45s | 1 Lumberjack slot | |

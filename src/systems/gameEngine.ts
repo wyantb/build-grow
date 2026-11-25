@@ -6,12 +6,17 @@ import { MARKET_RESOURCES } from '../data/market.js';
 import type { MarketResource } from '../data/market.js';
 import MarketSystem from './marketSystem.js';
 import type { MarketAction, MarketFlow, MarketOrders } from './marketSystem.js';
+import {
+  GROWTH_INTERVAL_TICKS,
+  getBirthChance,
+  getPopulationCapacity,
+} from './population.js';
+import { TICKS_PER_SECOND } from './ticks.js';
+
+export { TICKS_PER_SECOND };
 
 /** Resource keys the engine tracks. */
 const RESOURCE_KEYS = ['wood', 'stone', 'food', 'gold'] as const;
-
-/** How many ticks the engine runs per second. */
-export const TICKS_PER_SECOND = 5;
 
 class GameEngine {
   private state: WorldState;
@@ -21,10 +26,12 @@ class GameEngine {
   private listeners = new Set<() => void>();
   private buildingInstanceCounter: Record<string, number> = {};
   private loadEpoch = 0;
+  private random: () => number;
 
-  constructor(initialState?: WorldState) {
+  constructor(initialState?: WorldState, random: () => number = Math.random) {
     this.state = initialState ?? createInitialState();
     this.marketSystem = new MarketSystem(this.state);
+    this.random = random;
 
     // Recalculate job capacities from existing completed buildings
     this.recalculateJobCapacities();
@@ -145,6 +152,9 @@ class GameEngine {
 
     // Process market trades
     this.marketSystem.processTrades();
+
+    // Process population growth
+    this.processPopulationGrowth();
   }
 
   // Main game tick function
@@ -225,6 +235,46 @@ class GameEngine {
     if (jobId && this.state.jobs[jobId]) {
       this.state.jobs[jobId].capacity += 1;
     }
+  }
+
+  /**
+   * Roll for a birth.
+   *
+   * The world rolls once every growth interval. A birth needs somewhere to
+   * live, so it only happens when the huts have room.
+   */
+  private processPopulationGrowth(): void {
+    if (this.state.tick % GROWTH_INTERVAL_TICKS !== 0) {
+      return;
+    }
+
+    if (this.state.population >= this.getPopulationCapacity()) {
+      return;
+    }
+
+    if (this.random() >= getBirthChance(this.state.population)) {
+      return;
+    }
+
+    this.state.population++;
+
+    // A new person joins the default job, which is where the unassigned
+    // people live.
+    const defaultJob = this.state.jobs[this.state.defaultJob];
+    if (defaultJob) {
+      defaultJob.workers++;
+    }
+
+    console.info(`A child is born. Population is now ${this.state.population}.`);
+  }
+
+  /**
+   * The people the huts can hold.
+   *
+   * Only finished huts count, so a hut under construction houses nobody.
+   */
+  getPopulationCapacity(): number {
+    return getPopulationCapacity(this.state.buildingCounts['hut'] ?? 0);
   }
 
   // Add a building to construction queue

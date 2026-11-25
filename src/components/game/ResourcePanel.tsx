@@ -70,7 +70,9 @@ const ResourcePanel: Component = () => {
         >
           <span class="resource-name">Population</span>
         </Tooltip>
-        <span class="resource-amount">{gameState.getPopulation()}</span>
+        <span class="resource-amount">
+          {gameState.getPopulation()} / {gameState.getPopulationCapacity()}
+        </span>
         <span class="resource-rate">-</span>
       </div>
     </div>
