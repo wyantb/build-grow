@@ -50,9 +50,16 @@ uncoordinated commits.
   trades from the current state and applies that same plan, so a buy that
   cannot be paid for never appears as realized flow. The gold figure in the
   market panel and the gold rate in the resources panel must agree.
+- **The market panel shows the gold rate per second.** It reads
+  `GameEngine.getMarketRates()`, which holds the market's own contribution
+  only. Do not mix job production into it: a job that makes gold later must
+  not change this figure.
 - **The engine is the single source for rates.** `GameEngine.getTickRates()`
   and `getResourceRates()` are authoritative. The store mirrors them; it never
   recomputes them from mirrored state.
+- **Quantities the UI shows come from the engine too.** The units bought and
+  sold per second come from `GameEngine.getMarketFlow()`, not from a price
+  multiplied by an allocation count in the component.
 
 ## Persistence
 
@@ -64,6 +71,10 @@ hidden or closed. Settings → Data holds the manual controls.
   applies to an old save instead of being frozen inside it. The catalog is
   read back in on load; a job or building the catalog no longer knows about is
   skipped with a warning.
+- **Save times are stored as ISO and shown as local time.** The envelope keeps
+  `savedAt` in ISO, and `formatDateTime` in `src/utils/` renders it with the
+  browser's locale plus the UTC offset of that moment, so the reading says
+  which zone it belongs to.
 - **The encoding is gzip + base64.** `CompressionStream` and
   `DecompressionStream` do the work, so there is no compression dependency.
   The stored value carries a `BG1:` prefix that names the encoding.
