@@ -36,17 +36,20 @@ outside of allocating orders.
 - **A merchant only trades once a market is built.** The merchant count is
   zero and the Market tab is hidden until at least one Market building is
   completed.
-- **Each merchant carries one buy trade and one sell trade per tick.**
-  `TRADES_PER_MERCHANT` in `src/data/market.ts` is the number of trades a
-  single merchant offers in each direction. It is 1 today, and it is the
-  knob for scaling the number of trades per merchant later.
-- **Every unit of an order occupies one trade.** An order names a resource
-  and a per-tick quantity, and each unit of that quantity uses a trade. One
-  merchant can offer "buy 1 wood per tick", but "buy 2 wood per tick" needs
-  two merchants.
-- **The total quantity for a direction cannot exceed the capacity the
-  merchants provide.** With 2 merchants you may hold at most 2 units of buy
-  orders and 2 units of sell orders, spread across any resources.
+- **Each merchant provides one trade position capacity.** `TRADES_PER_MERCHANT`
+  in `src/data/market.ts` is the number of trade positions a single merchant
+  provides. It is 1 today, and it is the knob for scaling the number of trade
+  positions per merchant later.
+- **Every unit of an order occupies one trade position.** An order names a
+  resource and a per-tick quantity, and each unit of that quantity uses a trade
+  position. One merchant can support one trade position, so "buy 1 wood per
+  tick" uses one merchant's capacity. To have both "buy 1 wood per tick" and
+  "sell 1 stone per tick" requires two merchants.
+- **The total quantity across all orders cannot exceed the capacity the
+  merchants provide.** With 2 merchants you may hold at most 2 total units
+  of orders, spread across any resources and directions. For example, you
+  could have "buy 1 wood" and "sell 1 stone" (2 total trades), but not
+  "buy 1 wood", "sell 1 stone", and "sell 1 iron" (3 total trades).
 - **Raising the quantity of an existing order needs a free trade**, exactly
   as opening a new one does. With one merchant, a single "buy 1 wood" order
   uses that merchant's only buy trade. Raising it to 2 wood needs a second
@@ -56,13 +59,11 @@ outside of allocating orders.
   one direction releases the order for the same resource in the other
   direction. Buying 1 wood while selling 1 wood leaves a single buy order for
   wood; the sale is cancelled. The trade the cancelled order held is freed.
-- **Removing a merchant removes its trades.** Sales are trimmed first, then
-  buys. Within a direction the trade comes off the bottom-most resource that
-  holds one:
-    1. Take one trade off the **sale** order of the bottom-most resource that
-       holds one. The order is dropped entirely when its last trade goes.
-    2. If there are no sale trades left to remove, take one trade off the
-       **buy** order of the bottom-most resource that holds one.
+- **Removing a merchant removes one trade position.** The trade position is
+  taken from the bottom-most resource that holds one, regardless of whether
+  it's a buy or sell:
+    1. Take one trade position off the **bottom-most** resource that holds one.
+       The order is dropped entirely when its last trade position goes.
 - **"Bottom-most"** means the last resource in `MARKET_RESOURCES` order
   (currently: wood, stone, food — so food is the bottom-most).
 - **Removing workers from the Merchant job trims the trades immediately**,
@@ -98,6 +99,10 @@ jobs panels:
 | Current Buy Price | The buy price in gold, e.g. `0.75g` |
 | Sell / Buy Count | The sell and buy allocation controls |
 
+Above the table, the UI shows "Trades Maintained: X/Y" where X is the total
+number of trade positions currently allocated and Y is the total capacity
+from merchants.
+
 - There is **no trend column**, no "your amount" column, and no gold row.
 - The Sell / Buy Count column holds the allocation controls for that
   resource. Reading left to right, the row shows:
@@ -113,9 +118,9 @@ jobs panels:
   | `++` | Increase the buy count by 5 |
 
 - These are allocation controls, not one-off trades: the quantity keeps being
-  traded every tick until it is changed. Raising a quantity consumes a trade,
-  so the button is disabled when the merchants do not have enough free
-  trades for the whole step.
+  traded every tick until it is changed. Raising a quantity consumes a trade
+  position, so the button is disabled when doing so would exceed the total
+  merchant capacity.
 - The `0` button is disabled when there is nothing to clear.
 - Because a resource is bought or sold, never both, raising the buy count
   cancels the sell count for that resource and the other way round.

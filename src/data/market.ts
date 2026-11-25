@@ -28,16 +28,16 @@ export const BUY_PRICE_MULTIPLIER = 1.5;
 export const SELL_PRICE_MULTIPLIER = 0.75;
 
 /**
- * Trades a single merchant offers per tick, per direction.
+ * Trade positions a single merchant provides per tick.
  *
- * A merchant carries one buy trade and one sell trade, so their capacity is
- * one unit of each per tick. Raising the quantity of an order beyond this
- * needs another merchant.
+ * A merchant provides one trade position capacity, which can be used for
+ * either a buy or a sell order. Raising the total quantity of orders beyond
+ * this capacity requires another merchant.
  */
 export const TRADES_PER_MERCHANT = 1;
 
 /**
- * Trades per tick that `merchantCount` merchants can carry, in each direction.
+ * Total trade positions that `merchantCount` merchants can provide per tick.
  */
 export const getTradeCapacity = (merchantCount: number): number =>
   merchantCount * TRADES_PER_MERCHANT;
