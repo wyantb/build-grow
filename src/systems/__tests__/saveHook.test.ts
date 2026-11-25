@@ -1,7 +1,16 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { getGameState, resetGameState } from '../../hooks/useGameState.js';
 import { useSaveActions } from '../../hooks/useSaveSystem.js';
-import { clearLocalSave, decodeEnvelope, SAVE_STORAGE_KEY } from '../saveSystem.js';
+import {
+  clearLocalSave,
+  createEnvelope,
+  decodeEnvelope,
+  SAVE_STORAGE_KEY,
+  serializeState,
+} from '../saveSystem.js';
+import { gzipBytes } from '../gzip.js';
+import GameEngine from '../gameEngine.js';
+import { createTestWorld } from './testWorld.js';
 
 /**
  * The tests run in Node, which has no DOM. The save code only touches the
@@ -431,5 +440,51 @@ describe('saving and loading through the game', () => {
 
     expect(result.ok).toBe(false);
     expect(saveStatus()?.kind).toBe('error');
+  });
+
+  it('replaces the world with the game in a file', async () => {
+    const gameState = getGameState();
+    const { importFromFile } = useSaveActions();
+
+    // A world of its own, saved to a file the way the export button does.
+    const source = new GameEngine(createTestWorld({
+      population: 17,
+      buildings: ['hut', 'hut', 'farm'],
+    }));
+
+    source.runTicks(12);
+
+    const envelope = createEnvelope(serializeState(source.getState()));
+    const file = new File([await gzipBytes(JSON.stringify(envelope))], 'save.json.gz');
+
+    // The world being played is a different one.
+    gameState.buildBuilding('hut');
+    gameState.mirrorEngineState();
+
+    const result = await importFromFile(file);
+
+    expect(result.ok).toBe(true);
+
+    gameState.mirrorEngineState();
+
+    expect(gameState.getPopulation()).toBe(17);
+    expect(gameState.getBuildingCounts()['hut']).toBe(2);
+    expect(gameState.getBuildingCounts()['farm']).toBe(1);
+  });
+
+  it('refuses a file that is not a save and leaves the world alone', async () => {
+    const gameState = getGameState();
+    const { importFromFile, saveStatus } = useSaveActions();
+
+    gameState.buildBuilding('hut');
+    gameState.mirrorEngineState();
+
+    const file = new File(['this is not a save'], 'save.json.gz');
+
+    const result = await importFromFile(file);
+
+    expect(result.ok).toBe(false);
+    expect(saveStatus()?.kind).toBe('error');
+    expect(Object.keys(gameState.getBuildings())).toEqual(['hut-0']);
   });
 });
