@@ -1,4 +1,5 @@
 import type { Job, Resource } from '../types/worldState.js';
+import type { JobStats } from '../systems/stats.js';
 
 // Per-tick production rates (engine runs at 5 ticks/sec)
 // Settler: 0.2 food/s → 0.04/tick
@@ -8,7 +9,21 @@ import type { Job, Resource } from '../types/worldState.js';
 const ZERO: Resource = { wood: 0, stone: 0, food: 0, gold: 0 };
 const DEFAULT_CONSUMPTION = { wood: 0, stone: 0, food: 0.025, gold: 0 };
 
-export const JOBS: Record<string, Omit<Job, 'workers'>> = {
+/**
+ * The stats each job leans on.
+ *
+ * The primary stat counts fully and the secondary stat counts half, so a
+ * job's rate is the base rate times both factors. A job that is missing
+ * here is neither helped nor hindered by any stat.
+ */
+export const JOB_STATS: Record<string, JobStats> = {
+  lumberjack: { primary: 'strength', secondary: 'intelligence' },
+  quarrier: { primary: 'strength', secondary: 'constitution' },
+  farmer: { primary: 'constitution', secondary: 'wisdom' },
+  settler: { primary: 'intelligence', secondary: 'charisma' },
+};
+
+export const JOBS: Record<string, Omit<Job, 'workers' | 'species'>> = {
   unemployed: {
     id: 'unemployed',
     name: 'Unemployed',

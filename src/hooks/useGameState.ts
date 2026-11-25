@@ -30,6 +30,26 @@ const syncArray = (target: string[], source: string[]): void => {
   }
 };
 
+/**
+ * Bring a store record in line with a plain one, in place.
+ *
+ * The same rule as `syncArray` applies: the keys that did not change stay
+ * untouched, so only the counts that really moved notify.
+ */
+const syncRecord = (target: Record<string, number>, source: Record<string, number>): void => {
+  for (const [key, value] of Object.entries(source)) {
+    if (target[key] !== value) {
+      target[key] = value;
+    }
+  }
+
+  for (const key of Object.keys(target)) {
+    if (!(key in source)) {
+      delete target[key];
+    }
+  }
+};
+
 // Create a game state store with proper typing
 export const useGameState = () => {
   // The engine owns the authoritative game state; the store mirrors it
@@ -79,8 +99,9 @@ export const useGameState = () => {
         if (state.jobs[jobId]) {
           state.jobs[jobId].workers = job.workers;
           state.jobs[jobId].capacity = job.capacity;
+          syncRecord(state.jobs[jobId].species, job.species);
         } else {
-          state.jobs[jobId] = { ...job };
+          state.jobs[jobId] = { ...job, species: { ...job.species } };
         }
       }
 
@@ -137,6 +158,7 @@ export const useGameState = () => {
           ...job,
           production: { ...job.production },
           consumption: { ...job.consumption },
+          species: { ...job.species },
         };
       }
 

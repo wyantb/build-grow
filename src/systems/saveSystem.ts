@@ -8,6 +8,7 @@ import {
 import type { SaveEnvelope, SavePayload } from '../types/saveFile.js';
 import { JOBS } from '../data/jobs.js';
 import { getBuildingType } from '../data/buildings.js';
+import { getSpecies } from '../data/species.js';
 import { GAME_VERSION, isVersionCompatible } from './gameVersion.js';
 import {
   compressToBase64,
@@ -116,7 +117,15 @@ export const serializeState = (state: WorldState): SavePayload => {
   const jobs: SavePayload['jobs'] = {};
 
   for (const [jobId, job] of Object.entries(state.jobs)) {
-    jobs[jobId] = { workers: job.workers };
+    jobs[jobId] = { workers: job.workers, species: { ...job.species } };
+  }
+
+  // The stats of the species in the world are saved, because they decide
+  // what the population produces. The names come from the catalog.
+  const species: SavePayload['species'] = {};
+
+  for (const [speciesId, entry] of Object.entries(state.species)) {
+    species[speciesId] = { stats: { ...entry.stats } };
   }
 
   const buildings: SavePayload['buildings'] = {};
@@ -133,6 +142,7 @@ export const serializeState = (state: WorldState): SavePayload => {
     resources: { ...state.resources },
     defaultJob: state.defaultJob,
     jobs,
+    species,
     buildings,
     buildingCounts: { ...state.buildingCounts },
     unlockedBuildings: [...state.unlockedBuildings],
@@ -200,6 +210,27 @@ export const deserializePayload = (payload: SavePayload): WorldState => {
       workers: saved.workers,
       production: { ...catalogJob.production },
       consumption: { ...catalogJob.consumption },
+      species: { ...saved.species },
+    };
+  }
+
+  // The species roster comes from the save, because the stats decide what
+  // the population produces. A save written before the roster existed keeps
+  // the stats a new game starts with.
+  for (const [speciesId, savedSpecies] of Object.entries(payload.species ?? {})) {
+    const catalogSpecies = getSpecies(speciesId);
+
+    if (!catalogSpecies) {
+      console.warn(`Save contains unknown species "${speciesId}"; it was skipped.`);
+
+      continue;
+    }
+
+    state.species[speciesId] = {
+      id: catalogSpecies.id,
+      name: catalogSpecies.name,
+      description: catalogSpecies.description,
+      stats: { ...savedSpecies.stats },
     };
   }
 

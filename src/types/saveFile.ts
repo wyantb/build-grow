@@ -21,9 +21,16 @@ export const SAVE_FORMAT = 'build-grow.save';
  */
 export const SAVE_VERSION = 1;
 
-/** Worker counts per job. */
+/** Worker counts per job, and who works them. */
 const JobWorkersSchema = z.record(z.string(), z.object({
   workers: z.number(),
+  /**
+   * The species working the job, by species id.
+   *
+   * A save written before jobs tracked their species does not have this, so
+   * it is optional and defaults to nobody.
+   */
+  species: z.record(z.string(), z.number()).optional(),
 }));
 
 /**
@@ -52,6 +59,23 @@ export const SavePayloadSchema = z.object({
   resources: ResourceSchema,
   defaultJob: z.string(),
   jobs: JobWorkersSchema,
+  /**
+   * The species living in the world, by species id.
+   *
+   * Only the stats are saved: the name and the description come from the
+   * species catalog on load.
+   */
+  species: z.record(z.string(), z.object({
+    stats: z.object({
+      strength: z.number(),
+      dexterity: z.number(),
+      constitution: z.number(),
+      intelligence: z.number(),
+      wisdom: z.number(),
+      charisma: z.number(),
+      manaSensitivity: z.number(),
+    }),
+  })).optional(),
   buildings: z.record(z.string(), SavedBuildingSchema),
   buildingCounts: z.record(z.string(), z.number()),
   unlockedBuildings: z.array(z.string()),

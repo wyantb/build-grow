@@ -1,9 +1,10 @@
 import { createInitialState } from '../types/worldState.js';
-import type { WorldState, Resource } from '../types/worldState.js';
+import type { WorldState, Resource, Stats, Job } from '../types/worldState.js';
 import { getBuildingType, getScaledCost } from '../data/buildings.js';
-import { BUILDING_JOB_MAP } from '../data/jobs.js';
+import { BUILDING_JOB_MAP, JOB_STATS } from '../data/jobs.js';
 import { MARKET_RESOURCES } from '../data/market.js';
 import type { MarketResource } from '../data/market.js';
+import { DEFAULT_SPECIES_ID, NEUTRAL_STATS } from '../data/species.js';
 import MarketSystem from './marketSystem.js';
 import type { MarketAction, MarketFlow, MarketOrders } from './marketSystem.js';
 import {
@@ -11,6 +12,7 @@ import {
   getBirthChance,
   getPopulationCapacity,
 } from './population.js';
+import { getAverageStats, getJobFactor } from './stats.js';
 import { TICKS_PER_SECOND } from './ticks.js';
 
 export { TICKS_PER_SECOND };
@@ -187,17 +189,48 @@ class GameEngine {
     for (const job of Object.values(jobs)) {
       if (job.workers <= 0) {continue;}
 
-      this.state.resources.wood += job.production.wood * job.workers;
-      this.state.resources.stone += job.production.stone * job.workers;
-      this.state.resources.food += job.production.food * job.workers;
-      this.state.resources.gold += job.production.gold * job.workers;
+      // The stats of the people working the job decide how well they work.
+      // A job with no stats of its own is neither helped nor hindered.
+      const factor = this.getJobFactor(job);
 
-      // Consumption per worker
+      this.state.resources.wood += job.production.wood * job.workers * factor;
+      this.state.resources.stone += job.production.stone * job.workers * factor;
+      this.state.resources.food += job.production.food * job.workers * factor;
+      this.state.resources.gold += job.production.gold * job.workers * factor;
+
+      // Consumption per worker. Every worker eats the same, whatever their
+      // stats are, so consumption is not scaled.
       this.state.resources.wood -= job.consumption.wood * job.workers;
       this.state.resources.stone -= job.consumption.stone * job.workers;
       this.state.resources.food -= job.consumption.food * job.workers;
       this.state.resources.gold -= job.consumption.gold * job.workers;
     }
+  }
+
+  /**
+   * The stats of the creatures working a job, averaged over its workers.
+   *
+   * A job staffed by one elf and one human has the average of the two.
+   */
+  private getJobAverageStats(job: Job): Stats {
+    return getAverageStats(job.species, (speciesId) =>
+      this.state.species[speciesId]?.stats ?? NEUTRAL_STATS);
+  }
+
+  /**
+   * The factor the people working a job give to its production.
+   *
+   * The primary stat counts fully and the secondary stat counts half, and
+   * the two multiply. A stat of 100 is the average and changes nothing.
+   */
+  private getJobFactor(job: Job): number {
+    const jobStats = JOB_STATS[job.id];
+
+    if (!jobStats) {
+      return 1;
+    }
+
+    return getJobFactor(jobStats, this.getJobAverageStats(job));
   }
 
   // Apply the effects of a building that has just been paid for
@@ -233,10 +266,11 @@ class GameEngine {
     this.state.population++;
 
     // A new person joins the default job, which is where the unassigned
-    // people live.
+    // people live. The child is of the species the world starts with.
     const defaultJob = this.state.jobs[this.state.defaultJob];
     if (defaultJob) {
       defaultJob.workers++;
+      this.addSpecies(defaultJob, 1, DEFAULT_SPECIES_ID);
     }
 
     console.info(`A child is born. Population is now ${this.state.population}.`);
@@ -299,8 +333,17 @@ class GameEngine {
     return true;
   }
 
-  // Assign workers to a job
-  assignWorkers(jobId: string, count: number): boolean {
+  /**
+   * Assign workers to a job.
+   *
+   * The species of the people working the job is tracked alongside the
+   * worker count, because a job's production depends on the stats of the
+   * creatures working it. A job can be staffed by more than one species.
+   *
+   * @param speciesId The species of the people being moved. Defaults to the
+   *   species a new world starts with.
+   */
+  assignWorkers(jobId: string, count: number, speciesId: string = DEFAULT_SPECIES_ID): boolean {
     const job = this.state.jobs[jobId];
     if (!job) {return false;}
 
@@ -321,7 +364,10 @@ class GameEngine {
       if (canMove <= 0) {
         const defaultJob = this.state.jobs[this.state.defaultJob];
         if (defaultJob) {
-          canMove = Math.min(defaultJob.workers, roomInJob, count);
+          // Only people of the requested species can be pulled, because the
+          // people who arrive at the job are of that species.
+          const ofSpecies = defaultJob.species[speciesId] ?? 0;
+          canMove = Math.min(ofSpecies, roomInJob, count);
         }
       } else {
         canMove = Math.min(canMove, count);
@@ -336,22 +382,33 @@ class GameEngine {
         const defaultJob = this.state.jobs[this.state.defaultJob];
         if (defaultJob) {
           defaultJob.workers = Math.max(0, defaultJob.workers - fromDefault);
+          this.removeSpecies(defaultJob, fromDefault, speciesId);
         }
         job.workers += available;
         job.workers += fromDefault;
       } else {
         job.workers += canMove;
       }
+
+      // The people being moved are of the given species.
+      this.addSpecies(job, canMove, speciesId);
     } else {
       // When removing: move workers to default job instead of the void
       const removing = Math.min(job.workers, Math.abs(count));
       job.workers -= removing;
+
+      // The people leaving the job take their species with them.
+      const leaving = this.takeSpecies(job, removing);
 
       // Add to default job (unless removing from default job itself)
       if (jobId !== this.state.defaultJob) {
         const defaultJob = this.state.jobs[this.state.defaultJob];
         if (defaultJob) {
           defaultJob.workers += removing;
+
+          for (const [id, leavingCount] of Object.entries(leaving)) {
+            this.addSpecies(defaultJob, leavingCount, id);
+          }
         }
       }
     }
@@ -362,6 +419,85 @@ class GameEngine {
     this.notify();
 
     return true;
+  }
+
+  /**
+   * Record that `count` more people of `speciesId` work a job.
+   */
+  private addSpecies(job: Job, count: number, speciesId: string): void {
+    if (count <= 0) {return;}
+
+    job.species[speciesId] = (job.species[speciesId] ?? 0) + count;
+  }
+
+  /**
+   * Record that `count` people stop working a job.
+   *
+   * The people who leave are taken from the largest group first, so a mixed
+   * job empties out evenly rather than emptying one species first. The
+   * groups are ordered by size and then by name, so the choice does not
+   * depend on the order the species were added.
+   */
+  private takeSpecies(job: Job, count: number): Record<string, number> {
+    const leaving: Record<string, number> = {};
+
+    if (count <= 0) {
+      return leaving;
+    }
+
+    let remaining = count;
+
+    for (const speciesId of this.getSpeciesOrder(job)) {
+      if (remaining <= 0) {break;}
+
+      const have = job.species[speciesId] ?? 0;
+
+      if (have <= 0) {continue;}
+
+      const taken = Math.min(have, remaining);
+
+      leaving[speciesId] = taken;
+      remaining -= taken;
+
+      if (taken >= have) {
+        delete job.species[speciesId];
+      } else {
+        job.species[speciesId] = have - taken;
+      }
+    }
+
+    return leaving;
+  }
+
+  /**
+   * The species working a job, largest group first.
+   */
+  private getSpeciesOrder(job: Job): string[] {
+    return Object.keys(job.species).sort((a, b) => {
+      const difference = (job.species[b] ?? 0) - (job.species[a] ?? 0);
+
+      if (difference !== 0) {
+        return difference;
+      }
+
+      return a.localeCompare(b);
+    });
+  }
+
+  /**
+   * Record that `count` people of `speciesId` stop working a job.
+   */
+  private removeSpecies(job: Job, count: number, speciesId: string): void {
+    if (count <= 0) {return;}
+
+    const have = job.species[speciesId] ?? 0;
+    const removed = Math.min(have, count);
+
+    if (removed >= have) {
+      delete job.species[speciesId];
+    } else {
+      job.species[speciesId] = have - removed;
+    }
   }
 
   // Set the default job (where new workers go)
@@ -506,8 +642,12 @@ class GameEngine {
     for (const job of Object.values(this.state.jobs)) {
       if (job.workers <= 0) {continue;}
 
+      // Production is scaled by the stats of the people working the job.
+      // Consumption is not: every worker eats the same.
+      const factor = this.getJobFactor(job);
+
       for (const key of RESOURCE_KEYS) {
-        rates[key] += (job.production[key] - job.consumption[key]) * job.workers;
+        rates[key] += (job.production[key] * factor - job.consumption[key]) * job.workers;
       }
     }
 

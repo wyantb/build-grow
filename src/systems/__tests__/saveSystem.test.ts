@@ -89,8 +89,9 @@ describe('serializeState', () => {
     // come from the catalog on load.
     expect(building).toEqual({ id: 'hut' });
 
-    // A job is saved by its worker count only.
-    expect(Object.values(payload.jobs)[0]).toEqual({ workers: 0 });
+    // A job is saved by its worker count and by who works it. Everything
+    // else comes from the catalog on load.
+    expect(Object.values(payload.jobs)[0]).toEqual({ workers: 0, species: {} });
   });
 });
 
@@ -120,6 +121,72 @@ describe('deserializePayload', () => {
 
     expect(building?.name).toBe('Hut');
     expect(building?.cost.wood).toBe(20);
+  });
+
+  it('keeps the species of a job through a round trip', () => {
+    const world = createTestWorld({
+      population: 5,
+      workers: { lumberjack: 2, unemployed: 3 },
+      buildings: ['lumberjack', 'lumberjack'],
+      jobSpecies: { lumberjack: { human: 1, elf: 1 }, unemployed: { human: 3 } },
+    });
+
+    const restored = deserializePayload(serializeState(world));
+
+    expect(restored.jobs['lumberjack']?.species).toEqual({ human: 1, elf: 1 });
+    expect(restored.jobs['unemployed']?.species).toEqual({ human: 3 });
+  });
+
+  it('keeps the stats of the species through a round trip', () => {
+    const world = createTestWorld({
+      species: { human: { strength: 80, manaSensitivity: 5 } },
+    });
+
+    const restored = deserializePayload(serializeState(world));
+
+    expect(restored.species['human']?.stats.strength).toBe(80);
+    expect(restored.species['human']?.stats.manaSensitivity).toBe(5);
+  });
+
+  it('takes the name of a species from the catalog', () => {
+    const world = createTestWorld({});
+    const restored = deserializePayload(serializeState(world));
+
+    expect(restored.species['human']?.name).toBe('Human');
+  });
+
+  it('keeps the stats a new game starts with when a save has none', () => {
+    const world = createTestWorld({});
+    const payload = serializeState(world);
+
+    delete payload.species;
+
+    const restored = deserializePayload(payload);
+
+    expect(restored.species['human']?.stats.strength).toBe(80);
+    expect(restored.species['human']?.stats.manaSensitivity).toBe(5);
+  });
+
+  it('skips a species the catalog no longer knows about', () => {
+    const world = createTestWorld({});
+    const payload = serializeState(world);
+
+    payload.species!['goblin'] = {
+      stats: {
+        strength: 90,
+        dexterity: 90,
+        constitution: 90,
+        intelligence: 90,
+        wisdom: 90,
+        charisma: 90,
+        manaSensitivity: 90,
+      },
+    };
+
+    const restored = deserializePayload(payload);
+
+    expect(restored.species['goblin']).toBeUndefined();
+    expect(restored.species['human']).toBeDefined();
   });
 
   it('skips a job or building the catalog no longer knows about', () => {
