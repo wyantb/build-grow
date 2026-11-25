@@ -93,15 +93,10 @@ Rules of the gate:
 3. **Verify in the browser, once, and only if the change is visible or
    interactive**: run `npm run dev` and look at http://localhost:3000. Confirm
    the element appears, is reachable, and is laid out correctly. Do not verify
-   arithmetic here; that belongs in Vitest.
+   arithmetic here; that belongs in Vitest. Keep it short and non-exhaustive.
 4. **Commit**: source files only, not generated files.
-5. **Offer followup ideas** that violated 80/20 rules from earlier, only as final
-   output offered to the human reviewer.
-
-The browser check is deliberately last: it is the most expensive step per unit
-of information, so run it after the cheap automated checks have narrowed the
-problem down to layout and wiring. A CSS tweak may need a look while
-iterating; anything else should get one look at the end. See `## Testing`.
+5. **Offer followup ideas**, after pushing, of ideas that violated 80/20 rules
+   from earlier, only as final output/text offered to the human reviewer.
 
 ## Testing
 
