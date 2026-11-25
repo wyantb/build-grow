@@ -5,15 +5,18 @@ import { BUILDING_JOB_MAP } from '../data/jobs.js';
 import { MARKET_RESOURCES } from '../data/market.js';
 import type { MarketResource } from '../data/market.js';
 import MarketSystem from './marketSystem.js';
-import type { MarketAction, MarketOrders } from './marketSystem.js';
+import type { MarketAction, MarketFlow, MarketOrders } from './marketSystem.js';
 
 /** Resource keys the engine tracks. */
 const RESOURCE_KEYS = ['wood', 'stone', 'food', 'gold'] as const;
 
+/** How many ticks the engine runs per second. */
+export const TICKS_PER_SECOND = 5;
+
 class GameEngine {
   private state: WorldState;
   private intervalId: number | null = null;
-  private tickRate: number = 200; // 5 ticks per second
+  private tickRate: number = 1000 / TICKS_PER_SECOND;
   private marketSystem: MarketSystem;
   private listeners = new Set<() => void>();
   private buildingInstanceCounter: Record<string, number> = {};
@@ -381,6 +384,35 @@ class GameEngine {
    */
   getMarketTickRates(): Resource {
     return this.marketSystem.getTickRates();
+  }
+
+  /**
+   * Net resource change per second from the market orders alone.
+   *
+   * This is the market's own contribution, so it holds no job production.
+   * A job that makes gold later does not show up here; the market panel
+   * reports what the exchanges earn.
+   */
+  getMarketRates(): Resource {
+    const tickRates = this.marketSystem.getTickRates();
+    const ticksPerSecond = 1000 / this.tickRate;
+
+    return {
+      wood: tickRates.wood * ticksPerSecond,
+      stone: tickRates.stone * ticksPerSecond,
+      food: tickRates.food * ticksPerSecond,
+      gold: tickRates.gold * ticksPerSecond,
+    };
+  }
+
+  /**
+   * The units bought and sold per second, split by direction.
+   *
+   * The quantities come from the plan for the next tick, so they are what
+   * actually settles: a buy that cannot be paid for is left out.
+   */
+  getMarketFlow(): MarketFlow {
+    return this.marketSystem.getFlow(1000 / this.tickRate);
   }
 
   /**

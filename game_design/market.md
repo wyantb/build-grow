@@ -54,6 +54,11 @@ outside of allocating orders.
   position. One merchant can support one trade position, so "buy 1 wood per
   tick" uses one merchant's capacity. To have both "buy 1 wood per tick" and
   "sell 1 stone per tick" requires two merchants.
+- **A trade position carries half a unit per tick.** The quantity on an order
+  counts trade positions, not units, and each position carries
+  `UNITS_PER_TRADE_PER_TICK` units, which is 0.5. So one position trades half
+  a unit per tick and two positions trade a whole unit. The scale is
+  arbitrary; only the ratio between the positions matters.
 - **The total quantity across all orders cannot exceed the capacity the
   merchants provide.** With 2 merchants you may hold at most 2 total units
   of orders, spread across any resources and directions. For example, you
@@ -145,6 +150,15 @@ consumption, and the market orders, multiplied by the tick frequency (5).
 This keeps the displayed rate honest: if a merchant sells 1 wood per tick,
 the wood rate drops and the gold rate rises by the same amounts.
 
+The market panel reports the market's own gold rate, per second. It is
+`GameEngine.getMarketRates()`, which holds the market's contribution only:
+no job production is mixed in, so a job that makes gold later would not
+appear in this figure.
+
+- **The panel shows `Gold/s`, not `Gold/tick`.** The rate is multiplied by
+  the tick frequency before it is shown, so it reads in the same unit as
+  the rates in the resources panel.
+
 ## Catalog
 
 See `src/data/market.ts`.
@@ -154,4 +168,10 @@ See `src/data/market.ts`.
 | Wood | 0.5 | 0.75 | 0.375 |
 | Stone | 0.75 | 1.125 | 0.5625 |
 | Food | 0.4 | 0.6 | 0.3 |
+
+| Constant | Value | Meaning |
+|----------|-------|---------|
+| `TRADES_PER_MERCHANT` | 1 | Trade positions a merchant provides |
+| `TRADES_PER_CARAVANSERAI` | 1 | Extra positions a caravanserai gives each merchant |
+| `UNITS_PER_TRADE_PER_TICK` | 0.5 | Units a single position carries per tick |
 </content>

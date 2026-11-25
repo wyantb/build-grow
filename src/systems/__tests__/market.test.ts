@@ -1,13 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import GameEngine from '../gameEngine.js';
+import GameEngine, { TICKS_PER_SECOND } from '../gameEngine.js';
 import { createTestWorld } from './testWorld.js';
 import {
   MARKET_RESOURCES,
+  UNITS_PER_TRADE_PER_TICK,
   getBuyPrice,
   getSellPrice,
 } from '../../data/market.js';
-
-const TICKS_PER_SECOND = 5;
 
 /** A world with a market and one merchant, ready to trade. */
 const marketWorld = (overrides: Parameters<typeof createTestWorld>[0] = {}) => createTestWorld({
@@ -422,9 +421,10 @@ describe('Market settlement', () => {
 
     engine.runTicks(10);
 
-    // 10 ticks at 2 wood per tick, sold at 0.375 gold each.
-    expect(engine.getState().resources.wood).toBeCloseTo(100 - 10 * 2, 10);
-    expect(engine.getState().resources.gold).toBeCloseTo(10 * 2 * getSellPrice('wood'), 10);
+    // 10 ticks at 2 trade positions, each carrying half a unit.
+    const sold = 10 * 2 * UNITS_PER_TRADE_PER_TICK;
+    expect(engine.getState().resources.wood).toBeCloseTo(100 - sold, 10);
+    expect(engine.getState().resources.gold).toBeCloseTo(sold * getSellPrice('wood'), 10);
   });
 
   it('buys resources with gold every tick', () => {
@@ -435,8 +435,9 @@ describe('Market settlement', () => {
 
     engine.runTicks(10);
 
-    expect(engine.getState().resources.stone).toBeCloseTo(250 + 10, 10);
-    expect(engine.getState().resources.gold).toBeCloseTo(100 - 10 * getBuyPrice('stone'), 10);
+    const bought = 10 * UNITS_PER_TRADE_PER_TICK;
+    expect(engine.getState().resources.stone).toBeCloseTo(250 + bought, 10);
+    expect(engine.getState().resources.gold).toBeCloseTo(100 - bought * getBuyPrice('stone'), 10);
   });
 
   it('settles sales before buys so a sale can fund a buy', () => {
@@ -448,9 +449,13 @@ describe('Market settlement', () => {
 
     engine.runTicks(1);
 
-    // The sale paid 0.375 gold, which is not enough for a 1.125 gold stone.
-    expect(engine.getState().resources.stone).toBe(250);
-    expect(engine.getState().resources.gold).toBeCloseTo(getSellPrice('wood'), 10);
+    // The sale paid 0.1875 gold, which buys a fraction of the 0.5 stone the
+    // order asks for, so the buy settles partially.
+    const revenue = UNITS_PER_TRADE_PER_TICK * getSellPrice('wood');
+    const bought = revenue / getBuyPrice('stone');
+
+    expect(engine.getState().resources.stone).toBeCloseTo(250 + bought, 10);
+    expect(engine.getState().resources.gold).toBeCloseTo(revenue - bought * getBuyPrice('stone'), 10);
   });
 
   it('skips a buy when there is not enough gold', () => {
@@ -486,10 +491,12 @@ describe('Market rates', () => {
       marketBuys: { wood: 1 },
     }));
 
-    expect(engine.getTickRates().wood).toBeCloseTo(1, 10);
-    expect(engine.getTickRates().gold).toBeCloseTo(-getBuyPrice('wood'), 10);
-    expect(engine.getResourceRates().wood).toBeCloseTo(TICKS_PER_SECOND, 10);
-    expect(engine.getResourceRates().gold).toBeCloseTo(-getBuyPrice('wood') * TICKS_PER_SECOND, 10);
+    const perTick = UNITS_PER_TRADE_PER_TICK;
+
+    expect(engine.getTickRates().wood).toBeCloseTo(perTick, 10);
+    expect(engine.getTickRates().gold).toBeCloseTo(-perTick * getBuyPrice('wood'), 10);
+    expect(engine.getResourceRates().wood).toBeCloseTo(perTick * TICKS_PER_SECOND, 10);
+    expect(engine.getResourceRates().gold).toBeCloseTo(-perTick * getBuyPrice('wood') * TICKS_PER_SECOND, 10);
   });
 
   it('includes a sell order in the resource and gold rates', () => {
@@ -498,10 +505,12 @@ describe('Market rates', () => {
       marketSells: { wood: 1 },
     }));
 
-    expect(engine.getTickRates().wood).toBeCloseTo(-1, 10);
-    expect(engine.getTickRates().gold).toBeCloseTo(getSellPrice('wood'), 10);
-    expect(engine.getResourceRates().wood).toBeCloseTo(-TICKS_PER_SECOND, 10);
-    expect(engine.getResourceRates().gold).toBeCloseTo(getSellPrice('wood') * TICKS_PER_SECOND, 10);
+    const perTick = UNITS_PER_TRADE_PER_TICK;
+
+    expect(engine.getTickRates().wood).toBeCloseTo(-perTick, 10);
+    expect(engine.getTickRates().gold).toBeCloseTo(perTick * getSellPrice('wood'), 10);
+    expect(engine.getResourceRates().wood).toBeCloseTo(-perTick * TICKS_PER_SECOND, 10);
+    expect(engine.getResourceRates().gold).toBeCloseTo(perTick * getSellPrice('wood') * TICKS_PER_SECOND, 10);
   });
 
   it('omits a buy order that cannot be paid for', () => {
@@ -524,6 +533,7 @@ describe('Market rates', () => {
       marketBuys: { wood: 2 },
     }));
 
+    // Two positions ask for a whole unit, and the gold covers exactly one.
     expect(engine.getTickRates().wood).toBeCloseTo(1, 10);
     expect(engine.getTickRates().gold).toBeCloseTo(-getBuyPrice('wood'), 10);
   });
@@ -548,5 +558,113 @@ describe('Market rates', () => {
 
     expect(engine.getTickRates().wood).toBe(0);
     expect(engine.getTickRates().gold).toBe(0);
+  });
+});
+
+describe('Market units per trade', () => {
+  it('carries half a unit per trade position per tick', () => {
+    expect(UNITS_PER_TRADE_PER_TICK).toBe(0.5);
+  });
+
+  it('trades half a unit for a single position', () => {
+    const engine = new GameEngine(marketWorld({
+      resources: { wood: 100 },
+      marketSells: { wood: 1 },
+    }));
+
+    engine.runTicks(1);
+
+    expect(engine.getState().resources.wood).toBeCloseTo(100 - 0.5, 10);
+  });
+
+  it('trades one unit for two positions', () => {
+    const engine = new GameEngine(marketWorld({
+      workers: { merchant: 2 },
+      resources: { wood: 100 },
+      marketSells: { wood: 2 },
+    }));
+
+    engine.runTicks(1);
+
+    expect(engine.getState().resources.wood).toBeCloseTo(100 - 1, 10);
+  });
+});
+
+describe('Market gold rate per second', () => {
+  it('reports the market gold rate per second', () => {
+    const engine = new GameEngine(marketWorld({
+      resources: { wood: 100 },
+      marketSells: { wood: 1 },
+    }));
+
+    const perSecond = UNITS_PER_TRADE_PER_TICK * getSellPrice('wood') * TICKS_PER_SECOND;
+
+    expect(engine.getMarketRates().gold).toBeCloseTo(perSecond, 10);
+  });
+
+  it('reports the market gold rate per second as a negative for a buy', () => {
+    const engine = new GameEngine(marketWorld({
+      resources: { gold: 100 },
+      marketBuys: { wood: 1 },
+    }));
+
+    const perSecond = UNITS_PER_TRADE_PER_TICK * getBuyPrice('wood') * TICKS_PER_SECOND;
+
+    expect(engine.getMarketRates().gold).toBeCloseTo(-perSecond, 10);
+  });
+
+  it('holds no job production in the market rate', () => {
+    // A lumberjack makes wood but no gold, so the market gold rate stays at
+    // zero even though the world has a working job.
+    const engine = new GameEngine(marketWorld({
+      workers: { merchant: 1, lumberjack: 2 },
+      resources: { wood: 100 },
+    }));
+
+    expect(engine.getMarketRates().gold).toBe(0);
+    expect(engine.getResourceRates().wood).toBeGreaterThan(0);
+  });
+
+  it('reports no market flow without a market', () => {
+    const engine = new GameEngine(createTestWorld({
+      population: 4,
+      workers: { merchant: 1 },
+      marketBuys: { wood: 1 },
+    }));
+
+    expect(engine.getMarketRates().gold).toBe(0);
+  });
+});
+
+describe('Market flow per second', () => {
+  it('reports the units bought per second', () => {
+    const engine = new GameEngine(marketWorld({
+      resources: { gold: 100 },
+      marketBuys: { wood: 1 },
+    }));
+
+    expect(engine.getMarketFlow().bought.wood)
+      .toBeCloseTo(UNITS_PER_TRADE_PER_TICK * TICKS_PER_SECOND, 10);
+    expect(engine.getMarketFlow().sold.wood).toBeUndefined();
+  });
+
+  it('reports the units sold per second', () => {
+    const engine = new GameEngine(marketWorld({
+      resources: { wood: 100 },
+      marketSells: { wood: 1 },
+    }));
+
+    expect(engine.getMarketFlow().sold.wood)
+      .toBeCloseTo(UNITS_PER_TRADE_PER_TICK * TICKS_PER_SECOND, 10);
+    expect(engine.getMarketFlow().bought.wood).toBeUndefined();
+  });
+
+  it('leaves out a buy that cannot be paid for', () => {
+    const engine = new GameEngine(marketWorld({
+      resources: { gold: 0 },
+      marketBuys: { wood: 1 },
+    }));
+
+    expect(engine.getMarketFlow().bought.wood).toBeUndefined();
   });
 });

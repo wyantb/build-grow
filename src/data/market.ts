@@ -45,6 +45,15 @@ export const TRADES_PER_MERCHANT = 1;
 export const TRADES_PER_CARAVANSERAI = 1;
 
 /**
+ * Units a single trade position carries per tick.
+ *
+ * A trade position is a slot, not a fixed quantity, so the amount it
+ * carries is an arbitrary scale. Half a unit per tick means one trade
+ * position moves half a unit per tick.
+ */
+export const UNITS_PER_TRADE_PER_TICK = 0.5;
+
+/**
  * Total trade positions that `merchantCount` merchants can provide per tick.
  *
  * Each caravanserai adds a trade position to every merchant, so three

@@ -1,6 +1,7 @@
 import type { Resource, WorldState } from '../types/worldState.js';
 import {
   MARKET_RESOURCES,
+  UNITS_PER_TRADE_PER_TICK,
   getBuyPrice,
   getSellPrice,
   getTradeCapacity,
@@ -29,13 +30,26 @@ const ALLOCATION_KEY: Record<MarketAction, 'buys' | 'sells'> = {
 };
 
 /** What the market will trade on the next tick. */
-interface TradePlan {
+export interface TradePlan {
   /** Units taken from the player, per resource. */
   sold: Partial<Record<MarketResource, number>>;
   /** Units handed to the player, per resource. */
   bought: Partial<Record<MarketResource, number>>;
   /** Net change in gold. */
   goldChange: number;
+}
+
+/**
+ * The market's flow, split by direction.
+ *
+ * The quantities are what actually settles, so a buy that cannot be paid
+ * for is left out and a sale with nothing to sell is left out.
+ */
+export interface MarketFlow {
+  /** Units bought per second, per resource. */
+  bought: Partial<Record<MarketResource, number>>;
+  /** Units sold per second, per resource. */
+  sold: Partial<Record<MarketResource, number>>;
 }
 
 class MarketSystem {
@@ -236,6 +250,10 @@ class MarketSystem {
    *
    * The plan is computed from the current state and applied by
    * `processTrades`, so the rates the UI shows always match what settles.
+   *
+   * An order holds a number of trade positions, and each position carries
+   * `UNITS_PER_TRADE_PER_TICK` units, so the quantity actually traded is
+   * the number of positions times that.
    */
   planTrades(): TradePlan {
     const plan: TradePlan = { sold: {}, bought: {}, goldChange: 0 };
@@ -251,7 +269,8 @@ class MarketSystem {
       if (sellCount <= 0) {continue;}
 
       // A sale is limited by what the player actually has.
-      const sold = Math.min(sellCount, this.state.resources[resource]);
+      const wanted = sellCount * UNITS_PER_TRADE_PER_TICK;
+      const sold = Math.min(wanted, this.state.resources[resource]);
       if (sold <= 0) {continue;}
 
       const revenue = sold * getSellPrice(resource);
@@ -265,7 +284,8 @@ class MarketSystem {
       if (buyCount <= 0) {continue;}
 
       const price = getBuyPrice(resource);
-      const affordable = Math.min(buyCount, Math.floor(gold / price));
+      const wanted = buyCount * UNITS_PER_TRADE_PER_TICK;
+      const affordable = Math.min(wanted, gold / price);
       if (affordable <= 0) {continue;}
 
       const cost = affordable * price;
@@ -304,6 +324,31 @@ class MarketSystem {
     }
 
     this.state.resources.gold += plan.goldChange;
+  }
+
+  /**
+   * The units bought and sold per second, split by direction.
+   *
+   * The quantities come from the plan for the next tick, so they are what
+   * actually settles: a buy that cannot be paid for is left out.
+   */
+  getFlow(ticksPerSecond: number): MarketFlow {
+    const plan = this.planTrades();
+    const flow: MarketFlow = { bought: {}, sold: {} };
+
+    for (const resource of MARKET_RESOURCES) {
+      const bought = plan.bought[resource];
+      if (bought !== undefined) {
+        flow.bought[resource] = bought * ticksPerSecond;
+      }
+
+      const sold = plan.sold[resource];
+      if (sold !== undefined) {
+        flow.sold[resource] = sold * ticksPerSecond;
+      }
+    }
+
+    return flow;
   }
 
   /**

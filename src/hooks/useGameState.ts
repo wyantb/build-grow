@@ -6,7 +6,7 @@ import { BUILDING_TYPES, getBuildingType } from '../data/buildings.js';
 import type { BuildingType } from '../data/buildings.js';
 import { getTradeCapacity } from '../data/market.js';
 import type { MarketResource } from '../data/market.js';
-import type { MarketAction } from '../systems/marketSystem.js';
+import type { MarketAction, MarketFlow } from '../systems/marketSystem.js';
 import GameEngine from '../systems/gameEngine.js';
 
 // Create a game state store with proper typing
@@ -85,6 +85,8 @@ export const useGameState = () => {
     // The market rates come from the engine's plan for the next tick, so
     // they are mirrored alongside the state they were planned against.
     setMarketTickRates(gameEngine.getMarketTickRates());
+    setMarketRates(gameEngine.getMarketRates());
+    setMarketFlow(gameEngine.getMarketFlow());
   };
 
   /**
@@ -135,6 +137,8 @@ export const useGameState = () => {
     });
 
     setMarketTickRates(gameEngine.getMarketTickRates());
+    setMarketRates(gameEngine.getMarketRates());
+    setMarketFlow(gameEngine.getMarketFlow());
   };
 
   /**
@@ -327,7 +331,22 @@ export const useGameState = () => {
     gold: 0,
   });
 
+  // The market's own per-second rates, with no job production mixed in.
+  const [marketRates, setMarketRates] = createSignal<Resource>({
+    wood: 0,
+    stone: 0,
+    food: 0,
+    gold: 0,
+  });
+
+  // The units bought and sold per second, split by direction.
+  const [marketFlow, setMarketFlow] = createSignal<MarketFlow>({ bought: {}, sold: {} });
+
   const getMarketTickRates = (): Resource => marketTickRates();
+
+  const getMarketRates = (): Resource => marketRates();
+
+  const getMarketFlow = (): MarketFlow => marketFlow();
 
   // Simple state accessors
   const getTick = () => state.tick;
@@ -368,6 +387,8 @@ export const useGameState = () => {
     getMarketTradeCapacity,
     getFreeMarketTrades,
     getMarketTickRates,
+    getMarketRates,
+    getMarketFlow,
     gameEngine,
     mirrorEngineState,
     replaceEngineState,

@@ -32,12 +32,21 @@ const MarketPanel: Component = () => {
   const caravanserai = createMemo(() => gameState.getCaravanseraiCount());
 
   /**
-   * Gold spent or earned per tick by the market orders.
+   * Gold spent or earned per second by the market orders.
    *
    * The engine plans the tick's trades from the current state, so this is
    * what actually settles: a buy that cannot be paid for is not counted.
+   * This is the market's own rate, so a job that makes gold is not in it.
    */
-  const goldPerTick = createMemo(() => gameState.getMarketTickRates().gold);
+  const goldPerSecond = createMemo(() => gameState.getMarketRates().gold);
+
+  /**
+   * The units bought and sold per second.
+   *
+   * The engine plans the tick's trades from the current state, so this is
+   * what actually settles.
+   */
+  const flow = createMemo(() => gameState.getMarketFlow());
 
   const buyCount = (resource: MarketResource): number => orders().buys[resource] ?? 0;
   const sellCount = (resource: MarketResource): number => orders().sells[resource] ?? 0;
@@ -163,7 +172,7 @@ const MarketPanel: Component = () => {
                 <>
                   Buying:
                   <For each={Object.entries(orders().buys)}>{([resource, count]) =>
-                    count > 0 ? <div>{count} {resource} (costs {formatNumber(getBuyPrice(resource as MarketResource) * count)}/s)</div> : null}</For>
+                    count > 0 ? <div>{count} {resource} (costs {formatNumber(getBuyPrice(resource as MarketResource) * (flow().bought[resource as MarketResource] ?? 0))}/s)</div> : null}</For>
                 </>
               )}
               {Object.values(orders().buys).some(count => count > 0) && Object.values(orders().sells).some(count => count > 0) && <br />}
@@ -171,7 +180,7 @@ const MarketPanel: Component = () => {
                 <>
                   Selling:
                   <For each={Object.entries(orders().sells)}>{([resource, count]) =>
-                    count > 0 ? <div>{count} {resource} (gains {formatNumber(getSellPrice(resource as MarketResource) * count)}/s)</div> : null}</For>
+                    count > 0 ? <div>{count} {resource} (gains {formatNumber(getSellPrice(resource as MarketResource) * (flow().sold[resource as MarketResource] ?? 0))}/s)</div> : null}</For>
                 </>
               )}
             </div>
@@ -183,8 +192,8 @@ const MarketPanel: Component = () => {
           </span>
         </Tooltip>
         <span>
-          Gold/tick: <strong class={goldPerTick() >= 0 ? 'positive' : 'negative'}>
-            {goldPerTick() >= 0 ? '+' : ''}{formatNumber(goldPerTick())}
+          Gold/s: <strong class={goldPerSecond() >= 0 ? 'positive' : 'negative'}>
+            {goldPerSecond() >= 0 ? '+' : ''}{formatNumber(goldPerSecond())}
           </strong>
         </span>
       </div>
@@ -265,8 +274,8 @@ const MarketPanel: Component = () => {
       </div>
 
       <p class="market-note">
-        Merchants buy and sell every tick. Each merchant carries one buy and one sell
-        trade per tick. A resource is bought or sold, never both, so a buy cancels
+        Merchants buy and sell every tick. Each trade position carries half a unit
+        per tick. A resource is bought or sold, never both, so a buy cancels
         the matching sale.
       </p>
     </div>
