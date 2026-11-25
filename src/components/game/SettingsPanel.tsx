@@ -1,4 +1,4 @@
-import { createSignal, Show } from 'solid-js';
+import { createMemo, createSignal, Show } from 'solid-js';
 import type { Component } from 'solid-js';
 import {
   DEFAULT_TOOLTIP_DELAY,
@@ -7,6 +7,7 @@ import {
   useSettings,
 } from '../../hooks/useSettings.js';
 import { AUTOSAVE_INTERVAL_MS, useSaveActions } from '../../hooks/useSaveSystem.js';
+import { formatDateTime } from '../../utils/formatDateTime.js';
 
 const SettingsPanel: Component = () => {
   const { settings, setTooltipDelay, resetSettings } = useSettings();
@@ -37,6 +38,14 @@ const SettingsPanel: Component = () => {
   // Read inside JSX, which is a tracking scope. Reading it in the component
   // body would trip Solid's STRICT_READ_UNTRACKED diagnostic.
   const storedDelay = (): number => settings().tooltipDelay;
+
+  // The save time is shown in the player's own timezone, with the UTC
+  // offset, so the reading says which zone it belongs to.
+  const lastSavedLabel = createMemo(() => {
+    const savedAt = lastSavedAt();
+
+    return savedAt ? formatDateTime(savedAt) : 'Not saved yet';
+  });
 
   const commit = (raw: string) => {
     setDraft(raw);
@@ -140,7 +149,7 @@ const SettingsPanel: Component = () => {
 
         <div class="settings-row">
           <span class="settings-label">Last saved</span>
-          <span class="settings-value">{lastSavedAt() ?? 'Not saved yet'}</span>
+          <span class="settings-value">{lastSavedLabel()}</span>
         </div>
 
         <div class="settings-actions">
