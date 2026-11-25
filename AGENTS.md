@@ -16,6 +16,29 @@ the matching doc first and keep the implementation consistent with it. If the
 doc and code drift, fix the doc or the code — but do not change both in
 uncoordinated commits.
 
+## Buildings
+
+- **A building may grant no job slot.** The Caravanserai is the first one. It
+  boosts trade capacity instead of adding a worker, so it has no entry in
+  `BUILDING_JOB_MAP` (`src/data/jobs.ts`). `GameEngine.applyBuildingEffects`
+  already skips a building with no job mapping, so a job-less building needs
+  no special handling in the engine.
+- **`buildingCounts` counts completed buildings only.** It is incremented when
+  construction reaches 100%, so a building under construction grants nothing.
+  Any effect keyed off a building count therefore starts only once the
+  building is finished.
+
+## Saves
+
+- **A save written before a building existed does not list it.** On load,
+  `deserializePayload` merges the saved `unlockedBuildings` with the ones a
+  new game starts with. A building that has to be unlocked during play is not
+  in the starting set, so the merge never hands one out early.
+- **`GAME_VERSION` gates compatibility.** Bump it in `src/systems/gameVersion.ts`
+  when a change could affect a saved world, such as a balance change to a job
+  or a building. A different major version refuses the save; a different minor
+  version loads it with a warning.
+
 ## Resource Rates
 
 - **Rates are derived, never measured.** A resource's rate is the net
