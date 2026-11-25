@@ -1,11 +1,16 @@
 // Format numbers to show scientific notation when appropriate
 export const formatNumber = (num: number): string => {
+  // Handle numbers close to zero
+  if (Math.abs(num) < 0.0001) {
+    return '0.00';
+  }
+
   // Handle negative numbers
   const isNegative = num < 0;
   const absNum = Math.abs(num);
 
   // For very small numbers, use scientific notation
-  if (absNum > 0 && absNum < 0.01) {
+  if (absNum >= 0.0001 && absNum < 0.01) {
     return isNegative ? '-' + absNum.toExponential(2) : absNum.toExponential(2);
   }
 
