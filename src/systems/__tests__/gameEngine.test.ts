@@ -159,7 +159,7 @@ describe('GameEngine batch ticking', () => {
     expect(engine.getState().gameTime).toBe(0);
   });
 
-  it('completes building construction within a batch', () => {
+  it('builds a building the moment it is paid for', () => {
     const engine = new GameEngine(createTestWorld({
       population: 4,
       workers: { unemployed: 4 },
@@ -167,12 +167,22 @@ describe('GameEngine batch ticking', () => {
     }));
 
     engine.addBuilding('hut');
-    expect(engine.getState().buildings['hut-0']?.built).toBe(false);
 
-    // A building gains 10% construction progress per tick.
-    engine.runTicks(10);
-
-    expect(engine.getState().buildings['hut-0']?.built).toBe(true);
+    expect(engine.getState().buildings['hut-0']).toBeDefined();
     expect(engine.getState().buildingCounts['hut']).toBe(1);
+  });
+
+  it('applies a building effect straight away', () => {
+    const engine = new GameEngine(createTestWorld({
+      population: 4,
+      workers: { unemployed: 4 },
+      resources: { wood: 100, stone: 100 },
+    }));
+
+    expect(engine.getState().jobs['lumberjack']?.capacity).toBe(0);
+
+    engine.addBuilding('lumberjack');
+
+    expect(engine.getState().jobs['lumberjack']?.capacity).toBe(1);
   });
 });

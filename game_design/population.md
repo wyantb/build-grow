@@ -5,13 +5,14 @@ grow when there is room for another one.
 
 ## Core Rules
 
-- **A new game starts with one hut.** The hut is finished from the start, so
-  the starting population of 5 fills it exactly. The resources panel shows
-  `5 / 5`, and no birth is possible until the player builds more housing.
+- **A new game starts with one hut.** The hut is part of the starting world,
+  so the starting population of 5 fills it exactly. The resources panel
+  shows `5 / 5`, and no birth is possible until the player builds more
+  housing.
 - **One hut houses five people.** The capacity of the world is
-  `finished huts × 5`.
-- **Only finished huts count.** A hut under construction houses nobody, so it
-  adds no capacity until it is done.
+  `huts × 5`.
+- **Every hut counts.** A building is finished the moment it is paid for, so
+  a new hut adds its capacity straight away.
 - **The population never exceeds the capacity.** A birth needs somewhere to
   live. When the huts are full, the world stops rolling for births entirely.
 - **The world rolls for a birth every 25 ticks**, which is every 5 seconds.

@@ -64,9 +64,6 @@ export function createTestWorld(overrides: WorldOverrides = {}): WorldState {
       name: buildingId,
       description: `${buildingId} test building`,
       cost: zeroResource(),
-      buildTime: 0,
-      built: true,
-      constructionProgress: 100,
     };
     state.buildings[key] = building;
     state.buildingCounts[buildingId] = (state.buildingCounts[buildingId] ?? 0) + 1;

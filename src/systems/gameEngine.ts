@@ -1,6 +1,6 @@
 import { createInitialState } from '../types/worldState.js';
 import type { WorldState, Resource } from '../types/worldState.js';
-import { getBuildingType, getScaledCost, getScaledBuildTime } from '../data/buildings.js';
+import { getBuildingType, getScaledCost } from '../data/buildings.js';
 import { BUILDING_JOB_MAP } from '../data/jobs.js';
 import { MARKET_RESOURCES } from '../data/market.js';
 import type { MarketResource } from '../data/market.js';
@@ -147,9 +147,6 @@ class GameEngine {
     // Process resource generation
     this.processResourceGeneration();
 
-    // Process building construction
-    this.processBuildingConstruction();
-
     // Process market trades
     this.marketSystem.processTrades();
 
@@ -203,32 +200,9 @@ class GameEngine {
     }
   }
 
-  // Process building construction
-  private processBuildingConstruction(): void {
-    for (const [_instanceKey, building] of Object.entries(this.state.buildings)) {
-      if (!building.built && building.constructionProgress < 100) {
-        // Buildings take time to construct
-        building.constructionProgress += 10; // 10% per tick for quick testing
-
-        if (building.constructionProgress >= 100) {
-          building.constructionProgress = 100;
-          building.built = true;
-
-          // Increment count for this building type (use the building's type id, not the instance key)
-          const buildingTypeId = building.id;
-          this.state.buildingCounts[buildingTypeId]
-            = (this.state.buildingCounts[buildingTypeId] ?? 0) + 1;
-
-          // Apply building effects when completed
-          this.applyBuildingEffects(buildingTypeId);
-        }
-      }
-    }
-  }
-
-  // Apply building effects when completed
+  // Apply the effects of a building that has just been paid for
   private applyBuildingEffects(buildingId: string): void {
-    console.info(`Building ${buildingId} completed!`);
+    console.info(`Building ${buildingId} built!`);
 
     // Each building adds +1 capacity to its associated job
     const jobId = BUILDING_JOB_MAP[buildingId];
@@ -271,13 +245,14 @@ class GameEngine {
   /**
    * The people the huts can hold.
    *
-   * Only finished huts count, so a hut under construction houses nobody.
+   * Every hut counts, because a building is finished the moment it is paid
+   * for.
    */
   getPopulationCapacity(): number {
     return getPopulationCapacity(this.state.buildingCounts['hut'] ?? 0);
   }
 
-  // Add a building to construction queue
+  // Build a building
   addBuilding(buildingId: string, cost?: Resource): boolean {
     const buildingType = getBuildingType(buildingId);
     if (!buildingType) {
@@ -288,7 +263,6 @@ class GameEngine {
 
     // Use provided cost or calculate scaled cost
     const buildingCost = cost ?? getScaledCost(buildingType.cost, count);
-    const buildTime = getScaledBuildTime(buildingType.buildTime, count);
 
     // Check if player has enough resources
     if (this.state.resources.wood < buildingCost.wood
@@ -309,16 +283,16 @@ class GameEngine {
     this.buildingInstanceCounter[buildingId] = instanceIndex + 1;
     const instanceKey = `${buildingId}-${instanceIndex}`;
 
-    // Add building to state
+    // Add building to state. A building is finished the moment it is paid for.
     this.state.buildings[instanceKey] = {
       id: buildingId,
       name: buildingType.name,
       description: buildingType.description,
       cost: buildingCost,
-      buildTime,
-      built: false,
-      constructionProgress: 0,
     };
+
+    this.state.buildingCounts[buildingId] = count + 1;
+    this.applyBuildingEffects(buildingId);
 
     this.notify();
 

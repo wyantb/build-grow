@@ -303,16 +303,6 @@ body.light-mode .building-btn:disabled {
   border-color: #ccc;
 }
 
-/* Button state: currently constructing */
-.building-btn-constructing {
-  border-color: #007acc;
-  background-color: #1a2a3a;
-}
-
-body.light-mode .building-btn-constructing {
-  border-color: #3498db;
-  background-color: #e8f4fd;
-}
 
 /* Count badge in upper-right corner */
 .building-count {
@@ -377,110 +367,6 @@ body.light-mode .tooltip-divider {
 .tooltip-effects {
   font-size: 0.85rem;
   line-height: 1.4;
-}
-
-.tooltip-build-time {
-  font-size: 0.8rem;
-  color: #4d9de0;
-  text-align: right;
-  margin-top: 2px;
-}
-
-.build-button {
-  background-color: #444444;
-  color: white;
-  border: none;
-  padding: 12px 8px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 0.9rem;
-  transition: background-color 0.2s;
-  width: 100%;
-  min-height: 40px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-body.light-mode .build-button {
-  background-color: #cccccc;
-  color: #333;
-}
-
-.build-button:hover:not(:disabled) {
-  background-color: #555555;
-}
-
-body.light-mode .build-button:hover:not(:disabled) {
-  background-color: #bbbbbb;
-}
-
-.build-button:disabled {
-  background-color: #333333;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-body.light-mode .build-button:disabled {
-  background-color: #dddddd;
-}
-
-.build-button.built {
-  background-color: #2ecc71;
-  color: white;
-}
-
-body.light-mode .build-button.built {
-  background-color: #27ae60;
-}
-
-.build-button.constructing {
-  background-color: #007acc;
-  color: white;
-}
-
-body.light-mode .build-button.constructing {
-  background-color: #3498db;
-}
-
-.building-progress-container {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 8px;
-  width: 80%;
-}
-
-.building-progress-bar {
-  flex: 1;
-  height: 6px;
-  background-color: #555;
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-body.light-mode .building-progress-bar {
-  background-color: #aaa;
-}
-
-.building-progress-fill {
-  height: 100%;
-  background-color: #00aaff;
-  border-radius: 3px;
-}
-
-.building-progress-text {
-  font-size: 0.7rem;
-  color: #aaa;
-  min-width: 30px;
-  text-align: right;
-}
-
-body.light-mode .building-progress-text {
-  color: #666;
 }
 
 .resource-item {
@@ -585,39 +471,11 @@ body.light-mode .resource-rate.negative {
   font-size: 1rem;
 }
 
-.building-progress {
-  background-color: #007acc;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 0.8rem;
-}
 
 .building-description, .job-description {
   font-size: 0.85rem;
   opacity: 0.8;
   margin-top: 5px;
-}
-
-.completed {
-  border-left: 3px solid #4dffb8;
-}
-
-.constructing {
-  border-left: 3px solid #007acc;
-}
-
-.progress-bar {
-  height: 8px;
-  background-color: #444;
-  border-radius: 4px;
-  margin-top: 8px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background-color: #007acc;
-  border-radius: 4px;
 }
 
 .action-buttons {

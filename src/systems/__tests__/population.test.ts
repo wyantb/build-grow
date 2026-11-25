@@ -41,27 +41,20 @@ describe('population capacity', () => {
     const engine = new GameEngine();
 
     expect(engine.getState().buildingCounts['hut']).toBe(1);
-    expect(engine.getState().buildings['hut-0']?.built).toBe(true);
+    expect(engine.getState().buildings['hut-0']).toBeDefined();
     expect(engine.getPopulationCapacity()).toBe(5);
     expect(engine.getState().population).toBe(5);
   });
 
-  it('counts a hut that is still going up for nothing', () => {
+  it('counts a new hut from the moment it is paid for', () => {
     const engine = new GameEngine(createTestWorld({
       population: 5,
       resources: { wood: 100 },
     }));
 
     engine.addBuilding('hut');
-    engine.runTicks(3);
 
-    // The new hut is still under construction, so it houses nobody.
-    expect(engine.getState().buildings['hut-0']?.built).toBe(false);
-    expect(engine.getPopulationCapacity()).toBe(0);
-
-    engine.runTicks(7);
-
-    expect(engine.getState().buildings['hut-0']?.built).toBe(true);
+    expect(engine.getState().buildings['hut-0']).toBeDefined();
     expect(engine.getPopulationCapacity()).toBe(5);
   });
 });

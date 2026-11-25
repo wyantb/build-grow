@@ -12,8 +12,11 @@ provides job capacity, production bonuses, and unlocks new capabilities.
   else — the Caravanserai boosts trade capacity rather than adding a worker
   — has no entry in the building → job mapping. See `game_design/jobs.md`.
 - **Buildings have escalating costs.** Each additional building of the same
-  type costs 1.35× more and takes 1.25× longer to build.
-- **Buildings are permanent** once completed.
+  type costs 1.35× more.
+- **Buildings are built instantly.** If the player can pay the cost, the
+  building exists the moment they click it. There is no construction time and
+  no construction state.
+- **Buildings are permanent** once built.
 - **A new game starts with one finished hut.** It is part of the starting
   world, not something the player builds. See `game_design/population.md`.
 
@@ -21,15 +24,22 @@ provides job capacity, production bonuses, and unlocks new capabilities.
 
 See src/data/buildings.ts
 
-| Building | Cost | Build time | Grants | Notes |
-|----------|------|-----------|--------|-------|
-| Hut | 20 wood, 10 stone | 30s | Housing for 5 | |
-| Market | 30 wood, 30 stone, 15 food | 60s | 1 Merchant slot | Enables the market tab |
-| Caravanserai | 500 wood, 500 stone | 300s | +1 trade per merchant | No job slot of its own |
-| Lumberjack Post | 25 wood, 15 stone | 45s | 1 Lumberjack slot | |
-| Quarry | 20 wood, 25 stone | 45s | 1 Quarrier slot | |
-| Farm | 35 wood | 30s | 1 Farmer slot | |
-| Builder Workshop | 50 wood, 30 stone, 20 food | 120s | — | Unlocks advanced buildings |
+| Building | Cost | Grants | Notes |
+|----------|------|--------|-------|
+| Hut | 20 wood, 10 stone | Housing for 5 | |
+| Market | 30 wood, 30 stone, 15 food | 1 Merchant slot | Enables the market tab |
+| Caravanserai | 500 wood, 500 stone | +1 trade per merchant | No job slot of its own |
+| Lumberjack Post | 25 wood, 15 stone | 1 Lumberjack slot | |
+| Quarry | 20 wood, 25 stone | 1 Quarrier slot | |
+| Farm | 35 wood | 1 Farmer slot | |
+
+### Categories
+
+| Category | Buildings |
+|----------|----------|
+| Residential Block | Hut |
+| Commercial District | Market, Caravanserai |
+| Rural District | Lumberjack Post, Quarry, Farm |
 
 ### Caravanserai
 

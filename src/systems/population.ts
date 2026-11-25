@@ -55,7 +55,8 @@ export const GROWTH_INTERVAL_SECONDS = GROWTH_INTERVAL_TICKS / TICKS_PER_SECOND;
 /**
  * The people the huts can hold.
  *
- * Only finished huts count. A hut under construction houses nobody.
+ * Every hut counts, because a building is finished the moment it is paid
+ * for.
  */
 export const getPopulationCapacity = (hutCount: number): number =>
   hutCount * POPULATION_PER_HUT;

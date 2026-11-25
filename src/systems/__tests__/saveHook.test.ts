@@ -111,30 +111,25 @@ describe('saving and loading through the game', () => {
     expect(saveStatus()?.text).toBe('Game loaded.');
   });
 
-  it('keeps a building that is still under construction', async () => {
+  it('keeps a building that was built while the game was running', async () => {
     const gameState = getGameState();
     const { saveNow, loadNow } = useSaveActions();
 
     gameState.buildBuilding('hut');
-
-    // Three ticks is 30% of the construction done.
-    gameState.gameEngine.runTicks(3);
-    gameState.mirrorEngineState();
 
     await saveNow();
 
     gameState.gameEngine.runTicks(4);
     gameState.mirrorEngineState();
 
-    // The building moved on while the game kept running. It is the second
-    // hut, because the world starts with one.
-    expect(gameState.getBuildings()['hut-1']?.constructionProgress).toBe(70);
+    // The building is the second hut, because the world starts with one.
+    expect(gameState.getBuildings()['hut-1']?.id).toBe('hut');
 
     await loadNow();
 
-    // The load puts the construction back to the saved point.
-    expect(gameState.getBuildings()['hut-1']?.constructionProgress).toBe(30);
-    expect(gameState.getBuildings()['hut-1']?.built).toBe(false);
+    // The load brings the building back.
+    expect(gameState.getBuildings()['hut-1']?.id).toBe('hut');
+    expect(gameState.getBuildingCounts()['hut']).toBe(STARTING_HUTS + 1);
   });
 
   it('drops a building that the saved world does not have', async () => {
@@ -400,17 +395,13 @@ describe('saving and loading through the game', () => {
     expect(autosaveSuspended()).toBe(false);
   });
 
-  it('saves, resets and loads back a world with a building still going up', async () => {
+  it('saves, resets and loads back a world with a building', async () => {
     const gameState = getGameState();
     const { saveNow, loadNow, hardReset } = useSaveActions();
 
-    // A hut that is three ticks into its construction, so nothing new is
-    // finished and the world has only the starting hut to count.
+    // A second hut, built and counted.
     gameState.buildBuilding('hut');
-    gameState.gameEngine.runTicks(3);
     gameState.mirrorEngineState();
-
-    expect(gameState.getBuildingCounts()['hut']).toBe(STARTING_HUTS);
 
     await saveNow();
 
@@ -420,10 +411,9 @@ describe('saving and loading through the game', () => {
 
     await loadNow();
 
-    // The building is back, still under construction, at the same progress.
-    expect(gameState.getBuildings()['hut-1']?.built).toBe(false);
-    expect(gameState.getBuildings()['hut-1']?.constructionProgress).toBe(30);
-    expect(gameState.getBuildingCounts()['hut']).toBe(STARTING_HUTS);
+    // The building is back, and it is counted.
+    expect(gameState.getBuildings()['hut-1']?.id).toBe('hut');
+    expect(gameState.getBuildingCounts()['hut']).toBe(STARTING_HUTS + 1);
   });
 
   it('writes the save to the browser', async () => {

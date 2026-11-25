@@ -29,13 +29,10 @@ const JobWorkersSchema = z.record(z.string(), z.object({
 /**
  * One building instance.
  *
- * Only the identity and the construction state are saved; the rest comes
- * from the building catalog.
+ * Only the identity is saved; the rest comes from the building catalog.
  */
 const SavedBuildingSchema = z.object({
   id: z.string(),
-  built: z.boolean(),
-  constructionProgress: z.number(),
 });
 
 /** The mutable part of the world. */

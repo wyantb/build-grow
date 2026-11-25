@@ -64,11 +64,10 @@ export const useGameState = () => {
         }
       }
 
+      // A building instance never changes once it exists, so only new ones
+      // have to be copied over.
       for (const [buildingId, building] of Object.entries(engineState.buildings)) {
-        if (state.buildings[buildingId]) {
-          state.buildings[buildingId].constructionProgress = building.constructionProgress;
-          state.buildings[buildingId].built = building.built;
-        } else {
+        if (!state.buildings[buildingId]) {
           state.buildings[buildingId] = { ...building };
         }
       }
@@ -172,18 +171,10 @@ export const useGameState = () => {
       return false;
     }
 
-    // Already under construction or finished
-    const existing = state.buildings[buildingId];
-    if (existing?.built) {
-      console.error(`Building ${buildingId} already built`);
-
-      return false;
-    }
-
-    // The engine owns the state, so the cost check and the construction
-    // start must both happen there.
-    const started = gameEngine.addBuilding(buildingId);
-    if (!started) {
+    // The engine owns the state, so the cost check and the build must both
+    // happen there.
+    const built = gameEngine.addBuilding(buildingId);
+    if (!built) {
       console.error(`Not enough resources to build ${buildingId}`);
 
       return false;

@@ -5,7 +5,6 @@ import Tooltip from '../ui/Tooltip.js';
 import {
   BUILDING_CATEGORY_ORDER,
   getScaledCost,
-  getScaledBuildTime,
 } from '../../data/buildings.js';
 import type { BuildingType, BuildingCategory } from '../../data/buildings.js';
 import type { Resource } from '../../types/worldState.js';
@@ -57,20 +56,7 @@ const BuildingGrid: Component = () => {
                     {(type) => {
                       const count = () => gameState.getBuildingCounts()[type().id] ?? 0;
                       const scaledCost = () => getScaledCost(type().cost, count());
-                      const scaledTime = () => getScaledBuildTime(type().buildTime, count());
                       const affordable = () => canAfford(scaledCost());
-
-                      // Find any in-progress construction for this building type
-                      const construction = () => {
-                        const allBuildings = gameState.getBuildings();
-                        for (const [_key, building] of Object.entries(allBuildings)) {
-                          if (building.id === type().id && !building.built) {
-                            return building;
-                          }
-                        }
-
-                        return undefined;
-                      };
 
                       return (
                         <Tooltip
@@ -103,21 +89,17 @@ const BuildingGrid: Component = () => {
                               </div>
                               <div class="tooltip-divider" />
                               <div class="tooltip-effects">{type().effect}</div>
-                              <div class="tooltip-divider" />
-                              <div class="tooltip-build-time">Build time: {scaledTime()}s</div>
                             </div>
                           }
                           placement="top"
                         >
 
                           <button
-                            class={`building-btn ${!affordable() ? 'building-btn-unaffordable' : ''}${construction() ? ' building-btn-constructing' : ''}`}
-                            disabled={!affordable() || !!construction()}
+                            class={`building-btn ${!affordable() ? 'building-btn-unaffordable' : ''}`}
+                            disabled={!affordable()}
                             onClick={() => buildBuilding(type().id)}
                           >
-                            <span class="building-name">
-                              {construction() ? `Building... (${construction()?.constructionProgress}%)` : type().name}
-                            </span>
+                            <span class="building-name">{type().name}</span>
                             <Show when={count() > 0}>
                               <span class="building-count">{count()}</span>
                             </Show>

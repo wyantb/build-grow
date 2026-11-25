@@ -122,11 +122,7 @@ export const serializeState = (state: WorldState): SavePayload => {
   const buildings: SavePayload['buildings'] = {};
 
   for (const [instanceKey, building] of Object.entries(state.buildings)) {
-    buildings[instanceKey] = {
-      id: building.id,
-      built: building.built,
-      constructionProgress: building.constructionProgress,
-    };
+    buildings[instanceKey] = { id: building.id };
   }
 
   return {
@@ -221,9 +217,6 @@ export const deserializePayload = (payload: SavePayload): WorldState => {
       name: catalogBuilding.name,
       description: catalogBuilding.description,
       cost: { ...catalogBuilding.cost },
-      buildTime: catalogBuilding.buildTime,
-      built: saved.built,
-      constructionProgress: saved.constructionProgress,
     };
   }
 

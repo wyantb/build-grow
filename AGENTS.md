@@ -171,7 +171,7 @@ Writing engine tests:
 - The engine takes an optional `WorldState` in its constructor, so a test
   can start from an exact world. `createTestWorld` in
   `src/systems/__tests__/testWorld.ts` builds one from a small set of
-  overrides (population, resources, workers per job, completed buildings).
+  overrides (population, resources, workers per job, buildings).
 - Tests assert against the job table's numbers, not against values copied
   from the implementation. If a job's rates change, the test should fail.
 - `engine.runTicks(n)` advances the world by `n` ticks and notifies

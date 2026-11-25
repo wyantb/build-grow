@@ -85,13 +85,9 @@ describe('serializeState', () => {
     const payload = serializeState(world);
     const building = Object.values(payload.buildings)[0];
 
-    // A building is saved by identity and construction state only. The name,
-    // description, cost and build time come from the catalog on load.
-    expect(building).toEqual({
-      id: 'hut',
-      built: true,
-      constructionProgress: 100,
-    });
+    // A building is saved by identity only. The name, description and cost
+    // come from the catalog on load.
+    expect(building).toEqual({ id: 'hut' });
 
     // A job is saved by its worker count only.
     expect(Object.values(payload.jobs)[0]).toEqual({ workers: 0 });
@@ -117,18 +113,6 @@ describe('deserializePayload', () => {
     expect(restored.market.buys.wood).toBe(2);
   });
 
-  it('restores the construction progress of an unfinished building', () => {
-    const world = createTestWorld();
-    const payload = serializeState(world);
-
-    payload.buildings['hut-0'] = { id: 'hut', built: false, constructionProgress: 42 };
-
-    const restored = deserializePayload(payload);
-
-    expect(restored.buildings['hut-0']?.built).toBe(false);
-    expect(restored.buildings['hut-0']?.constructionProgress).toBe(42);
-  });
-
   it('takes the catalog values back from the game data', () => {
     const world = createTestWorld({ buildings: ['hut'] });
     const restored = deserializePayload(serializeState(world));
@@ -136,7 +120,6 @@ describe('deserializePayload', () => {
 
     expect(building?.name).toBe('Hut');
     expect(building?.cost.wood).toBe(20);
-    expect(building?.buildTime).toBe(30);
   });
 
   it('skips a job or building the catalog no longer knows about', () => {
@@ -144,7 +127,7 @@ describe('deserializePayload', () => {
     const payload = serializeState(world);
 
     payload.jobs['obsolete-job'] = { workers: 5 };
-    payload.buildings['gone-0'] = { id: 'gone', built: true, constructionProgress: 100 };
+    payload.buildings['gone-0'] = { id: 'gone' };
 
     const restored = deserializePayload(payload);
 
@@ -352,7 +335,11 @@ describe('version handling', () => {
   it('refuses a save from a different major version', () => {
     const envelope = createEnvelope(serializeState(createTestWorld()));
 
-    envelope.gameVersion = '2.0.0';
+    // A major version the game is not on, whatever that happens to be.
+    const [major] = GAME_VERSION.split('.');
+    const otherMajor = `${Number(major) + 1}.0.0`;
+
+    envelope.gameVersion = otherMajor;
 
     const result = decodeEnvelopeText(JSON.stringify(envelope));
 
@@ -363,7 +350,7 @@ describe('version handling', () => {
     }
 
     expect(result.code).toBe('incompatible-version');
-    expect(result.error).toContain('2.0.0');
+    expect(result.error).toContain(otherMajor);
   });
 
   it('refuses a save written in a newer save format', () => {
@@ -383,9 +370,12 @@ describe('version handling', () => {
   });
 
   it('treats a different major version as incompatible', () => {
-    expect(isVersionCompatible('1.0.0')).toBe(true);
-    expect(isVersionCompatible('1.9.3')).toBe(true);
-    expect(isVersionCompatible('2.0.0')).toBe(false);
+    const [major, minor] = GAME_VERSION.split('.');
+
+    // The same major version is compatible, whatever the minor version is.
+    expect(isVersionCompatible(`${major}.0.0`)).toBe(true);
+    expect(isVersionCompatible(`${major}.9.3`)).toBe(true);
+    expect(isVersionCompatible(`${Number(major) + 1}.${minor}.0`)).toBe(false);
     expect(isVersionCompatible('not-a-version')).toBe(false);
   });
 
