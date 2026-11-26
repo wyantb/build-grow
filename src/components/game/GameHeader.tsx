@@ -85,6 +85,20 @@ const GameHeader: Component = () => {
             </button>
           </Tooltip>
         )}
+
+        {DEBUG && (
+          <Tooltip content="Debug: print world state." placement="bottom">
+            <button
+              class="debug-print"
+              id="debug-print"
+              type="button"
+              onClick={() => console.info(gameState.gameEngine.getState())}
+              aria-label="Debug: print world state"
+            >
+              <span class="debug-icon">(P)</span>
+            </button>
+          </Tooltip>
+        )}
       </div>
 
       <div class="header-center">
