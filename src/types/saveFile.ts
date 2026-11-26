@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ResourceSchema, MarketSchema } from './worldState.js';
+import { ResourceSchema, MarketSchema, PendingRebirthSchema } from './worldState.js';
 
 /**
  * The on-disk shape of a save.
@@ -95,6 +95,13 @@ export const SavePayloadSchema = z.object({
   unlockedBuildings: z.array(z.string()),
   unlockedJobs: z.array(z.string()),
   market: MarketSchema,
+  /**
+   * A rebirth the player has started but not confirmed.
+   *
+   * It is optional because a save written before the rebirth existed does
+   * not have one, and because most saves are made outside a rebirth.
+   */
+  pendingRebirth: PendingRebirthSchema.optional(),
 });
 
 export type SavePayload = z.infer<typeof SavePayloadSchema>;

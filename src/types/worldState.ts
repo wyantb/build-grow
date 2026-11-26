@@ -87,6 +87,22 @@ export const SpeciesSchema = z.object({
 export type Species = z.infer<typeof SpeciesSchema>;
 
 /**
+ * A rebirth the player has started but not confirmed.
+ *
+ * The rebirth throws the world away and starts a new one, so the player is
+ * shown what changes before they commit to it: the stats each species has
+ * now, and the stats it will have after.
+ */
+export const PendingRebirthSchema = z.object({
+  /** The stats each species has now, by species id. */
+  before: z.record(z.string(), StatsSchema),
+  /** The stats each species will have after the rebirth, by species id. */
+  after: z.record(z.string(), StatsSchema),
+});
+
+export type PendingRebirth = z.infer<typeof PendingRebirthSchema>;
+
+/**
  * Per-tick market orders.
  *
  * Gold is the medium of exchange and is never traded, so the allocation maps
@@ -124,6 +140,13 @@ export const WorldStateSchema = z.object({
   gameTime: z.number(), // in seconds
   defaultJob: z.string(), // id of the job new workers go to
   market: MarketSchema,
+  /**
+   * A rebirth the player has started but not confirmed.
+   *
+   * It is absent while no rebirth is pending. The player is taken out of the
+   * village while it is there, so it has to be saved with the world.
+   */
+  pendingRebirth: PendingRebirthSchema.optional(),
 });
 
 export type WorldState = z.infer<typeof WorldStateSchema>;

@@ -9,6 +9,7 @@ import type { SaveEnvelope, SavePayload } from '../types/saveFile.js';
 import { JOBS, normalizeJobOrder } from '../data/jobs.js';
 import { getBuildingType } from '../data/buildings.js';
 import { getSpecies } from '../data/species.js';
+import type { Stats } from '../data/species.js';
 import { GAME_VERSION, isVersionCompatible } from './gameVersion.js';
 import {
   compressToBase64,
@@ -152,6 +153,14 @@ export const serializeState = (state: WorldState): SavePayload => {
       buys: { ...state.market.buys },
       sells: { ...state.market.sells },
     },
+    // A pending rebirth is saved, because the player is out of the village
+    // while it is there. A save made outside a rebirth has none.
+    pendingRebirth: state.pendingRebirth
+      ? {
+        before: { ...state.pendingRebirth.before },
+        after: { ...state.pendingRebirth.after },
+      }
+      : undefined,
   };
 };
 
@@ -197,6 +206,29 @@ export const deserializePayload = (payload: SavePayload): WorldState => {
     buys: { ...payload.market.buys },
     sells: { ...payload.market.sells },
   };
+
+  // A save made outside a rebirth has no pending rebirth, so the player is
+  // in the village as usual. A species the catalog does not know about is
+  // dropped, the same way an unknown job or building is dropped.
+  if (payload.pendingRebirth) {
+    const before: Record<string, Stats> = {};
+    const after: Record<string, Stats> = {};
+
+    for (const [speciesId, savedAfter] of Object.entries(payload.pendingRebirth.after)) {
+      if (!getSpecies(speciesId)) {
+        console.warn(`Save contains unknown species "${speciesId}" in the pending rebirth; it was skipped.`);
+
+        continue;
+      }
+
+      const savedBefore = payload.pendingRebirth.before[speciesId];
+
+      after[speciesId] = { ...savedAfter };
+      before[speciesId] = savedBefore ? { ...savedBefore } : { ...savedAfter };
+    }
+
+    state.pendingRebirth = { before, after };
+  }
 
   for (const [jobId, saved] of Object.entries(payload.jobs)) {
     const catalogJob = JOBS[jobId];

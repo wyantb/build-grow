@@ -1,5 +1,5 @@
 import { createInitialState } from '../types/worldState.js';
-import type { WorldState, Resource, Stats, Job } from '../types/worldState.js';
+import type { WorldState, Resource, Stats, Job, PendingRebirth } from '../types/worldState.js';
 import { getBuildingType, getScaledCost } from '../data/buildings.js';
 import {
   BUILDING_JOB_MAP,
@@ -18,12 +18,20 @@ import {
   getPopulationCapacity,
 } from './population.js';
 import { getAverageStats, getJobFactor } from './stats.js';
+import { getRebirthStats } from './rebirth.js';
 import { TICKS_PER_SECOND } from './ticks.js';
 
 export { TICKS_PER_SECOND };
 
 /** Resource keys the engine tracks. */
 const RESOURCE_KEYS = ['wood', 'stone', 'food', 'gold'] as const;
+
+/**
+ * The gold a rebirth costs.
+ *
+ * A rebirth throws the world away, so the gold is spent by doing it.
+ */
+export const REBIRTH_GOLD_COST = 1000;
 
 class GameEngine {
   private state: WorldState;
@@ -614,6 +622,112 @@ class GameEngine {
         order[slot] = id;
       }
     });
+
+    this.notify();
+
+    return true;
+  }
+
+  /**
+   * True when the player has enough gold to rebirth.
+   *
+   * A rebirth costs gold, and the gold is spent by throwing the world away,
+   * so the world never carries a gold balance across a rebirth.
+   */
+  canRebirth(): boolean {
+    return this.state.resources.gold >= REBIRTH_GOLD_COST;
+  }
+
+  /**
+   * The rebirth the player is in the middle of.
+   *
+   * It is absent while no rebirth is pending. The rolls were made when the
+   * rebirth began, so the numbers the player was shown are the numbers the
+   * rebirth gives.
+   */
+  getPendingRebirth(): PendingRebirth | null {
+    return this.state.pendingRebirth ?? null;
+  }
+
+  /**
+   * Start a rebirth.
+   *
+   * The world is not thrown away yet: the player is shown what the rebirth
+   * brings and confirms it. The rolls are made here and kept, so a reload
+   * does not roll again.
+   */
+  beginRebirth(): boolean {
+    if (!this.canRebirth()) {
+      return false;
+    }
+
+    if (this.state.pendingRebirth) {
+      return false;
+    }
+
+    const before: PendingRebirth['before'] = {};
+    const after: PendingRebirth['after'] = {};
+
+    for (const [speciesId, entry] of Object.entries(this.state.species)) {
+      before[speciesId] = { ...entry.stats };
+      after[speciesId] = getRebirthStats(entry.stats, entry.count, this.random);
+    }
+
+    this.state.pendingRebirth = { before, after };
+
+    this.notify();
+
+    return true;
+  }
+
+  /**
+   * Carry out the pending rebirth.
+   *
+   * The world is replaced by a new one, so the player gets a fresh village
+   * with the same starting population and the same single hut. The species
+   * keep the stats the pending rebirth promised them.
+   */
+  confirmRebirth(): boolean {
+    const pending = this.state.pendingRebirth;
+
+    if (!pending) {
+      return false;
+    }
+
+    const next = createInitialState();
+
+    // The species carry their improved stats into the new world. A species
+    // the new world does not know about is skipped, because there is no way
+    // to put it in the roster.
+    for (const [speciesId, stats] of Object.entries(pending.after)) {
+      const entry = next.species[speciesId];
+
+      if (!entry) {
+        continue;
+      }
+
+      entry.stats = { ...stats };
+    }
+
+    this.loadState(next);
+
+    console.info('The world was reborn. The people carry better genes.');
+
+    return true;
+  }
+
+  /**
+   * Abandon the pending rebirth and go back to the village.
+   *
+   * The world is left exactly as it was, so the player can think about it
+   * and come back.
+   */
+  cancelRebirth(): boolean {
+    if (!this.state.pendingRebirth) {
+      return false;
+    }
+
+    delete this.state.pendingRebirth;
 
     this.notify();
 

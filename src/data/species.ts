@@ -38,6 +38,19 @@ export const STAT_NAMES = [
 export type StatName = typeof STAT_NAMES[number];
 
 /**
+ * The name of each stat, as the player sees it.
+ */
+export const STAT_LABELS: Record<StatName, string> = {
+  strength: 'Strength',
+  dexterity: 'Dexterity',
+  constitution: 'Constitution',
+  intelligence: 'Intelligence',
+  wisdom: 'Wisdom',
+  charisma: 'Charisma',
+  manaSensitivity: 'Mana Efficiency',
+};
+
+/**
  * The stat that counts for nothing.
  *
  * A stat of 100 is the average, so the effect of a stat on a job is

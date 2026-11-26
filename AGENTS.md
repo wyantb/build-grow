@@ -11,6 +11,7 @@ before modifying the systems it describes:
 | Jobs | `game_design/jobs.md` | Job types, production rates, capacity, defaults |
 | Market | `game_design/market.md` | Tick-based orders, merchant trade capacity, prices, rates |
 | Population | `game_design/population.md` | Housing capacity, the birth roll, the growth curve |
+| Rebirth | `game_design/rebirth.md` | The gold cost, the rebirth view, the gene roll |
 
 When implementing or refactoring features that touch buildings, jobs, markets etc read
 the matching doc first and keep the implementation consistent with it. If the

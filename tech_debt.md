@@ -42,3 +42,29 @@ compresses it, and posts the bytes back.
 `file://` URL, cannot start the worker. The code falls back to compressing on
 the main thread, so the game still saves, but the stutter the worker was meant
 to avoid comes back on those pages.
+
+## The rebirth rolls use Math.random
+
+**Status:** Open, accepted for now.
+
+**Where:** `src/systems/rebirth.ts`, called from `src/systems/gameEngine.ts`.
+
+**The problem.** A rebirth rolls for better genes with `Math.random`, so the
+rolls cannot be reproduced. A player who has a bad rebirth has no way to
+replay it, and the game cannot tell a player what they were dealt. The
+game already takes a random function through the engine's constructor, so
+the roll is testable, but the source is still `Math.random` in the browser.
+
+**The fix.** Replace `Math.random` with a seeded Mersenne Twister. The
+generator would be seeded from a seed that is saved with the world, so the
+same seed produces the same rebirth. A seed would also let the game show a
+player the roll before they confirm it, and let a developer reproduce a
+reported outcome exactly.
+
+**Why it is not done now.** The mechanic is new and will change anyway, and
+`Math.random` is good enough for a roll the player cannot see the inside of.
+The engine's random function is already injectable, so swapping the source
+later touches one place.
+
+**Related.** The same generator would serve any future mechanic that needs
+reproducible randomness.

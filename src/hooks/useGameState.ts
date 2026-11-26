@@ -1,6 +1,6 @@
 import { createSignal, createMemo } from 'solid-js';
 import { createStore } from 'solid-js';
-import type { WorldState, Resource } from '../types/worldState.js';
+import type { WorldState, Resource, Stats } from '../types/worldState.js';
 import { createInitialState } from '../types/worldState.js';
 import { BUILDING_TYPES, getBuildingType } from '../data/buildings.js';
 import type { BuildingType } from '../data/buildings.js';
@@ -8,7 +8,7 @@ import { getTradeCapacity } from '../data/market.js';
 import type { MarketResource } from '../data/market.js';
 import type { MarketAction, MarketFlow } from '../systems/marketSystem.js';
 import { getPopulationCapacity as getCapacityFromHuts } from '../systems/population.js';
-import GameEngine from '../systems/gameEngine.js';
+import GameEngine, { REBIRTH_GOLD_COST } from '../systems/gameEngine.js';
 
 /**
  * Bring a store array in line with a plain array, in place.
@@ -46,6 +46,55 @@ const syncRecord = (target: Record<string, number>, source: Record<string, numbe
   for (const key of Object.keys(target)) {
     if (!(key in source)) {
       delete target[key];
+    }
+  }
+};
+
+/**
+ * Bring the pending rebirth in the store in line with the engine's.
+ *
+ * The rebirth holds the stats of every species, so it is written field by
+ * field. A world with no pending rebirth clears the store's, because a
+ * rebirth that was confirmed leaves nothing behind.
+ */
+const syncPendingRebirth = (
+  state: WorldState,
+  pending: WorldState['pendingRebirth'],
+): void => {
+  if (!pending) {
+    delete state.pendingRebirth;
+
+    return;
+  }
+
+  if (!state.pendingRebirth) {
+    state.pendingRebirth = {
+      before: {},
+      after: {},
+    };
+  }
+
+  for (const [speciesId, stats] of Object.entries(pending.before)) {
+    const existing = state.pendingRebirth.before[speciesId];
+
+    if (existing) {
+      for (const name of Object.keys(stats) as (keyof Stats)[]) {
+        existing[name] = stats[name];
+      }
+    } else {
+      state.pendingRebirth.before[speciesId] = { ...stats };
+    }
+  }
+
+  for (const [speciesId, stats] of Object.entries(pending.after)) {
+    const existing = state.pendingRebirth.after[speciesId];
+
+    if (existing) {
+      for (const name of Object.keys(stats) as (keyof Stats)[]) {
+        existing[name] = stats[name];
+      }
+    } else {
+      state.pendingRebirth.after[speciesId] = { ...stats };
     }
   }
 };
@@ -141,6 +190,8 @@ export const useGameState = () => {
       // Mirror market orders
       state.market.buys = { ...engineState.market.buys };
       state.market.sells = { ...engineState.market.sells };
+
+      syncPendingRebirth(state, engineState.pendingRebirth);
     });
 
     // The market rates come from the engine's plan for the next tick, so
@@ -172,7 +223,9 @@ export const useGameState = () => {
       state.resources.food = engineState.resources.food;
       state.resources.gold = engineState.resources.gold;
 
-      state.jobOrder = [...engineState.jobOrder];
+      // The order is written onto the array the store already holds, so
+      // only the places that really moved notify their readers.
+      syncArray(state.jobOrder, engineState.jobOrder);
 
       state.jobs = {};
       for (const [jobId, job] of Object.entries(engineState.jobs)) {
@@ -203,6 +256,8 @@ export const useGameState = () => {
 
       state.market.buys = { ...engineState.market.buys };
       state.market.sells = { ...engineState.market.sells };
+
+      syncPendingRebirth(state, engineState.pendingRebirth);
     });
 
     setMarketTickRates(gameEngine.getMarketTickRates());
@@ -301,6 +356,72 @@ export const useGameState = () => {
     const moved = gameEngine.reorderJob(jobId, targetIndex);
 
     if (!moved) {
+      return false;
+    }
+
+    mirrorEngineState();
+
+    return true;
+  };
+
+  /**
+   * True when the player has enough gold to rebirth.
+   *
+   * Read from the mirrored store, so the figure stays reactive. The engine's
+   * own state is not a tracking scope.
+   */
+  const canRebirth = (): boolean => (state.resources.gold ?? 0) >= REBIRTH_GOLD_COST;
+
+  /**
+   * The rebirth the player is in the middle of, if any.
+   *
+   * Read from the mirrored store, so the view comes and goes with the
+   * rebirth.
+   */
+  const getPendingRebirth = () => state.pendingRebirth ?? null;
+
+  /**
+   * Start a rebirth.
+   *
+   * The player is taken out of the village and shown what the rebirth
+   * brings. The world is left alone until they confirm it.
+   */
+  const beginRebirth = (): boolean => {
+    const begun = gameEngine.beginRebirth();
+
+    if (!begun) {
+      return false;
+    }
+
+    mirrorEngineState();
+
+    return true;
+  };
+
+  /**
+   * Carry out the pending rebirth.
+   *
+   * The world is replaced by a new one, so the store is replaced to match.
+   */
+  const confirmRebirth = (): boolean => {
+    const confirmed = gameEngine.confirmRebirth();
+
+    if (!confirmed) {
+      return false;
+    }
+
+    replaceEngineState();
+
+    return true;
+  };
+
+  /**
+   * Abandon the pending rebirth and go back to the village.
+   */
+  const cancelRebirth = (): boolean => {
+    const cancelled = gameEngine.cancelRebirth();
+
+    if (!cancelled) {
       return false;
     }
 
@@ -483,6 +604,11 @@ export const useGameState = () => {
     assignWorkers,
     moveJob,
     reorderJob,
+    canRebirth,
+    getPendingRebirth,
+    beginRebirth,
+    confirmRebirth,
+    cancelRebirth,
     setDefaultJob,
     getAvailableWorkers,
     getMarketOrders,
