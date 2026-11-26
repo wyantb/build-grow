@@ -102,6 +102,15 @@ export const SavePayloadSchema = z.object({
    * not have one, and because most saves are made outside a rebirth.
    */
   pendingRebirth: PendingRebirthSchema.optional(),
+  /**
+   * The rebirth pool.
+   *
+   * Tracks what races are available for the next village. A save written
+   * before the pool existed does not have it, so it defaults to zero elves.
+   */
+  rebirthPool: z.object({
+    elf: z.number(),
+  }).optional(),
 });
 
 export type SavePayload = z.infer<typeof SavePayloadSchema>;

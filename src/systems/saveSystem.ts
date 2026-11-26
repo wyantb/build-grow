@@ -159,8 +159,12 @@ export const serializeState = (state: WorldState): SavePayload => {
       ? {
         before: { ...state.pendingRebirth.before },
         after: { ...state.pendingRebirth.after },
+        composition: { ...state.pendingRebirth.composition },
       }
       : undefined,
+    // The rebirth pool survives a save so the player can reload mid-game
+    // and still see the right races.
+    rebirthPool: { ...state.rebirthPool },
   };
 };
 
@@ -213,6 +217,7 @@ export const deserializePayload = (payload: SavePayload): WorldState => {
   if (payload.pendingRebirth) {
     const before: Record<string, Stats> = {};
     const after: Record<string, Stats> = {};
+    const composition: Record<string, number> = {};
 
     for (const [speciesId, savedAfter] of Object.entries(payload.pendingRebirth.after)) {
       if (!getSpecies(speciesId)) {
@@ -225,10 +230,20 @@ export const deserializePayload = (payload: SavePayload): WorldState => {
 
       after[speciesId] = { ...savedAfter };
       before[speciesId] = savedBefore ? { ...savedBefore } : { ...savedAfter };
+
+      if (payload.pendingRebirth.composition) {
+        composition[speciesId] = payload.pendingRebirth.composition[speciesId] ?? 0;
+      }
     }
 
-    state.pendingRebirth = { before, after };
+    state.pendingRebirth = { before, after, composition };
   }
+
+  // The rebirth pool survives a reload. A save written before the pool
+  // existed gets zero elves.
+  state.rebirthPool = {
+    elf: payload.rebirthPool?.elf ?? 0,
+  };
 
   for (const [jobId, saved] of Object.entries(payload.jobs)) {
     const catalogJob = JOBS[jobId];

@@ -71,6 +71,7 @@ const syncPendingRebirth = (
     state.pendingRebirth = {
       before: {},
       after: {},
+      composition: {},
     };
   }
 
@@ -95,6 +96,17 @@ const syncPendingRebirth = (
       }
     } else {
       state.pendingRebirth.after[speciesId] = { ...stats };
+    }
+  }
+
+  // Mirror the composition.
+  for (const [speciesId, count] of Object.entries(pending.composition)) {
+    state.pendingRebirth.composition[speciesId] = count;
+  }
+
+  for (const key of Object.keys(state.pendingRebirth.composition)) {
+    if (!(key in pending.composition)) {
+      delete state.pendingRebirth.composition[key];
     }
   }
 };
@@ -191,6 +203,9 @@ export const useGameState = () => {
       state.market.buys = { ...engineState.market.buys };
       state.market.sells = { ...engineState.market.sells };
 
+      // Mirror the rebirth pool.
+      state.rebirthPool = { ...engineState.rebirthPool };
+
       syncPendingRebirth(state, engineState.pendingRebirth);
     });
 
@@ -256,6 +271,8 @@ export const useGameState = () => {
 
       state.market.buys = { ...engineState.market.buys };
       state.market.sells = { ...engineState.market.sells };
+
+      state.rebirthPool = { ...engineState.rebirthPool };
 
       syncPendingRebirth(state, engineState.pendingRebirth);
     });
@@ -422,6 +439,27 @@ export const useGameState = () => {
     const cancelled = gameEngine.cancelRebirth();
 
     if (!cancelled) {
+      return false;
+    }
+
+    mirrorEngineState();
+
+    return true;
+  };
+
+  /**
+   * The pool of races available for the next village.
+   */
+  const getRebirthPool = (): WorldState['rebirthPool'] =>
+    gameEngine.getRebirthPool();
+
+  /**
+   * Update the composition of the next village.
+   */
+  const setComposition = (composition: Record<string, number>): boolean => {
+    const done = gameEngine.setComposition(composition);
+
+    if (!done) {
       return false;
     }
 
@@ -609,6 +647,8 @@ export const useGameState = () => {
     beginRebirth,
     confirmRebirth,
     cancelRebirth,
+    getRebirthPool,
+    setComposition,
     setDefaultJob,
     getAvailableWorkers,
     getMarketOrders,

@@ -152,7 +152,9 @@ describe('population growth', () => {
 
     engine.runTicks(1);
 
-    expect(rolls).toBe(1);
+    // The engine calls the random function twice: once to decide if a birth
+    // happens, and once to pick the species of the newborn.
+    expect(rolls).toBe(2);
   });
 });
 

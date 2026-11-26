@@ -18,7 +18,7 @@ import {
   getPopulationCapacity,
 } from './population.js';
 import { getAverageStats, getJobFactor } from './stats.js';
-import { getRebirthStats } from './rebirth.js';
+import { getRebirthStatsPerSpecies, pickBirthSpecies } from './rebirth.js';
 import { TICKS_PER_SECOND } from './ticks.js';
 
 export { TICKS_PER_SECOND };
@@ -284,15 +284,40 @@ class GameEngine {
     this.state.population++;
 
     // A new person joins the default job, which is where the unassigned
-    // people live. The child is of the species the world starts with.
+    // people live. The child's species is picked by that species' share of
+    // the current population: 1 elf and 4 humans means a 20% chance of
+    // being an elf.
     const defaultJob = this.state.jobs[this.state.defaultJob];
-    if (defaultJob) {
-      defaultJob.workers++;
-      this.addSpecies(defaultJob, 1, DEFAULT_SPECIES_ID);
+    const counts: Record<string, number> = {};
+
+    for (const [speciesId, entry] of Object.entries(this.state.species)) {
+      counts[speciesId] = entry.count;
     }
 
-    // The roster counts the child too.
-    const species = this.state.species[DEFAULT_SPECIES_ID];
+    const birthSpecies = pickBirthSpecies(counts, this.random);
+    if (!birthSpecies) {
+      // Fallback: nobody has been counted yet, so use the default.
+      if (defaultJob) {
+        defaultJob.workers++;
+        this.addSpecies(defaultJob, 1, DEFAULT_SPECIES_ID);
+      }
+
+      const species = this.state.species[DEFAULT_SPECIES_ID];
+      if (species) {
+        species.count++;
+      }
+
+      console.info(`A child is born. Population is now ${this.state.population}.`);
+
+      return;
+    }
+
+    if (defaultJob) {
+      defaultJob.workers++;
+      this.addSpecies(defaultJob, 1, birthSpecies);
+    }
+
+    const species = this.state.species[birthSpecies];
     if (species) {
       species.count++;
     }
@@ -655,6 +680,10 @@ class GameEngine {
    * The world is not thrown away yet: the player is shown what the rebirth
    * brings and confirms it. The rolls are made here and kept, so a reload
    * does not roll again.
+   *
+   * Each species rolls its own stat increases: the rolls of one race do not
+   * help another race. The composition of the next village is set to all
+   * humans by default, and the player can change it before confirming.
    */
   beginRebirth(): boolean {
     if (!this.canRebirth()) {
@@ -666,14 +695,27 @@ class GameEngine {
     }
 
     const before: PendingRebirth['before'] = {};
-    const after: PendingRebirth['after'] = {};
 
     for (const [speciesId, entry] of Object.entries(this.state.species)) {
       before[speciesId] = { ...entry.stats };
-      after[speciesId] = getRebirthStats(entry.stats, entry.count, this.random);
     }
 
-    this.state.pendingRebirth = { before, after };
+    const speciesStats: Record<string, Stats> = {};
+    const speciesCounts: Record<string, number> = {};
+
+    for (const [speciesId, entry] of Object.entries(this.state.species)) {
+      speciesStats[speciesId] = entry.stats;
+      speciesCounts[speciesId] = entry.count;
+    }
+
+    const after = getRebirthStatsPerSpecies(speciesStats, speciesCounts, this.random);
+
+    // Default composition: all 5 lives are humans.
+    const composition: Record<string, number> = {
+      [DEFAULT_SPECIES_ID]: 5,
+    };
+
+    this.state.pendingRebirth = { before, after, composition };
 
     this.notify();
 
@@ -683,9 +725,9 @@ class GameEngine {
   /**
    * Carry out the pending rebirth.
    *
-   * The world is replaced by a new one, so the player gets a fresh village
-   * with the same starting population and the same single hut. The species
-   * keep the stats the pending rebirth promised them.
+   * The world is replaced by a new one, built from the player's chosen
+   * composition. The player earns one elf in the rebirth pool for each
+   * village they leave behind. Jobs are auto-staffed by species quality.
    */
   confirmRebirth(): boolean {
     const pending = this.state.pendingRebirth;
@@ -695,6 +737,12 @@ class GameEngine {
     }
 
     const next = createInitialState();
+
+    // One more elf is added to the pool each time the player confirms a
+    // rebirth, so the pool grows with each village they leave behind.
+    next.rebirthPool = {
+      elf: (this.state.rebirthPool?.elf ?? 0) + 1,
+    };
 
     // The species carry their improved stats into the new world. A species
     // the new world does not know about is skipped, because there is no way
@@ -709,9 +757,199 @@ class GameEngine {
       entry.stats = { ...stats };
     }
 
+    // Build the new village's population from the chosen composition.
+    const comp = pending.composition;
+    const totalLives = Object.values(comp).reduce((s, c) => s + c, 0);
+
+    next.population = Math.max(0, totalLives);
+
+    // Put the people into the default job and the species roster.
+    const defaultJobRef = next.jobs[next.defaultJob];
+    if (defaultJobRef) {
+      defaultJobRef.workers = next.population;
+    }
+
+    for (const [speciesId, count] of Object.entries(comp)) {
+      const entry = next.species[speciesId];
+
+      if (!entry || count <= 0) {
+        continue;
+      }
+
+      entry.count = count;
+
+      if (defaultJobRef) {
+        defaultJobRef.species[speciesId] = count;
+      }
+    }
+
+    // Staff the jobs by species quality, then load the world.
+    this.autoStaffJobs(next);
+
     this.loadState(next);
 
     console.info('The world was reborn. The people carry better genes.');
+
+    return true;
+  }
+
+  /**
+   * Staff the jobs in a world by species quality.
+   *
+   * The rules are:
+   * 1. Jobs with a fixed capacity and at least one worker go first.
+   * 2. Jobs with zero workers are skipped entirely — the player said nobody
+   *    should work that job.
+   * 3. Uncapped jobs go last, so the best races aren't wasted on them.
+   * 4. Within a group, the player's priority order is respected.
+   *
+   * For each job, the best-performing species is picked based on the net
+   * multiplier of its primary and secondary stats. When that species runs
+   * out, the next best takes its place.
+   */
+  private autoStaffJobs(state: WorldState): void {
+    const capacityJobs: string[] = [];
+    const uncappedJobs: string[] = [];
+
+    for (const jobId of state.jobOrder) {
+      const job = state.jobs[jobId];
+
+      if (!job) {
+        continue;
+      }
+
+      if (job.capacity === 0) {
+        uncappedJobs.push(jobId);
+      } else if (job.workers > 0) {
+        capacityJobs.push(jobId);
+      }
+    }
+
+    // Track how many of each species are still free to assign.
+    const remaining: Record<string, number> = {};
+
+    for (const [speciesId, entry] of Object.entries(state.species)) {
+      remaining[speciesId] = entry.count;
+    }
+
+    // Clear all job assignments.
+    for (const job of Object.values(state.jobs)) {
+      job.workers = 0;
+      job.species = {};
+    }
+
+    // Put everyone back into the default job as the starting point.
+    const defaultJob = state.jobs[state.defaultJob];
+    if (defaultJob) {
+      defaultJob.workers = state.population;
+
+      for (const [speciesId, entry] of Object.entries(state.species)) {
+        defaultJob.species[speciesId] = entry.count;
+      }
+    }
+
+    // Pull people from the default job into each capacity-limited job.
+    const staffingOrder = [...capacityJobs, ...uncappedJobs];
+
+    for (const jobId of staffingOrder) {
+      const job = state.jobs[jobId];
+
+      if (!job || job.capacity <= 0) {
+        continue;
+      }
+
+      const available = job.capacity;
+      let filled = 0;
+
+      // Find the best species that still has free people.
+      const sortedSpecies = this.sortedSpeciesForJob(job, remaining, state);
+
+      for (const speciesId of sortedSpecies) {
+        if (filled >= available) {
+          break;
+        }
+
+        const canTake = Math.min(remaining[speciesId] ?? 0, available - filled);
+
+        if (canTake <= 0) {
+          continue;
+        }
+
+        remaining[speciesId] = (remaining[speciesId] ?? 0) - canTake;
+        job.workers += canTake;
+        job.species[speciesId] = canTake;
+        filled += canTake;
+
+        // Remove from the default job.
+        if (defaultJob) {
+          defaultJob.workers -= canTake;
+          defaultJob.species[speciesId] = Math.max(
+            0,
+            (defaultJob.species[speciesId] ?? 0) - canTake,
+          );
+        }
+      }
+    }
+  }
+
+  /**
+   * Species sorted by how well they perform a job, best first.
+   *
+   * Only species that have remaining free people are considered.
+   */
+  private sortedSpeciesForJob(
+    job: Job,
+    remaining: Record<string, number>,
+    state: WorldState,
+  ): string[] {
+    const jobStats = JOB_STATS[job.id];
+
+    const scored: { speciesId: string; score: number }[] = [];
+
+    for (const [speciesId, count] of Object.entries(remaining)) {
+      if (count <= 0) {
+        continue;
+      }
+
+      const stats = state.species[speciesId]?.stats;
+
+      if (!stats) {
+        continue;
+      }
+
+      const score = jobStats ? getJobFactor(jobStats, stats) : 1;
+
+      scored.push({ speciesId, score });
+    }
+
+    scored.sort((a, b) => b.score - a.score);
+
+    return scored.map((entry) => entry.speciesId);
+  }
+
+  /**
+   * The rebirth pool.
+   *
+   * Tells the UI what races the player can pick from.
+   */
+  getRebirthPool(): WorldState['rebirthPool'] {
+    return this.state.rebirthPool;
+  }
+
+  /**
+   * Update the composition of the next village.
+   *
+   * The player picks which races make up the 5 lives. The engine only
+   * stores the change; it is not applied until the player confirms.
+   */
+  setComposition(composition: Record<string, number>): boolean {
+    if (!this.state.pendingRebirth) {
+      return false;
+    }
+
+    this.state.pendingRebirth.composition = { ...composition };
+
+    this.notify();
 
     return true;
   }

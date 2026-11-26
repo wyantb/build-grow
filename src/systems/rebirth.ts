@@ -14,6 +14,10 @@
  *
  * Mana sensitivity is not a core stat. It is shown, but a gold rebirth
  * never raises it.
+ *
+ * Each species rolls independently: the rolls of one race do not help
+ * another race. A village with 2 elves and 10 humans gives the elves 2
+ * rolls per core stat and the humans 10.
  */
 
 import type { Stats } from '../data/species.js';
@@ -134,6 +138,30 @@ export const getRebirthStats = (
 };
 
 /**
+ * The stats each species would have after a rebirth, rolled independently.
+ *
+ * Each species rolls its own stat increases based on its own population.
+ * A species with zero members does not roll and keeps its current stats.
+ */
+export const getRebirthStatsPerSpecies = (
+  speciesStats: Record<string, Stats>,
+  speciesCounts: Record<string, number>,
+  random: () => number = Math.random,
+): Record<string, Stats> => {
+  const result: Record<string, Stats> = {};
+
+  for (const [speciesId, stats] of Object.entries(speciesStats)) {
+    const count = speciesCounts[speciesId] ?? 0;
+
+    result[speciesId] = count > 0
+      ? getRebirthStats(stats, count, random)
+      : { ...stats };
+  }
+
+  return result;
+};
+
+/**
  * The stats a species would have after a rebirth, without changing them.
  *
  * The preview and the rebirth itself must roll the same way, so both use
@@ -144,6 +172,39 @@ export const getRebirthPreview = (
   population: number,
   random: () => number = Math.random,
 ): Stats => getRebirthStats(current, population, random);
+
+/**
+ * Pick a random species weighted by population count.
+ *
+ * With 1 elf and 4 humans, the chance of picking the elf is 1 / 5 = 20%.
+ * Returns undefined when there is nobody or all counts are zero.
+ */
+export const pickBirthSpecies = (
+  speciesCounts: Record<string, number>,
+  random: () => number = Math.random,
+): string | undefined => {
+  const total = Object.values(speciesCounts).reduce((sum, c) => sum + c, 0);
+
+  if (total <= 0) {
+    return undefined;
+  }
+
+  const roll = random() * total;
+  let cumulative = 0;
+
+  for (const [speciesId, count] of Object.entries(speciesCounts)) {
+    cumulative += count;
+
+    if (roll < cumulative) {
+      return speciesId;
+    }
+  }
+
+  // Fall through for floating point edge cases.
+  const ids = Object.keys(speciesCounts);
+
+  return ids[ids.length - 1];
+};
 
 /**
  * The stats the player is shown, in the order they are listed.

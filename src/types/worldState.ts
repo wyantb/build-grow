@@ -92,15 +92,38 @@ export type Species = z.infer<typeof SpeciesSchema>;
  * The rebirth throws the world away and starts a new one, so the player is
  * shown what changes before they commit to it: the stats each species has
  * now, and the stats it will have after.
+ *
+ * The player also chooses the composition of the next village: which races
+ * make up the 5 lives, picked from the rebirth pool.
  */
 export const PendingRebirthSchema = z.object({
   /** The stats each species has now, by species id. */
   before: z.record(z.string(), StatsSchema),
   /** The stats each species will have after the rebirth, by species id. */
   after: z.record(z.string(), StatsSchema),
+  /**
+   * The composition of the next village: how many lives are of each race.
+   *
+   * The player picks this from the rebirth pool before confirming.
+   */
+  composition: z.record(z.string(), z.number()),
 });
 
 export type PendingRebirth = z.infer<typeof PendingRebirthSchema>;
+
+/**
+ * The rebirth pool.
+ *
+ * Tracks how many elves are available to carry into the next village.
+ * Starts at zero and grows by one each time the player completes a gold
+ * rebirth.
+ */
+export const RebirthPoolSchema = z.object({
+  /** How many elves the player may use in the next village. */
+  elf: z.number(),
+});
+
+export type RebirthPool = z.infer<typeof RebirthPoolSchema>;
 
 /**
  * Per-tick market orders.
@@ -147,6 +170,13 @@ export const WorldStateSchema = z.object({
    * village while it is there, so it has to be saved with the world.
    */
   pendingRebirth: PendingRebirthSchema.optional(),
+  /**
+   * The rebirth pool.
+   *
+   * Tracks what races are available for the next village. Starts at zero
+   * elves and grows by one each time the player confirms a gold rebirth.
+   */
+  rebirthPool: RebirthPoolSchema,
 });
 
 export type WorldState = z.infer<typeof WorldStateSchema>;
@@ -202,6 +232,9 @@ export const createInitialState = (): WorldState => {
     market: {
       buys: {},
       sells: {},
+    },
+    rebirthPool: {
+      elf: 0,
     },
   };
 
