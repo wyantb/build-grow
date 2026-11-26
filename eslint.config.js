@@ -122,6 +122,17 @@ export default tseslint.config(
       'no-unneeded-ternary': 'error',
       'no-lonely-if': 'error',
 
+      // Require explicit parentheses when mixing ?? with comparisons, so
+      // precedence bugs like `a ?? 0 >= b` cannot compile silently.
+      // Arithmetic precedence (* before + etc.) is well known and left free.
+      'no-mixed-operators': ['error', {
+        groups: [
+          ['??', '||', '&&'],
+          ['??', '==', '!=', '===', '!==', '>', '>=', '<', '<=', 'in', 'instanceof'],
+        ],
+        allowSamePrecedence: true,
+      }],
+
       // Indentation.
       indent: [
         'error',

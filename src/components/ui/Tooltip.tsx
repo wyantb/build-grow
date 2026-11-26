@@ -110,9 +110,9 @@ const Tooltip: Component<TooltipProps> = (props) => {
 
     if (placement === 'top' || placement === 'bottom') {
       top = placement === 'top' ? anchor.top - size.height - GAP : anchor.bottom + GAP;
-      left = anchor.left + anchor.width / 2 - size.width / 2;
+      left = anchor.left + (anchor.width / 2) - (size.width / 2);
     } else {
-      top = anchor.top + anchor.height / 2 - size.height / 2;
+      top = anchor.top + (anchor.height / 2) - (size.height / 2);
       left = placement === 'left' ? anchor.left - size.width - GAP : anchor.right + GAP;
     }
 

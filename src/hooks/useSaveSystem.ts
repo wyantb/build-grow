@@ -275,11 +275,19 @@ export const useSaveSystem = () => {
         return;
       }
 
+      if (getGameState().getPendingRebirth()) {
+        return;
+      }
+
       void saveNow();
     }, AUTOSAVE_INTERVAL_MS);
 
     const flushSave = () => {
       if (autosaveSuspended()) {
+        return;
+      }
+
+      if (getGameState().getPendingRebirth()) {
         return;
       }
 

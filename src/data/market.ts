@@ -60,7 +60,7 @@ export const UNITS_PER_TRADE_PER_TICK = 0.5;
  * merchants and three caravanserai carry twelve positions.
  */
 export const getTradeCapacity = (merchantCount: number, caravanseraiCount: number): number =>
-  merchantCount * (TRADES_PER_MERCHANT + caravanseraiCount * TRADES_PER_CARAVANSERAI);
+  merchantCount * (TRADES_PER_MERCHANT + (caravanseraiCount * TRADES_PER_CARAVANSERAI));
 
 /** Display metadata for the market rows. */
 export const MARKET_RESOURCE_INFO: Record<MarketResource, { label: string; description: string }> = {
