@@ -139,34 +139,51 @@ export const getAvailableJobIds = (
 ): string[] => jobIds.filter((jobId) => isJobAvailable(jobId, buildingCounts));
 
 /**
- * A job order brought into line with the jobs that exist.
+ * Normalize a job priority order.
  *
- * A job the game does not know about is dropped. A job the order forgot is
- * put back at the end, so the order always holds every job exactly once.
+ * Unknown or duplicate job ids are dropped. Jobs that are missing from the
+ * order are appended. A job that can be defaulted (settler, unemployed) is
+ * always placed at the end, with unemployed last, so the player's priority
+ * order covers every meaningful job before the fallback block.
  */
 export const normalizeJobOrder = (order: string[] | undefined): string[] => {
-  if (!order || order.length === 0) {
-    return [...DEFAULT_JOB_ORDER];
-  }
+  // Start from DEFAULT_JOB_ORDER when no order is given, so a world that
+  // never set one still gets the canonical starting order.
+  const base: string[] = order && order.length > 0 ? [...order] : [...DEFAULT_JOB_ORDER];
 
   const known = new Set(Object.keys(JOBS));
   const seen = new Set<string>();
   const result: string[] = [];
 
-  for (const jobId of order) {
+  // First pass: keep only non-defaultable jobs in the player's order.
+  for (const jobId of base) {
     if (!known.has(jobId) || seen.has(jobId)) {
       continue;
     }
 
     seen.add(jobId);
-    result.push(jobId);
-  }
 
-  for (const jobId of DEFAULT_JOB_ORDER) {
-    if (!seen.has(jobId)) {
+    if (!JOBS[jobId]?.canDefault) {
       result.push(jobId);
     }
   }
+
+  // New jobs that were not in the order yet: insert them above the
+  // defaultable block (unless they are defaultable themselves).
+  for (const jobId of DEFAULT_JOB_ORDER) {
+    if (seen.has(jobId)) {
+      continue;
+    }
+
+    seen.add(jobId);
+
+    if (!JOBS[jobId]?.canDefault) {
+      result.push(jobId);
+    }
+  }
+
+  // The defaultable jobs always go at the end: settler, then unemployed.
+  result.push('settler', 'unemployed');
 
   return result;
 };

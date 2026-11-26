@@ -20,11 +20,13 @@ per worker, a capacity (often tied to buildings), and optional default status.
   second (0.01 per tick at 5 ticks/sec). This applies regardless of job.
 - **Jobs have a priority order.** The Jobs panel lists the jobs top to bottom,
   and the player can move a job up or down with the buttons next to its name,
-  or drag it by the handle to any place in the list. The order is the player's
-  own: it decides nothing yet, and it is saved with the world. The order holds
-  every job, including the ones that are not on screen, so a job whose building
-  is not up yet appears where the player left it once the building is. A job
-  the game adds later starts at the end.
+  or drag it by the handle to any place in the list. The order decides which
+  species fills which job slot: the engine fills jobs top to bottom, assigning
+  the best available species to each one, then rebalances after every change.
+  Settler and Unemployed are always at the bottom and cannot be moved.
+  The order holds every job, including the ones that are not on screen, so
+  a job whose building is not up yet appears where the player left it once
+  the building is.
 - **A drag places a job among the jobs on screen.** The place a job is dropped
   on is counted among the jobs the player can see, so a job that is not on
   screen does not take a spot. The visible jobs keep the places they hold in

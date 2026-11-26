@@ -5,6 +5,7 @@ import {
   BUILDING_JOB_MAP,
   getAvailableJobIds,
   JOB_STATS,
+  JOBS,
   normalizeJobOrder,
 } from '../data/jobs.js';
 import { MARKET_RESOURCES } from '../data/market.js';
@@ -285,6 +286,7 @@ class GameEngine {
     const jobId = BUILDING_JOB_MAP[buildingId];
     if (jobId && this.state.jobs[jobId]) {
       this.state.jobs[jobId].capacity += 1;
+      this.balanceWorkers();
     }
   }
 
@@ -331,6 +333,8 @@ class GameEngine {
         species.count++;
       }
 
+      this.balanceWorkers();
+
       console.info(`A child is born. Population is now ${this.getPopulation()}.`);
 
       return;
@@ -345,6 +349,8 @@ class GameEngine {
     if (species) {
       species.count++;
     }
+
+    this.balanceWorkers();
 
     console.info(`A child is born. Population is now ${this.getPopulation()}.`);
   }
@@ -428,59 +434,87 @@ class GameEngine {
    * worker count, because a job's production depends on the stats of the
    * creatures working it. A job can be staffed by more than one species.
    *
-   * @param speciesId The species of the people being moved. Defaults to the
-   *   species a new world starts with.
+   * When `speciesId` is omitted, the best available species for the job is
+   * picked automatically, and the whole workforce is rebalanced afterwards.
    */
-  assignWorkers(jobId: string, count: number, speciesId: string = DEFAULT_SPECIES_ID): boolean {
+  assignWorkers(jobId: string, count: number, speciesId?: string): boolean {
     const job = this.state.jobs[jobId];
     if (!job) {return false;}
 
     if (count > 0) {
-      // Room in job (0 capacity = unlimited)
-      const roomInJob = job.capacity > 0
-        ? Math.max(0, job.capacity - job.workers)
-        : Infinity;
-
-      // How many people of this species the world has that are not working
-      // a job yet. The unassigned people live in the default job, and the
-      // people in no job at all have not found work.
       const defaultJob = this.state.jobs[this.state.defaultJob];
-      const unassigned = defaultJob?.species[speciesId] ?? 0;
-      const free = Math.max(
-        0,
-        (this.state.species[speciesId]?.count ?? 0) - unassigned - this.getWorking(speciesId),
-      );
-      const availableOfSpecies = free + unassigned;
 
-      // Determine how many workers can be moved
-      const canMove = Math.min(availableOfSpecies, roomInJob, count);
+      // No species specified — pick the best available, then rebalance.
+      if (speciesId === undefined) {
+        const roomInJob = job.capacity > 0
+          ? Math.max(0, job.capacity - job.workers)
+          : Infinity;
 
-      // If still no available workers, nothing to do
-      if (canMove <= 0) {return true;}
+        if (roomInJob <= 0) {return true;}
 
-      // The people who are in no job at all are taken first, because they
-      // are not working anything yet.
-      const fromFree = Math.min(canMove, free);
-      const fromDefault = canMove - fromFree;
+        const remaining: Record<string, number> = {};
+        for (const [sid, entry] of Object.entries(this.state.species)) {
+          remaining[sid] = entry.count - this.getWorking(sid);
+        }
 
-      if (fromDefault > 0 && defaultJob) {
-        defaultJob.workers = Math.max(0, defaultJob.workers - fromDefault);
-        this.removeSpecies(defaultJob, fromDefault, speciesId);
+        // Only species that still have free people.
+        const sorted = this.sortedSpeciesForJob(job, remaining, this.state);
+        const picked = sorted[0];
+
+        if (!picked) {return true;}
+
+        const canMove = Math.min(remaining[picked] ?? 0, roomInJob, count);
+        if (canMove <= 0) {return true;}
+
+        // People not in any job are taken first, then from the default job.
+        const unassigned = defaultJob?.species[picked] ?? 0;
+        const free = Math.max(
+          0,
+          (this.state.species[picked]?.count ?? 0) - unassigned - this.getWorking(picked),
+        );
+        const fromFree = Math.min(canMove, free);
+        const fromDefault = canMove - fromFree;
+
+        if (fromDefault > 0 && defaultJob) {
+          defaultJob.workers = Math.max(0, defaultJob.workers - fromDefault);
+          this.removeSpecies(defaultJob, fromDefault, picked);
+        }
+
+        job.workers += canMove;
+        this.addSpecies(job, canMove, picked);
+      } else {
+        // Room in job (0 capacity = unlimited)
+        const roomInJob = job.capacity > 0
+          ? Math.max(0, job.capacity - job.workers)
+          : Infinity;
+
+        const unassigned = defaultJob?.species[speciesId] ?? 0;
+        const free = Math.max(
+          0,
+          (this.state.species[speciesId]?.count ?? 0) - unassigned - this.getWorking(speciesId),
+        );
+        const availableOfSpecies = free + unassigned;
+
+        const canMove = Math.min(availableOfSpecies, roomInJob, count);
+        if (canMove <= 0) {return true;}
+
+        const fromFree = Math.min(canMove, free);
+        const fromDefault = canMove - fromFree;
+
+        if (fromDefault > 0 && defaultJob) {
+          defaultJob.workers = Math.max(0, defaultJob.workers - fromDefault);
+          this.removeSpecies(defaultJob, fromDefault, speciesId);
+        }
+
+        job.workers += canMove;
+        this.addSpecies(job, canMove, speciesId);
       }
-
-      job.workers += canMove;
-
-      // The people being moved are of the given species.
-      this.addSpecies(job, canMove, speciesId);
     } else {
-      // When removing: move workers to default job instead of the void
       const removing = Math.min(job.workers, Math.abs(count));
       job.workers -= removing;
 
-      // The people leaving the job take their species with them.
       const leaving = this.takeSpecies(job, removing);
 
-      // Add to default job (unless removing from default job itself)
       if (jobId !== this.state.defaultJob) {
         const defaultJob = this.state.jobs[this.state.defaultJob];
         if (defaultJob) {
@@ -612,6 +646,9 @@ class GameEngine {
   moveJob(jobId: string, direction: -1 | 1): boolean {
     if (!this.state.jobs[jobId]) {return false;}
 
+    // Defaultable jobs are locked at the bottom and cannot be moved.
+    if (JOBS[jobId]?.canDefault) {return false;}
+
     const visible = getAvailableJobIds(this.state.buildingCounts, this.state.jobOrder);
     const index = visible.indexOf(jobId);
 
@@ -619,7 +656,9 @@ class GameEngine {
 
     const neighbour = visible[index + direction];
 
-    if (!neighbour) {return false;}
+    // The neighbour is a defaultable job — refuse, because the defaultable
+    // block is locked at the bottom.
+    if (!neighbour || JOBS[neighbour]?.canDefault) {return false;}
 
     // The two jobs swap places in the full order, so the order stays a
     // permutation of every job.
@@ -632,11 +671,12 @@ class GameEngine {
     order[first] = neighbour;
     order[second] = jobId;
 
+    this.balanceWorkers();
+
     this.notify();
 
     return true;
   }
-
   /**
    * Move a job to a given place in the priority order.
    *
@@ -686,6 +726,8 @@ class GameEngine {
         order[slot] = id;
       }
     });
+
+    this.balanceWorkers();
 
     this.notify();
 
@@ -900,22 +942,19 @@ class GameEngine {
   }
 
   /**
-   * Staff the jobs in a world by species quality.
+   * Rebalance all workers across jobs based on the job priority order.
    *
-   * The rules are:
-   * 1. Jobs with a fixed capacity and at least one worker go first.
-   * 2. Jobs with zero workers are skipped entirely — the player said nobody
-   *    should work that job.
-   * 3. Uncapped jobs go last, so the best races aren't wasted on them.
-   * 4. Within a group, the player's priority order is respected.
+   * This clears every job assignment and redistributes the population from
+   * scratch: jobs with a capacity slot are filled first (in priority order),
+   * then uncapped jobs. For each job the best available species is picked
+   * based on the job's stat factors.
    *
-   * For each job, the best-performing species is picked based on the net
-   * multiplier of its primary and secondary stats. When that species runs
-   * out, the next best takes its place.
+   * Called after: assigning workers, births, job reordering, capacity
+   * changes, and confirming a rebirth.
    */
-  private autoStaffJobs(state: WorldState): void {
+  balanceWorkers(): void {
+    const state = this.state;
     const capacityJobs: string[] = [];
-    const uncappedJobs: string[] = [];
 
     for (const jobId of state.jobOrder) {
       const job = state.jobs[jobId];
@@ -924,9 +963,7 @@ class GameEngine {
         continue;
       }
 
-      if (job.capacity === 0) {
-        uncappedJobs.push(jobId);
-      } else if (job.workers > 0) {
+      if (job.capacity > 0 && job.workers > 0) {
         capacityJobs.push(jobId);
       }
     }
@@ -957,7 +994,9 @@ class GameEngine {
     }
 
     // Pull people from the default job into each capacity-limited job.
-    const staffingOrder = [...capacityJobs, ...uncappedJobs];
+    // Uncapped jobs are not auto-filled — whoever is left over stays in the
+    // default job, and the player assigns them by hand.
+    const staffingOrder = [...capacityJobs];
 
     for (const jobId of staffingOrder) {
       const job = state.jobs[jobId];
@@ -969,7 +1008,6 @@ class GameEngine {
       const available = job.capacity;
       let filled = 0;
 
-      // Find the best species that still has free people.
       const sortedSpecies = this.sortedSpeciesForJob(job, remaining, state);
 
       for (const speciesId of sortedSpecies) {
@@ -988,7 +1026,6 @@ class GameEngine {
         job.species[speciesId] = canTake;
         filled += canTake;
 
-        // Remove from the default job.
         if (defaultJob) {
           defaultJob.workers -= canTake;
           defaultJob.species[speciesId] = Math.max(
@@ -998,6 +1035,19 @@ class GameEngine {
         }
       }
     }
+  }
+
+  /**
+   * Staff the jobs in a given world state by species quality.
+   *
+   * Used during rebirth to staff the new world before it is loaded.
+   */
+  private autoStaffJobs(state: WorldState): void {
+    // Swap the engine's state pointer temporarily, run balance, restore.
+    const saved = this.state;
+    this.state = state;
+    this.balanceWorkers();
+    this.state = saved;
   }
 
   /**
