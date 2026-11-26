@@ -845,10 +845,21 @@ class GameEngine {
 
     const after = getRebirthStatsPerSpecies(speciesStats, speciesCounts, this.random);
 
-    // Default composition: all lives are humans, up to the pool's human count.
+    // Default composition: all lives are humans, minus any elves already
+    // earned.  The player can change the split before confirming.
+    const pool = this.state.rebirthPool;
     const composition: Record<string, number> = {
-      [DEFAULT_SPECIES_ID]: this.state.rebirthPool?.human ?? REBIRTH_LIVES,
+      [DEFAULT_SPECIES_ID]: pool?.human ?? REBIRTH_LIVES,
     };
+
+    const earnedElves = pool?.elf ?? 0;
+
+    if (earnedElves > 0 && (composition[DEFAULT_SPECIES_ID] ?? 0) > 0) {
+      const elves = Math.min(earnedElves, composition[DEFAULT_SPECIES_ID] ?? 0);
+
+      composition[DEFAULT_SPECIES_ID] = (composition[DEFAULT_SPECIES_ID] ?? 0) - elves;
+      composition['elf'] = elves;
+    }
 
     this.state.pendingRebirth = { before, after, composition };
 
