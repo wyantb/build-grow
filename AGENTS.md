@@ -276,6 +276,28 @@ src/
   id. After a reorder, each row's handle and arrows stay bound to the job
   that row shows.
 
+## Rebirth
+
+- **The rolls happen once, when the rebirth begins.** `beginRebirth` rolls
+  the genes and keeps them in `pendingRebirth`. A reload reads them back
+  from the save, so the player is shown the same numbers they were shown
+  before, and gets the same result when they confirm.
+- **The pending rebirth is what holds the player out of the village.** The
+  `Show` in `App.tsx` swaps the whole game content for the rebirth view
+  while `pendingRebirth` is set. The rebirth view has no buildings, no
+  jobs and no resources of its own.
+- **The store reads the mirrored state, not the engine.** `canRebirth` and
+  `getPendingRebirth` read `state.resources.gold` and `state.pendingRebirth`
+  in `useGameState.ts`. The engine's own state is not a tracking scope, so
+  a read of it would never re-run and the tab would stay hidden.
+- **A species is chosen by how many of them there are.** The rebirth view
+  sorts the species by their count and opens the most populous one. It is
+  the species the player spent the most time with.
+- **A new world is built by `createInitialState`.** A rebirth gives the
+  player a fresh game with the same starting population and the same
+  single hut. Only the species a new game starts with survive; one that
+  has to be unlocked during play is not in that set.
+
 ## Coding Conventions
 
 ### Style Rules (all autofixable)
