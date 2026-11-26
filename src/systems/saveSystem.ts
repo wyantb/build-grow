@@ -18,6 +18,7 @@ import {
   decompressText,
   isCompressionSupported,
 } from './compression.js';
+import { DEBUG } from '../utils/debug.js';
 
 /**
  * The localStorage key that holds the autosave.
@@ -301,6 +302,11 @@ export const deserializePayload = (payload: SavePayload): WorldState => {
     };
   }
 
+  if (DEBUG) {
+    console.info('[debug] load — pool from save:', JSON.stringify(payload.rebirthPool),
+      '→ deserialized pool:', JSON.stringify(state.rebirthPool));
+  }
+
   return state;
 };
 
@@ -433,6 +439,10 @@ export const writeLocalSave = async (envelope: SaveEnvelope): Promise<SaveResult
 
   try {
     const encoded = await encodeEnvelope(envelope);
+
+    if (DEBUG) {
+      console.info('[debug] save payload:', JSON.stringify(envelope.state));
+    }
 
     localStorage.setItem(SAVE_STORAGE_KEY, STORAGE_PREFIX + encoded);
 

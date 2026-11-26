@@ -20,6 +20,7 @@ import {
 import { getAverageStats, getJobFactor } from './stats.js';
 import { getRebirthStatsPerSpecies, pickBirthSpecies } from './rebirth.js';
 import { TICKS_PER_SECOND } from './ticks.js';
+import { DEBUG } from '../utils/debug.js';
 
 export { TICKS_PER_SECOND };
 
@@ -804,6 +805,11 @@ class GameEngine {
 
     // Staff the jobs by species quality, then load the world.
     this.autoStaffJobs(next);
+
+    if (DEBUG) {
+      console.info('[debug] confirmRebirth — old pool:', JSON.stringify(this.state.rebirthPool),
+        '→ new pool:', JSON.stringify(next.rebirthPool));
+    }
 
     this.loadState(next);
 
