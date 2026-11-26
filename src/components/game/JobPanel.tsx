@@ -2,9 +2,100 @@ import { For, createMemo, untrack } from 'solid-js';
 import type { Component } from 'solid-js';
 import { createDragContext, createDraggable, createDroppable } from '@solid-primitives/drag-drop';
 import { getGameState } from '../../hooks/useGameState.js';
-import { getAvailableJobIds } from '../../data/jobs.js';
+import { getAvailableJobIds, JOB_STATS } from '../../data/jobs.js';
+import type { JobStats } from '../../systems/stats.js';
+import { getWeightedStatFactor, getAverageStats } from '../../systems/stats.js';
+import { NEUTRAL_STAT, STAT_LABELS } from '../../data/species.js';
+import type { StatName } from '../../data/species.js';
 import Tooltip from '../ui/Tooltip.js';
 import { DragHandleIcon } from '../ui/icons.js';
+
+/** The divider line between tooltip sections. */
+const DIVIDER = '───────────────────';
+
+/**
+ * Build the tooltip content for a job row.
+ *
+ * Shows the job description, the average stats of its workers (with a
+ * species breakdown), and the net productivity calculation.
+ */
+const getJobTooltip = (
+  jobId: string,
+  species: Record<string, number>,
+  state: ReturnType<typeof getGameState>['state'],
+): string => {
+  const job = state.jobs[jobId];
+
+  if (!job) {
+    return '';
+  }
+
+  const lines: string[] = [job.description];
+
+  const jobStats: JobStats | undefined = JOB_STATS[jobId];
+
+  if (jobStats && Object.values(species).some((c) => c > 0)) {
+    const avg = getAverageStats(species, (speciesId) =>
+      state.species[speciesId]?.stats ?? {
+        strength: NEUTRAL_STAT,
+        dexterity: NEUTRAL_STAT,
+        constitution: NEUTRAL_STAT,
+        intelligence: NEUTRAL_STAT,
+        wisdom: NEUTRAL_STAT,
+        charisma: NEUTRAL_STAT,
+        manaSensitivity: NEUTRAL_STAT,
+      },
+    );
+
+    const parts = Object.entries(species)
+      .filter(([, c]) => c > 0)
+      .map(([id, c]) => {
+        const name = state.species[id]?.name ?? id;
+
+        return `${c} ${name}`;
+      })
+      .join(' + ');
+
+    lines.push(DIVIDER);
+
+    if (jobStats.primary) {
+      const label = STAT_LABELS[jobStats.primary as StatName] ?? jobStats.primary;
+      const value = Math.round(avg[jobStats.primary as keyof typeof avg]);
+      lines.push(`Avg ${label}: ${value} (from ${parts})`);
+    }
+
+    if (jobStats.secondary) {
+      const label = STAT_LABELS[jobStats.secondary as StatName] ?? jobStats.secondary;
+      const value = Math.round(avg[jobStats.secondary as keyof typeof avg]);
+      lines.push(`Avg ${label}: ${value} (from ${parts})`);
+    }
+
+    lines.push(DIVIDER);
+    lines.push('Net productivity:');
+
+    const primaryFactor = jobStats.primary
+      ? getWeightedStatFactor(avg[jobStats.primary as keyof typeof avg], 1)
+      : 1;
+    const secondaryFactor = jobStats.secondary
+      ? getWeightedStatFactor(avg[jobStats.secondary as keyof typeof avg], 0.5)
+      : 1;
+
+    // Find the resource this job produces (first non-zero entry).
+    const producedResource = Object.entries(job.production)
+      .find(([, rate]) => rate > 0);
+
+    if (producedResource) {
+      const [resourceId, baseRate] = producedResource;
+      const netRate = baseRate * primaryFactor * secondaryFactor;
+
+      lines.push(
+        `${baseRate.toFixed(2)} (${resourceId}/tick) × ${primaryFactor.toFixed(2)} (from ${STAT_LABELS[jobStats.primary as StatName] ?? jobStats.primary}) × ${secondaryFactor.toFixed(2)} (from ${STAT_LABELS[jobStats.secondary as StatName] ?? jobStats.secondary}) = ${netRate.toFixed(2)}/tick`,
+      );
+    }
+  }
+
+  return lines.join('\n');
+};
 
 const JobPanel: Component = () => {
   const gameState = getGameState();
@@ -158,7 +249,7 @@ const JobPanel: Component = () => {
                   </Tooltip>
                 </div>
                 <div class="job-row-name">
-                  <Tooltip content={job().description} placement="top">
+                  <Tooltip content={getJobTooltip(job().id, job().species, gameState.state)} placement="top">
                     <span class="job-label">{job().name}</span>
                   </Tooltip>
                 </div>
