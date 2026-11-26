@@ -5,8 +5,9 @@ import { SPECIES, STAT_LABELS } from '../../data/species.js';
 import type { Stats } from '../../data/species.js';
 import { REBIRTH_DISPLAY_STATS } from '../../systems/rebirth.js';
 import Tooltip from '../ui/Tooltip.js';
+import SettingsPanel from './SettingsPanel.js';
 
-type RebirthTab = 'avatar' | 'species' | 'confirm';
+type RebirthTab = 'avatar' | 'species' | 'confirm' | 'settings';
 
 const RebirthView: Component = () => {
   const gameState = getGameState();
@@ -158,6 +159,13 @@ const RebirthView: Component = () => {
         >
           Confirm
         </button>
+        <button
+          class={`tab ${activeTab() === 'settings' ? 'active' : ''}`}
+          type="button"
+          onClick={() => setActiveTab('settings')}
+        >
+          Settings
+        </button>
       </div>
 
       <div class="tab-content">
@@ -300,6 +308,13 @@ const RebirthView: Component = () => {
                 Confirm Rebirth
               </button>
             </Tooltip>
+          </div>
+        </div>
+
+        <div class={`tab-pane ${activeTab() === 'settings' ? 'active' : ''}`} id="rebirth-settings-tab">
+          <h2>Settings</h2>
+          <div id="rebirth-settings-content">
+            <SettingsPanel />
           </div>
         </div>
       </div>

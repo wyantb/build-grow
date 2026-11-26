@@ -734,10 +734,26 @@ class GameEngine {
     }
 
     // The gold rebirth grants one elf to the pool.
+    // If the new species is not yet in the world roster, add it now so
+    // confirmRebirth can find it as a template.
     this.state.rebirthPool = {
       human: REBIRTH_LIVES,
       elf: (this.state.rebirthPool?.elf ?? 0) + 1,
     };
+
+    if (!this.state.species['elf'] && this.state.rebirthPool.elf > 0) {
+      const template = SPECIES.find((s) => s.id === 'elf');
+
+      if (template) {
+        this.state.species['elf'] = {
+          id: 'elf',
+          name: template.name,
+          description: template.description,
+          stats: { ...template.baseStats },
+          count: 0,
+        };
+      }
+    }
 
     // Species already in the roster.
     const speciesIds = new Set(Object.keys(this.state.species));
