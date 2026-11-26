@@ -253,6 +253,28 @@ src/
   Read the stored setting inside JSX, not in the component body, to avoid
   `STRICT_READ_UNTRACKED`.
 
+## Job Order
+
+- **The order holds every job, not just the visible ones.** `jobOrder` is a
+  permutation of every job in the catalog. `getAvailableJobIds` filters it
+  down to the jobs the player can see, so a job whose building is not up yet
+  takes no place on screen but keeps its slot in the full order.
+- **A place is counted among the visible jobs.** `reorderJob(jobId,
+  targetIndex)` takes an index into the visible list, not into `jobOrder`.
+  It moves the job in the visible list, then writes the visible jobs back
+  into the slots they hold in the full order, so the off-screen jobs keep
+  their slots and the order stays a permutation of every job.
+- **Two ways to change the order, one state.** The arrows call `moveJob`,
+  the drag handle calls `reorderJob`. Both write the same `jobOrder`, and
+  the order is already saved with the world, so a drag survives a reload.
+- **The handle is the draggable, the row is the droppable.** `createSortable`
+  puts both on one element, which would make the whole row draggable and
+  swallow the arrow clicks. The panel uses `createDraggable` on the handle
+  and `createDroppable` on the row instead.
+- **Rows are keyed, so a row keeps its identity.** The `For` is keyed by job
+  id. After a reorder, each row's handle and arrows stay bound to the job
+  that row shows.
+
 ## Coding Conventions
 
 ### Style Rules (all autofixable)
