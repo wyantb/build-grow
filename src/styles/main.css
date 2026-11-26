@@ -551,11 +551,50 @@ body.light-mode .resource-rate.negative {
 /* Job UI Styles */
 .job-row {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: auto 1fr auto auto;
   align-items: center;
   gap: 12px;
   padding: 8px 0;
   border-bottom: 1px solid #444;
+}
+
+.job-row-order {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.job-order-btn {
+  background-color: #444;
+  color: white;
+  border: 1px solid #555;
+  padding: 0;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.6rem;
+  line-height: 1.2;
+  width: 18px;
+  height: 14px;
+  text-align: center;
+}
+
+body.light-mode .job-order-btn {
+  background-color: #ccc;
+  color: #333;
+  border-color: #aaa;
+}
+
+.job-order-btn:hover:not(:disabled) {
+  background-color: #555;
+}
+
+body.light-mode .job-order-btn:hover:not(:disabled) {
+  background-color: #bbb;
+}
+
+.job-order-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 body.light-mode .job-row {

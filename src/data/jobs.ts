@@ -93,5 +93,83 @@ export const BUILDING_JOB_MAP: Record<string, string> = {
   market: 'merchant',
 };
 
+// The same mapping the other way around, so a job can be traced back to the
+// building that makes it available.
+const BUILDING_FOR_JOB: Record<string, string> = {};
+
+for (const [buildingId, jobId] of Object.entries(BUILDING_JOB_MAP)) {
+  BUILDING_FOR_JOB[jobId] = buildingId;
+}
+
+/**
+ * The order the jobs are in when a world starts.
+ *
+ * The player can reorder the jobs, so this is only the starting order.
+ */
+export const DEFAULT_JOB_ORDER: string[] = Object.keys(JOBS);
+
+/**
+ * True when a job is available to the player.
+ *
+ * A job that belongs to a building is only available once that building
+ * has been built. A job without a building is always available.
+ */
+export const isJobAvailable = (
+  jobId: string,
+  buildingCounts: Record<string, number>,
+): boolean => {
+  const buildingId = BUILDING_FOR_JOB[jobId];
+
+  if (!buildingId) {
+    return true;
+  }
+
+  return (buildingCounts[buildingId] ?? 0) > 0;
+};
+
+/**
+ * The available jobs, by job id.
+ *
+ * The Jobs panel shows these, and the order of them is the priority order
+ * the player has set.
+ */
+export const getAvailableJobIds = (
+  buildingCounts: Record<string, number>,
+  jobIds: string[] = Object.keys(JOBS),
+): string[] => jobIds.filter((jobId) => isJobAvailable(jobId, buildingCounts));
+
+/**
+ * A job order brought into line with the jobs that exist.
+ *
+ * A job the game does not know about is dropped. A job the order forgot is
+ * put back at the end, so the order always holds every job exactly once.
+ */
+export const normalizeJobOrder = (order: string[] | undefined): string[] => {
+  if (!order || order.length === 0) {
+    return [...DEFAULT_JOB_ORDER];
+  }
+
+  const known = new Set(Object.keys(JOBS));
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  for (const jobId of order) {
+    if (!known.has(jobId) || seen.has(jobId)) {
+      continue;
+    }
+
+    seen.add(jobId);
+    result.push(jobId);
+  }
+
+  for (const jobId of DEFAULT_JOB_ORDER) {
+    if (!seen.has(jobId)) {
+      result.push(jobId);
+    }
+  }
+
+  return result;
+};
+
 // Food consumed per population point per tick (0.05 food/s / 5 ticks = 0.01)
 export const FOOD_CONSUMPTION_PER_TICK = 0.01;

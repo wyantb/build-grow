@@ -89,6 +89,7 @@ export const useGameState = () => {
       state.gameTime = engineState.gameTime;
       state.population = engineState.population;
       state.defaultJob = engineState.defaultJob;
+      syncArray(state.jobOrder, engineState.jobOrder);
 
       state.resources.wood = engineState.resources.wood;
       state.resources.stone = engineState.resources.stone;
@@ -170,6 +171,8 @@ export const useGameState = () => {
       state.resources.stone = engineState.resources.stone;
       state.resources.food = engineState.resources.food;
       state.resources.gold = engineState.resources.gold;
+
+      state.jobOrder = [...engineState.jobOrder];
 
       state.jobs = {};
       for (const [jobId, job] of Object.entries(engineState.jobs)) {
@@ -264,6 +267,23 @@ export const useGameState = () => {
     if (!assigned) {
       console.error(`Could not assign ${count} workers to ${jobId}`);
 
+      return false;
+    }
+
+    mirrorEngineState();
+
+    return true;
+  };
+
+  /**
+   * Move a job up or down in the priority order.
+   *
+   * @param direction -1 to move the job up, 1 to move it down.
+   */
+  const moveJob = (jobId: string, direction: -1 | 1): boolean => {
+    const moved = gameEngine.moveJob(jobId, direction);
+
+    if (!moved) {
       return false;
     }
 
@@ -444,6 +464,7 @@ export const useGameState = () => {
     getBuildingCatalog,
     buildBuilding,
     assignWorkers,
+    moveJob,
     setDefaultJob,
     getAvailableWorkers,
     getMarketOrders,

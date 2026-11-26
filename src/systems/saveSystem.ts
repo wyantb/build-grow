@@ -6,7 +6,7 @@ import {
   SaveEnvelopeSchema,
 } from '../types/saveFile.js';
 import type { SaveEnvelope, SavePayload } from '../types/saveFile.js';
-import { JOBS } from '../data/jobs.js';
+import { JOBS, normalizeJobOrder } from '../data/jobs.js';
 import { getBuildingType } from '../data/buildings.js';
 import { getSpecies } from '../data/species.js';
 import { GAME_VERSION, isVersionCompatible } from './gameVersion.js';
@@ -142,6 +142,7 @@ export const serializeState = (state: WorldState): SavePayload => {
     resources: { ...state.resources },
     defaultJob: state.defaultJob,
     jobs,
+    jobOrder: [...state.jobOrder],
     species,
     buildings,
     buildingCounts: { ...state.buildingCounts },
@@ -175,6 +176,7 @@ export const deserializePayload = (payload: SavePayload): WorldState => {
   state.population = payload.population;
   state.resources = { ...payload.resources };
   state.defaultJob = payload.defaultJob;
+  state.jobOrder = normalizeJobOrder(payload.jobOrder);
 
   // A new game starts with a hut, but a save holds the whole set of
   // buildings. The saved ones replace the starting ones, so a world that

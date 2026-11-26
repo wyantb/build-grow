@@ -1,7 +1,12 @@
 import { createInitialState } from '../types/worldState.js';
 import type { WorldState, Resource, Stats, Job } from '../types/worldState.js';
 import { getBuildingType, getScaledCost } from '../data/buildings.js';
-import { BUILDING_JOB_MAP, JOB_STATS } from '../data/jobs.js';
+import {
+  BUILDING_JOB_MAP,
+  getAvailableJobIds,
+  JOB_STATS,
+  normalizeJobOrder,
+} from '../data/jobs.js';
 import { MARKET_RESOURCES } from '../data/market.js';
 import type { MarketResource } from '../data/market.js';
 import { DEFAULT_SPECIES_ID, NEUTRAL_STATS } from '../data/species.js';
@@ -34,6 +39,10 @@ class GameEngine {
     this.state = initialState ?? createInitialState();
     this.marketSystem = new MarketSystem(this.state);
     this.random = random;
+
+    // The priority order holds every job exactly once, so a world that
+    // arrived with a partial order is brought into line.
+    this.state.jobOrder = normalizeJobOrder(this.state.jobOrder);
 
     // Recalculate job capacities from existing completed buildings
     this.recalculateJobCapacities();
@@ -90,6 +99,7 @@ class GameEngine {
    */
   loadState(state: WorldState): void {
     this.state = state;
+    this.state.jobOrder = normalizeJobOrder(this.state.jobOrder);
     this.marketSystem = new MarketSystem(this.state);
 
     this.buildingInstanceCounter = {};
@@ -516,6 +526,43 @@ class GameEngine {
     } else {
       job.species[speciesId] = have - removed;
     }
+  }
+
+  /**
+   * Move a job up or down in the priority order.
+   *
+   * The order the player sees is the order of the jobs that are available.
+   * A job moves one place among those, so a job that is not on screen does
+   * not get in the way.
+   *
+   * @param direction -1 to move the job up, 1 to move it down.
+   */
+  moveJob(jobId: string, direction: -1 | 1): boolean {
+    if (!this.state.jobs[jobId]) {return false;}
+
+    const visible = getAvailableJobIds(this.state.buildingCounts, this.state.jobOrder);
+    const index = visible.indexOf(jobId);
+
+    if (index < 0) {return false;}
+
+    const neighbour = visible[index + direction];
+
+    if (!neighbour) {return false;}
+
+    // The two jobs swap places in the full order, so the order stays a
+    // permutation of every job.
+    const order = this.state.jobOrder;
+    const first = order.indexOf(jobId);
+    const second = order.indexOf(neighbour);
+
+    if (first < 0 || second < 0) {return false;}
+
+    order[first] = neighbour;
+    order[second] = jobId;
+
+    this.notify();
+
+    return true;
   }
 
   // Set the default job (where new workers go)

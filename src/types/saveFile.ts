@@ -60,6 +60,13 @@ export const SavePayloadSchema = z.object({
   defaultJob: z.string(),
   jobs: JobWorkersSchema,
   /**
+   * The jobs in priority order, top to bottom.
+   *
+   * A save written before the jobs could be ordered does not have this, so
+   * it is optional and the starting order is used instead.
+   */
+  jobOrder: z.array(z.string()).optional(),
+  /**
    * The species living in the world, by species id.
    *
    * Only the stats are saved: the name and the description come from the

@@ -2,6 +2,7 @@ import { createInitialState } from '../../types/worldState.js';
 import type { Building, Resource, Stats, WorldState } from '../../types/worldState.js';
 import type { MarketResource } from '../../data/market.js';
 import { DEFAULT_SPECIES_ID, NEUTRAL_STATS, SPECIES } from '../../data/species.js';
+import { normalizeJobOrder } from '../../data/jobs.js';
 
 export interface WorldOverrides {
   population?: number;
@@ -30,6 +31,12 @@ export interface WorldOverrides {
    * Without this, every worker of a job is of the default species.
    */
   jobSpecies?: Record<string, Record<string, number>>;
+  /**
+   * The jobs in priority order, top to bottom.
+   *
+   * Without this, the jobs are in the order the catalog holds them.
+   */
+  jobOrder?: string[];
 }
 
 const zeroResource = (): Resource => ({ wood: 0, stone: 0, food: 0, gold: 0 });
@@ -44,6 +51,10 @@ export function createTestWorld(overrides: WorldOverrides = {}): WorldState {
   const state = createInitialState();
 
   state.population = overrides.population ?? state.population;
+
+  if (overrides.jobOrder) {
+    state.jobOrder = normalizeJobOrder(overrides.jobOrder);
+  }
 
   if (overrides.resources) {
     state.resources = { ...state.resources, ...overrides.resources };

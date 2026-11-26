@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { JOBS } from '../data/jobs.js';
+import { DEFAULT_JOB_ORDER, JOBS } from '../data/jobs.js';
 import { MARKET_RESOURCES } from '../data/market.js';
 import { DEFAULT_SPECIES_ID, SPECIES, STARTING_SPECIES_IDS } from '../data/species.js';
 import { GAME_VERSION } from '../systems/gameVersion.js';
@@ -108,6 +108,13 @@ export const WorldStateSchema = z.object({
   resources: ResourceSchema,
   population: z.number(),
   jobs: z.record(z.string(), JobSchema),
+  /**
+   * The jobs in priority order, top to bottom.
+   *
+   * The player sets this order in the Jobs panel. It is a list of every job
+   * id, so the order stays complete even when a job is not on screen.
+   */
+  jobOrder: z.array(z.string()),
   buildings: z.record(z.string(), BuildingSchema),
   buildingCounts: z.record(z.string(), z.number()), // built count per building type
   /** The species living in the world, by species id. */
@@ -136,6 +143,7 @@ export const createInitialState = (): WorldState => {
     jobs: Object.fromEntries(
       Object.entries(JOBS).map(([id, job]) => [id, { ...job, workers: 0, species: {} }]),
     ),
+    jobOrder: [...DEFAULT_JOB_ORDER],
     buildings: {
       // A new world starts with one hut, so the starting population has
       // somewhere to live. The hut is part of the world, not something the
