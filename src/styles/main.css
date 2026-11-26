@@ -148,6 +148,34 @@ body.light-mode .theme-toggle:hover {
   background-color: #ccc;
 }
 
+.debug-resources {
+  cursor: pointer;
+  font-size: 0.75rem;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  padding: 0 4px;
+  border: none;
+  background: none;
+  color: inherit;
+  line-height: 1;
+  font-weight: 600;
+}
+
+.debug-resources:hover {
+  background-color: #444;
+}
+
+body.light-mode .debug-resources:hover {
+  background-color: #ccc;
+}
+
+.debug-icon {
+  font-size: 0.75rem;
+}
+
 .game-speed-toggle {
   cursor: pointer;
   font-size: 0.75rem;

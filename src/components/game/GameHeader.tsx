@@ -8,6 +8,8 @@ import { GAME_VERSION } from '../../systems/gameVersion.js';
 import Tooltip from '../ui/Tooltip.js';
 import { DEBUG, nextGameSpeed } from '../../utils/debug.js';
 
+const DEBUG_RESOURCE_AMOUNT = 2000;
+
 const ThemeToggle: Component = () => {
   const { theme, toggleTheme } = useTheme();
 
@@ -69,6 +71,20 @@ const GameHeader: Component = () => {
         <ThemeToggle />
 
         {DEBUG && <GameSpeedToggle />}
+
+        {DEBUG && (
+          <Tooltip content="Debug: add 2k of each resource." placement="bottom">
+            <button
+              class="debug-resources"
+              id="debug-resources"
+              type="button"
+              onClick={() => gameState.gameEngine.debugAddResources(DEBUG_RESOURCE_AMOUNT)}
+              aria-label="Debug: add 2k of each resource"
+            >
+              <span class="debug-icon">(R)</span>
+            </button>
+          </Tooltip>
+        )}
       </div>
 
       <div class="header-center">

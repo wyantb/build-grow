@@ -1264,6 +1264,17 @@ class GameEngine {
     // In a more sophisticated implementation, we might interpolate between ticks
     this.tick();
   }
+
+  /**
+   * Debug cheat: add resources to the player.
+   */
+  debugAddResources(amount: number): void {
+    this.state.resources.wood += amount;
+    this.state.resources.stone += amount;
+    this.state.resources.food += amount;
+    this.state.resources.gold += amount;
+    this.notify();
+  }
 }
 
 export default GameEngine;
