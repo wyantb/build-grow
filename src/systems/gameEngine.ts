@@ -46,6 +46,7 @@ class GameEngine {
   private state: WorldState;
   private intervalId: number | null = null;
   private tickRate: number = 1000 / TICKS_PER_SECOND;
+  private tickMultiplier: number = 1;
   private marketSystem: MarketSystem;
   private listeners = new Set<() => void>();
   private buildingInstanceCounter: Record<string, number> = {};
@@ -156,7 +157,7 @@ class GameEngine {
     if (this.intervalId !== null) {return;}
 
     this.intervalId = window.setInterval(() => {
-      this.tick();
+      this.runTicks(this.tickMultiplier);
     }, this.tickRate);
   }
 
@@ -166,6 +167,22 @@ class GameEngine {
       clearInterval(this.intervalId);
       this.intervalId = null;
     }
+  }
+
+  /**
+   * How many ticks each interval fires.
+   *
+   * This does not change what the engine does per tick; it only changes how
+   * many ticks run per second, so the UI can refresh at its own pace while
+   * the simulation accelerates.
+   */
+  setTickMultiplier(multiplier: number): void {
+    this.tickMultiplier = multiplier;
+  }
+
+  /** The current tick multiplier. */
+  getTickMultiplier(): number {
+    return this.tickMultiplier;
   }
 
   // Advance the world by one tick without notifying subscribers.
@@ -1204,12 +1221,13 @@ class GameEngine {
   /**
    * Net resource change per second, derived from the per-tick rate.
    *
-   * The engine runs at a fixed 5 ticks per second, so the per-second rate is
-   * the per-tick rate multiplied by the tick frequency.
+   * The engine runs at a fixed 5 ticks per second, multiplied by the tick
+   * multiplier. The per-second rate is the per-tick rate multiplied by the
+   * effective tick frequency.
    */
   getResourceRates(): Resource {
     const tickRates = this.getTickRates();
-    const ticksPerSecond = 1000 / this.tickRate; // 5 ticks per second
+    const ticksPerSecond = (1000 / this.tickRate) * this.tickMultiplier;
 
     return {
       wood: tickRates.wood * ticksPerSecond,

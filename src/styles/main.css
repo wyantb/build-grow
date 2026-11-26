@@ -148,6 +148,38 @@ body.light-mode .theme-toggle:hover {
   background-color: #ccc;
 }
 
+.game-speed-toggle {
+  cursor: pointer;
+  font-size: 0.75rem;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  height: 24px;
+  padding: 0 4px;
+  border: none;
+  background: none;
+  color: inherit;
+  line-height: 1;
+}
+
+.game-speed-toggle:hover {
+  background-color: #444;
+}
+
+body.light-mode .game-speed-toggle:hover {
+  background-color: #ccc;
+}
+
+.speed-icon {
+  font-size: 0.8rem;
+}
+
+.speed-label {
+  font-weight: 600;
+}
+
 body.light-mode header {
   background-color: #ddd;
 }

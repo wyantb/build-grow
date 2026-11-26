@@ -275,6 +275,26 @@ src/
   id. After a reorder, each row's handle and arrows stay bound to the job
   that row shows.
 
+## Debug Conditional Pattern
+
+Debug-only features should be gated behind the `DEBUG` flag from `src/utils/debug.ts`.
+The pattern is:
+
+```ts
+import { DEBUG } from '../utils/debug.js';
+
+// At module / hook level:
+export const GAME_SPEEDS = DEBUG ? [5, 10, 25, 100, 1] as const : undefined;
+```
+
+UI gates use the same flag:
+```tsx
+{DEBUG && <DebugControl />}
+```
+
+Never ship debug-only code to production; Vite tree-shakes dead branches, so
+`if (DEBUG)` is eliminated in the prod build.
+
 ## Coding Conventions
 
 ### Style Rules (all autofixable)

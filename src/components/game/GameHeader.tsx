@@ -1,4 +1,4 @@
-import { createMemo } from 'solid-js';
+import { createMemo, createSignal } from 'solid-js';
 import type { Component } from 'solid-js';
 import { getGameState } from '../../hooks/useGameState.js';
 import { useSettings } from '../../hooks/useSettings.js';
@@ -6,6 +6,7 @@ import { useTheme } from '../../hooks/useTheme.js';
 import { formatCalendarDate } from '../../systems/calendar.js';
 import { GAME_VERSION } from '../../systems/gameVersion.js';
 import Tooltip from '../ui/Tooltip.js';
+import { DEBUG, nextGameSpeed } from '../../utils/debug.js';
 
 const ThemeToggle: Component = () => {
   const { theme, toggleTheme } = useTheme();
@@ -28,6 +29,32 @@ const ThemeToggle: Component = () => {
   );
 };
 
+const GameSpeedToggle: Component = () => {
+  const gameState = getGameState();
+  const [speed, setSpeed] = createSignal(1);
+
+  const cycleSpeed = () => {
+    const next = nextGameSpeed(speed());
+    setSpeed(next);
+    gameState.gameEngine.setTickMultiplier(next);
+  };
+
+  return (
+    <Tooltip content={`Game speed: ${speed()}x`} placement="bottom">
+      <button
+        class="game-speed-toggle"
+        id="game-speed-toggle"
+        type="button"
+        onClick={cycleSpeed}
+        aria-label={`Game speed: ${speed()}x`}
+      >
+        <span class="speed-icon">⏱</span>
+        <span class="speed-label">{speed()}x</span>
+      </button>
+    </Tooltip>
+  );
+};
+
 const GameHeader: Component = () => {
   const gameState = getGameState();
   const { isPaused, togglePaused } = useSettings();
@@ -40,6 +67,8 @@ const GameHeader: Component = () => {
         <h1>Fantasy Civilization Builder</h1>
 
         <ThemeToggle />
+
+        {DEBUG && <GameSpeedToggle />}
       </div>
 
       <div class="header-center">
