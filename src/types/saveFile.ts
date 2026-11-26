@@ -109,6 +109,7 @@ export const SavePayloadSchema = z.object({
    * before the pool existed does not have it, so it defaults to zero elves.
    */
   rebirthPool: z.object({
+    human: z.number().optional(),
     elf: z.number(),
   }).optional(),
 });

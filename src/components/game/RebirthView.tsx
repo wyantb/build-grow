@@ -8,13 +8,21 @@ import Tooltip from '../ui/Tooltip.js';
 
 type RebirthTab = 'avatar' | 'species' | 'confirm';
 
-const TOTAL_LIVES = 5;
-
 const RebirthView: Component = () => {
   const gameState = getGameState();
 
   const pending = createMemo(() => gameState.getPendingRebirth());
   const pool = createMemo(() => gameState.getRebirthPool());
+
+  /** Total lives available for the next village (always 5). */
+  const totalLives = createMemo(() => {
+    const p = pool();
+
+    // The total number of lives per village is fixed; it does not grow
+    // with the pool.  The pool only caps how many of each species may
+    // be chosen.
+    return p?.human ?? 5;
+  });
 
   /** The species whose before/after stats are available. */
   const viewableSpecies = createMemo(() => {
@@ -37,10 +45,10 @@ const RebirthView: Component = () => {
     const rebirth = pending();
 
     if (!rebirth) {
-      return { human: TOTAL_LIVES };
+      return { human: totalLives() };
     }
 
-    return rebirth.composition ?? { human: TOTAL_LIVES };
+    return rebirth.composition ?? { human: totalLives() };
   });
 
   const usedLives = createMemo(() =>
@@ -49,9 +57,20 @@ const RebirthView: Component = () => {
 
   /**
    * Increase the count of one race.
+   *
+   * Must stay within the species' pool cap and the total lives budget.
    */
   const increaseRace = (raceId: string) => {
-    if (usedLives() >= TOTAL_LIVES) {
+    const p = pool();
+    const poolCount = p !== undefined
+      ? (p as Record<string, number>)[raceId] ?? 0
+      : 0;
+
+    if (composition()[raceId] ?? 0 >= poolCount) {
+      return;
+    }
+
+    if (usedLives() >= totalLives()) {
       return;
     }
 
@@ -79,17 +98,14 @@ const RebirthView: Component = () => {
   };
 
   /**
-   * Races the player can pick: humans are always available, elves when the
-   * pool has at least one.
+   * Races the player can pick: any species with count > 0 in the pool.
    */
   const availableRaces = createMemo(() => {
-    const races = ['human'];
+    const p = pool();
 
-    if ((pool()?.elf ?? 0) > 0) {
-      races.push('elf');
-    }
-
-    return races;
+    return Object.entries((p as Record<string, number> | undefined) ?? {})
+      .filter(([, count]) => count > 0)
+      .map(([id]) => id);
   });
 
   /**
@@ -214,8 +230,8 @@ const RebirthView: Component = () => {
           <h2>Confirm</h2>
 
           <p class="rebirth-hint">
-            Choose the {TOTAL_LIVES} lives for your next village.
-            {' '}{usedLives()} / {TOTAL_LIVES} chosen.
+            Choose the {totalLives()} lives for your next village.
+            {' '}{usedLives()} / {totalLives()} chosen.
           </p>
 
           <div class="race-selector">
@@ -257,7 +273,7 @@ const RebirthView: Component = () => {
                       <button
                         class="race-btn"
                         type="button"
-                        disabled={usedLives() >= TOTAL_LIVES}
+                        disabled={usedLives() >= totalLives()}
                         onClick={() => increaseRace(raceId)}
                       >
                         {'\u203A'}
@@ -278,7 +294,7 @@ const RebirthView: Component = () => {
                 class="action-button"
                 id="confirm-rebirth-button"
                 type="button"
-                disabled={usedLives() !== TOTAL_LIVES}
+                disabled={usedLives() !== totalLives()}
                 onClick={confirm}
               >
                 Confirm Rebirth

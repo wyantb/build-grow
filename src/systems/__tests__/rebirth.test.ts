@@ -326,7 +326,7 @@ describe('a multi-race rebirth', () => {
 
     // Seed the pool and add an elf to the species roster so beginRebirth
     // will roll stats for it.
-    engine.getState().rebirthPool = { elf: 1 };
+    engine.getState().rebirthPool = { human: 5, elf: 1 };
     engine.getState().species['elf'] = {
       id: 'elf',
       name: 'Elf',
@@ -355,7 +355,7 @@ describe('a multi-race rebirth', () => {
     const engine = worldWithGold(REBIRTH_GOLD_COST);
 
     // Seed the pool so the elf is available.
-    engine.getState().rebirthPool = { elf: 1 };
+    engine.getState().rebirthPool = { human: 5, elf: 1 };
     engine.getState().species['elf'] = {
       id: 'elf',
       name: 'Elf',
@@ -389,20 +389,20 @@ describe('a multi-race rebirth', () => {
     engine.confirmRebirth();
 
     // The new world should have one elf in the pool.
-    expect(engine.getRebirthPool()).toEqual({ elf: 1 });
+    expect(engine.getRebirthPool()).toEqual({ human: 5, elf: 1 });
 
     // Simulate a page reload: serialize the world, deserialize it, create a
     // new engine from the loaded state.
     const payload = serializeState(engine.getState());
-    expect(payload.rebirthPool).toEqual({ elf: 1 });
+    expect(payload.rebirthPool).toEqual({ human: 5, elf: 1 });
 
     const loaded = deserializePayload(payload);
-    expect(loaded.rebirthPool).toEqual({ elf: 1 });
+    expect(loaded.rebirthPool).toEqual({ human: 5, elf: 1 });
 
     const reloaded = new GameEngine(loaded);
 
     // The loaded engine sees the same pool.
-    expect(reloaded.getRebirthPool()).toEqual({ elf: 1 });
+    expect(reloaded.getRebirthPool()).toEqual({ human: 5, elf: 1 });
 
     // After reaching the gold threshold again, beginRebirth should show the
     // elf in the pending stats, which is what the UI's availableRaces memo

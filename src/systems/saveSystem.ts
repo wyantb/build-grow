@@ -241,8 +241,9 @@ export const deserializePayload = (payload: SavePayload): WorldState => {
   }
 
   // The rebirth pool survives a reload. A save written before the pool
-  // existed gets zero elves.
+  // existed gets zero elves and the default number of humans.
   state.rebirthPool = {
+    human: payload.rebirthPool?.human ?? createInitialState().rebirthPool.human,
     elf: payload.rebirthPool?.elf ?? 0,
   };
 

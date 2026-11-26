@@ -34,6 +34,14 @@ const RESOURCE_KEYS = ['wood', 'stone', 'food', 'gold'] as const;
  */
 export const REBIRTH_GOLD_COST = 1000;
 
+/**
+ * How many lives a village starts with.
+ *
+ * Every rebirth the pool is reset to this many humans; any elves earned
+ * from previous villages are carried forward on top.
+ */
+export const REBIRTH_LIVES = 5;
+
 class GameEngine {
   private state: WorldState;
   private intervalId: number | null = null;
@@ -743,9 +751,9 @@ class GameEngine {
 
     const after = getRebirthStatsPerSpecies(speciesStats, speciesCounts, this.random);
 
-    // Default composition: all 5 lives are humans.
+    // Default composition: all lives are humans, up to the pool's human count.
     const composition: Record<string, number> = {
-      [DEFAULT_SPECIES_ID]: 5,
+      [DEFAULT_SPECIES_ID]: this.state.rebirthPool?.human ?? REBIRTH_LIVES,
     };
 
     this.state.pendingRebirth = { before, after, composition };
@@ -772,8 +780,9 @@ class GameEngine {
     const next = createInitialState();
 
     // One more elf is added to the pool each time the player confirms a
-    // rebirth, so the pool grows with each village they leave behind.
+    // rebirth, and humans are reset to REBIRTH_LIVES.
     next.rebirthPool = {
+      human: REBIRTH_LIVES,
       elf: (this.state.rebirthPool?.elf ?? 0) + 1,
     };
 

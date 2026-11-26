@@ -114,11 +114,12 @@ export type PendingRebirth = z.infer<typeof PendingRebirthSchema>;
 /**
  * The rebirth pool.
  *
- * Tracks how many elves are available to carry into the next village.
- * Starts at zero and grows by one each time the player completes a gold
- * rebirth.
+ * Humans are always present at REBIRTH_LIVES per village; elves accumulate
+ * one per completed gold rebirth.
  */
 export const RebirthPoolSchema = z.object({
+  /** How many humans the player may use in the next village. */
+  human: z.number(),
   /** How many elves the player may use in the next village. */
   elf: z.number(),
 });
@@ -234,6 +235,7 @@ export const createInitialState = (): WorldState => {
       sells: {},
     },
     rebirthPool: {
+      human: 5,
       elf: 0,
     },
   };
