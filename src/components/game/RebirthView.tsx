@@ -116,13 +116,6 @@ const RebirthView: Component = () => {
     gameState.confirmRebirth();
   };
 
-  /**
-   * Go back to the village without rebirth.
-   */
-  const cancel = () => {
-    gameState.cancelRebirth();
-  };
-
   const [activeTab, setActiveTab] = createSignal<RebirthTab>('avatar');
 
   return (
@@ -289,20 +282,6 @@ const RebirthView: Component = () => {
                 onClick={confirm}
               >
                 Confirm Rebirth
-              </button>
-            </Tooltip>
-
-            <Tooltip
-              content="Cancel and return to the village."
-              placement="top"
-            >
-              <button
-                class="action-button"
-                id="cancel-rebirth-button"
-                type="button"
-                onClick={cancel}
-              >
-                Cancel
               </button>
             </Tooltip>
           </div>
