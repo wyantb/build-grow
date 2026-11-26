@@ -1251,6 +1251,15 @@ body.light-mode .species-tab.active {
   border-color: #007acc;
 }
 
+/* Species panes within the species tab: only the active one is shown. */
+.species-pane {
+  display: none;
+}
+
+.species-pane.active {
+  display: block;
+}
+
 /* The stat table is laid out as two pairs of columns: the name and the
    value before on the left, the name and the value after on the right. */
 .stat-table {

@@ -1,19 +1,12 @@
 import { createMemo, createSignal, For } from 'solid-js';
 import type { Component } from 'solid-js';
 import { getGameState } from '../../hooks/useGameState.js';
-import { STAT_LABELS } from '../../data/species.js';
+import { SPECIES, STAT_LABELS } from '../../data/species.js';
 import type { Stats } from '../../data/species.js';
 import { REBIRTH_DISPLAY_STATS } from '../../systems/rebirth.js';
 import Tooltip from '../ui/Tooltip.js';
 
-type RebirthTab = 'avatar' | 'race' | 'confirm';
-
-interface RaceOption {
-  id: string;
-  name: string;
-  stats: Stats;
-  totalStats: number;
-}
+type RebirthTab = 'species' | 'confirm';
 
 const TOTAL_LIVES = 5;
 
@@ -23,58 +16,20 @@ const RebirthView: Component = () => {
   const pending = createMemo(() => gameState.getPendingRebirth());
   const pool = createMemo(() => gameState.getRebirthPool());
 
-  /**
-   * The races the player can pick from.
-   *
-   * Humans are always available. Elves are available once the pool has at
-   * least one.
-   */
-  const raceOptions = createMemo<RaceOption[]>(() => {
+  /** The species whose before/after stats are available. */
+  const viewableSpecies = createMemo(() => {
     const rebirth = pending();
+    if (!rebirth) return [];
 
-    if (!rebirth) {
-      return [];
-    }
-
-    const options: RaceOption[] = [];
-
-    // Humans are always available.
-    const humanAfter = rebirth.after['human'];
-
-    if (humanAfter) {
-      const total = REBIRTH_DISPLAY_STATS.reduce((s, key) => s + humanAfter[key], 0);
-
-      options.push({
-        id: 'human',
-        name: 'Human',
-        stats: humanAfter,
-        totalStats: total,
-      });
-    }
-
-    // Elves are available when the pool has at least one.
-    const elfCount = pool()?.elf ?? 0;
-
-    if (elfCount > 0) {
-      const elfAfter = rebirth.after['elf'];
-
-      if (elfAfter) {
-        const total = REBIRTH_DISPLAY_STATS.reduce((s, key) => s + elfAfter[key], 0);
-
-        options.push({
-          id: 'elf',
-          name: 'Elf',
-          stats: elfAfter,
-          totalStats: total,
-        });
-      }
-    }
-
-    return options;
+    return SPECIES.filter((s) => rebirth.before[s.id] && rebirth.after[s.id]);
   });
 
+  const [activeSpeciesTab, setActiveSpeciesTab] = createSignal<string>(
+    viewableSpecies()[0]?.id ?? 'human',
+  );
+
   /**
-   * The current composition: how many lives of each race.
+   * The composition: how many lives of each race the player chose.
    *
    * Read from the pending rebirth so it survives a save / reload.
    */
@@ -87,8 +42,6 @@ const RebirthView: Component = () => {
 
     return rebirth.composition ?? { human: TOTAL_LIVES };
   });
-
-  const [activeTab, setActiveTab] = createSignal<RebirthTab>('avatar');
 
   const usedLives = createMemo(() =>
     Object.values(composition()).reduce((s, c) => s + c, 0),
@@ -126,28 +79,61 @@ const RebirthView: Component = () => {
   };
 
   /**
+   * Races the player can pick: humans are always available, elves when the
+   * pool has at least one.
+   */
+  const availableRaces = createMemo(() => {
+    const races = ['human'];
+
+    if ((pool()?.elf ?? 0) > 0) {
+      races.push('elf');
+    }
+
+    return races;
+  });
+
+  /**
+   * The after-stats for a race, for the tooltip on the confirm tab.
+   */
+  const raceAfterStats = createMemo(() => {
+    const rebirth = pending();
+    const result: Record<string, Stats> = {};
+
+    for (const raceId of availableRaces()) {
+      const after = rebirth?.after?.[raceId];
+      if (after) {
+        result[raceId] = after;
+      }
+    }
+
+    return result;
+  });
+
+  /**
    * Carry out the rebirth and go back to the village.
    */
   const confirm = () => {
     gameState.confirmRebirth();
   };
 
+  /**
+   * Go back to the village without rebirth.
+   */
+  const cancel = () => {
+    gameState.cancelRebirth();
+  };
+
+  const [activeTab, setActiveTab] = createSignal<RebirthTab>('species');
+
   return (
     <div class="rebirth-view" id="rebirth-view">
       <div class="tabs">
         <button
-          class={`tab ${activeTab() === 'avatar' ? 'active' : ''}`}
+          class={`tab ${activeTab() === 'species' ? 'active' : ''}`}
           type="button"
-          onClick={() => setActiveTab('avatar')}
+          onClick={() => setActiveTab('species')}
         >
-          Avatar
-        </button>
-        <button
-          class={`tab ${activeTab() === 'race' ? 'active' : ''}`}
-          type="button"
-          onClick={() => setActiveTab('race')}
-        >
-          Race
+          Species
         </button>
         <button
           class={`tab ${activeTab() === 'confirm' ? 'active' : ''}`}
@@ -159,33 +145,97 @@ const RebirthView: Component = () => {
       </div>
 
       <div class="tab-content">
-        <div class={`tab-pane ${activeTab() === 'avatar' ? 'active' : ''}`} id="rebirth-avatar-tab">
-          <h2>Avatar</h2>
-          <p class="rebirth-blob">This is You!</p>
+        <div class={`tab-pane ${activeTab() === 'species' ? 'active' : ''}`} id="rebirth-species-tab">
+          <div class="species-tabs">
+            <For each={viewableSpecies()}>
+              {(species) => (
+                <button
+                  class={`species-tab ${activeSpeciesTab() === species.id ? 'active' : ''}`}
+                  type="button"
+                  onClick={() => setActiveSpeciesTab(species.id)}
+                >
+                  {species.name}
+                </button>
+              )}
+            </For>
+          </div>
+
+          <For each={viewableSpecies()}>
+            {(species) => {
+              const rebirth = pending();
+              const before = rebirth?.before?.[species.id];
+              const after = rebirth?.after?.[species.id];
+
+              if (!before || !after) return null;
+
+              return (
+                <div
+                  class={`species-pane ${activeSpeciesTab() === species.id ? 'active' : ''}`}
+                  id={`species-pane-${species.id}`}
+                >
+                  <h2>{species.name}</h2>
+                  <div class="stat-table">
+                    <div class="stat-table-header">
+                      <span class="stat-name">Stat</span>
+                      <span class="stat-before">Before</span>
+                      <span class="stat-before" />
+                      <span class="stat-after">After</span>
+                    </div>
+                    <For each={REBIRTH_DISPLAY_STATS}>
+                      {(stat) => {
+                        const gain = after[stat] - before[stat];
+
+                        return (
+                          <div class="stat-row">
+                            <span class="stat-name">{STAT_LABELS[stat]}</span>
+                            <span class="stat-before">{before[stat]}</span>
+                            <span class="stat-after" />
+                            <span class="stat-after">
+                              {after[stat]}
+                              {gain > 0 && <span class="stat-gain">(+{gain})</span>}
+                            </span>
+                          </div>
+                        );
+                      }}
+                    </For>
+                  </div>
+                </div>
+              );
+            }}
+          </For>
         </div>
 
-        <div class={`tab-pane ${activeTab() === 'race' ? 'active' : ''}`} id="rebirth-race-tab">
-          <h2>Race</h2>
+        <div class={`tab-pane ${activeTab() === 'confirm' ? 'active' : ''}`} id="rebirth-confirm-tab">
+          <h2>Confirm</h2>
+
           <p class="rebirth-hint">
             Choose the {TOTAL_LIVES} lives for your next village.
             {' '}{usedLives()} / {TOTAL_LIVES} chosen.
           </p>
 
           <div class="race-selector">
-            <For each={raceOptions()}>
-              {(race) => {
-                const count = createMemo(() => composition()[race.id] ?? 0);
+            <For each={availableRaces()}>
+              {(raceId) => {
+                const species = SPECIES.find((s) => s.id === raceId);
+                if (!species) return null;
+
+                const after = raceAfterStats()[raceId];
+                const total = after
+                  ? REBIRTH_DISPLAY_STATS.reduce((s, key) => s + after[key], 0)
+                  : 0;
+
+                const count = createMemo(() => composition()[raceId] ?? 0);
 
                 return (
                   <div class="race-row">
                     <Tooltip
                       content={REBIRTH_DISPLAY_STATS
-                        .map((key) => `${STAT_LABELS[key]}: ${race.stats[key]}`)
+                        .map((key) => `${STAT_LABELS[key]}: ${after?.[key] ?? '?'}`)
                         .join('\n')}
                       placement="top"
                     >
                       <span class="race-name">
-                        {race.name} ({race.totalStats})
+                        {species.name} ({total})
                       </span>
                     </Tooltip>
 
@@ -194,7 +244,7 @@ const RebirthView: Component = () => {
                         class="race-btn"
                         type="button"
                         disabled={count() <= 0}
-                        onClick={() => decreaseRace(race.id)}
+                        onClick={() => decreaseRace(raceId)}
                       >
                         {'\u2039'}
                       </button>
@@ -203,7 +253,7 @@ const RebirthView: Component = () => {
                         class="race-btn"
                         type="button"
                         disabled={usedLives() >= TOTAL_LIVES}
-                        onClick={() => increaseRace(race.id)}
+                        onClick={() => increaseRace(raceId)}
                       >
                         {'\u203A'}
                       </button>
@@ -212,32 +262,6 @@ const RebirthView: Component = () => {
                 );
               }}
             </For>
-          </div>
-        </div>
-
-        <div class={`tab-pane ${activeTab() === 'confirm' ? 'active' : ''}`} id="rebirth-confirm-tab">
-          <h2>Confirm</h2>
-
-          <div class="confirm-composition">
-            <p class="rebirth-blob">
-              <For each={raceOptions()}>
-                {(race) => {
-                  const count = composition()[race.id] ?? 0;
-
-                  if (count <= 0) {
-                    return null;
-                  }
-
-                  return (
-                    <span>
-                      {count} {race.name}
-                      {count > 1 ? 's' : ''}
-                      {' '}
-                    </span>
-                  );
-                }}
-              </For>
-            </p>
           </div>
 
           <div class="action-buttons">
@@ -253,6 +277,20 @@ const RebirthView: Component = () => {
                 onClick={confirm}
               >
                 Confirm Rebirth
+              </button>
+            </Tooltip>
+
+            <Tooltip
+              content="Cancel and return to the village."
+              placement="top"
+            >
+              <button
+                class="action-button"
+                id="cancel-rebirth-button"
+                type="button"
+                onClick={cancel}
+              >
+                Cancel
               </button>
             </Tooltip>
           </div>

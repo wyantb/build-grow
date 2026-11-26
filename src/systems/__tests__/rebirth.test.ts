@@ -319,3 +319,64 @@ describe('a pending rebirth that crosses a reload', () => {
     expect(loaded.pendingRebirth?.after[DEFAULT_SPECIES_ID]).toBeDefined();
   });
 });
+
+describe('a multi-race rebirth', () => {
+  it('grants the chosen species even when they are not in createInitialState', () => {
+    const engine = worldWithGold(REBIRTH_GOLD_COST);
+
+    // Seed the pool and add an elf to the species roster so beginRebirth
+    // will roll stats for it.
+    engine.getState().rebirthPool = { elf: 1 };
+    engine.getState().species['elf'] = {
+      id: 'elf',
+      name: 'Elf',
+      description: 'Long-lived and quick to learn.',
+      stats: { strength: 95, dexterity: 120, constitution: 105, intelligence: 120, wisdom: 120, charisma: 120, manaSensitivity: 100 },
+      count: 0,
+    };
+
+    engine.beginRebirth();
+
+    // Player chooses 3 humans and 2 elves.
+    engine.setComposition({ human: 3, elf: 2 });
+    engine.confirmRebirth();
+
+    const state = engine.getState();
+
+    // Both species exist in the new world.
+    expect(state.species['human']).toBeDefined();
+    expect(state.species['elf']).toBeDefined();
+    expect(state.species['human']?.count).toBe(3);
+    expect(state.species['elf']?.count).toBe(2);
+    expect(state.population).toBe(5);
+  });
+
+  it('carries the improved stats to a species added from the composition', () => {
+    const engine = worldWithGold(REBIRTH_GOLD_COST);
+
+    // Seed the pool so the elf is available.
+    engine.getState().rebirthPool = { elf: 1 };
+    engine.getState().species['elf'] = {
+      id: 'elf',
+      name: 'Elf',
+      description: 'Long-lived and quick to learn.',
+      stats: { strength: 95, dexterity: 120, constitution: 105, intelligence: 120, wisdom: 120, charisma: 120, manaSensitivity: 100 },
+      count: 1,
+    };
+
+    engine.beginRebirth();
+
+    const promisedElfStats = engine.getPendingRebirth()?.after['elf'];
+
+    expect(promisedElfStats).toBeDefined();
+
+    engine.setComposition({ human: 2, elf: 3 });
+    engine.confirmRebirth();
+
+    // The elf in the new world has the improved stats.
+    const elfEntry = engine.getState().species['elf'];
+
+    expect(elfEntry).toBeDefined();
+    expect(elfEntry?.stats.strength).toBe(promisedElfStats!.strength);
+  });
+});

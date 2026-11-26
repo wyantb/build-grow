@@ -744,6 +744,31 @@ class GameEngine {
       elf: (this.state.rebirthPool?.elf ?? 0) + 1,
     };
 
+    // Build the new village's population from the chosen composition.
+    const comp = pending.composition;
+    const totalLives = Object.values(comp).reduce((s, c) => s + c, 0);
+
+    next.population = Math.max(0, totalLives);
+
+    // Add any species from the composition that are not in the new world
+    // yet (e.g. elf), so they have an entry before we assign counts or
+    // copy improved stats.
+    for (const [speciesId, count] of Object.entries(comp)) {
+      if (count > 0 && !next.species[speciesId]) {
+        const template = this.state.species[speciesId];
+
+        if (template) {
+          next.species[speciesId] = {
+            id: speciesId,
+            name: template.name,
+            description: template.description,
+            stats: { ...template.stats },
+            count: 0,
+          };
+        }
+      }
+    }
+
     // The species carry their improved stats into the new world. A species
     // the new world does not know about is skipped, because there is no way
     // to put it in the roster.
@@ -756,12 +781,6 @@ class GameEngine {
 
       entry.stats = { ...stats };
     }
-
-    // Build the new village's population from the chosen composition.
-    const comp = pending.composition;
-    const totalLives = Object.values(comp).reduce((s, c) => s + c, 0);
-
-    next.population = Math.max(0, totalLives);
 
     // Put the people into the default job and the species roster.
     const defaultJobRef = next.jobs[next.defaultJob];
