@@ -43,7 +43,7 @@ describe('population capacity', () => {
     expect(engine.getState().buildingCounts['hut']).toBe(1);
     expect(engine.getState().buildings['hut-0']).toBeDefined();
     expect(engine.getPopulationCapacity()).toBe(5);
-    expect(engine.getState().population).toBe(5);
+    expect(engine.getPopulation()).toBe(5);
   });
 
   it('counts a new hut from the moment it is paid for', () => {
@@ -69,7 +69,7 @@ describe('population growth', () => {
     // The only hut is full, so no birth can happen.
     engine.runTicks(GROWTH_INTERVAL_TICKS * 10);
 
-    expect(engine.getState().population).toBe(5);
+    expect(engine.getPopulation()).toBe(5);
   });
 
   it('grows when there is room in the huts', () => {
@@ -80,7 +80,7 @@ describe('population growth', () => {
 
     engine.runTicks(GROWTH_INTERVAL_TICKS);
 
-    expect(engine.getState().population).toBe(5);
+    expect(engine.getPopulation()).toBe(5);
   });
 
   it('grows by one person per check, not by more', () => {
@@ -91,7 +91,7 @@ describe('population growth', () => {
 
     engine.runTicks(GROWTH_INTERVAL_TICKS);
 
-    expect(engine.getState().population).toBe(5);
+    expect(engine.getPopulation()).toBe(5);
   });
 
   it('only rolls on the growth interval', () => {
@@ -103,11 +103,11 @@ describe('population growth', () => {
     // One tick short of the interval, so no roll has happened yet.
     engine.runTicks(GROWTH_INTERVAL_TICKS - 1);
 
-    expect(engine.getState().population).toBe(4);
+    expect(engine.getPopulation()).toBe(4);
 
     engine.runTicks(1);
 
-    expect(engine.getState().population).toBe(5);
+    expect(engine.getPopulation()).toBe(5);
   });
 
   it('never grows when the roll fails', () => {
@@ -118,7 +118,7 @@ describe('population growth', () => {
 
     engine.runTicks(GROWTH_INTERVAL_TICKS * 20);
 
-    expect(engine.getState().population).toBe(4);
+    expect(engine.getPopulation()).toBe(4);
   });
 
   it('puts a new person in the default job', () => {
@@ -130,7 +130,7 @@ describe('population growth', () => {
 
     engine.runTicks(GROWTH_INTERVAL_TICKS);
 
-    expect(engine.getState().population).toBe(5);
+    expect(engine.getPopulation()).toBe(5);
     expect(engine.getState().jobs['unemployed']?.workers).toBe(5);
   });
 

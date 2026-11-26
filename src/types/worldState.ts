@@ -184,6 +184,9 @@ export type WorldState = z.infer<typeof WorldStateSchema>;
 
 // Create initial state
 export const createInitialState = (): WorldState => {
+  // The starting population, as the number of humans in the roster.
+  const startingPopulation = 5;
+
   const initialState: WorldState = {
     version: GAME_VERSION,
     tick: 0,
@@ -193,7 +196,7 @@ export const createInitialState = (): WorldState => {
       food: 500,
       gold: 0,
     },
-    population: 5,
+    population: startingPopulation,
     jobs: Object.fromEntries(
       Object.entries(JOBS).map(([id, job]) => [id, { ...job, workers: 0, species: {} }]),
     ),
@@ -240,18 +243,21 @@ export const createInitialState = (): WorldState => {
     },
   };
 
-  // Put initial population in the default job
-  const defaultJobRef = initialState.jobs[initialState.defaultJob];
-  if (defaultJobRef) {
-    defaultJobRef.workers = initialState.population;
-    defaultJobRef.species = { [DEFAULT_SPECIES_ID]: initialState.population };
-  }
-
   // The roster counts the whole population, which is all of one species
   // when a world starts.
   const startingSpecies = initialState.species[DEFAULT_SPECIES_ID];
   if (startingSpecies) {
-    startingSpecies.count = initialState.population;
+    startingSpecies.count = startingPopulation;
+  }
+
+  // Population is derived from the species roster, so set it last.
+  initialState.population = startingPopulation;
+
+  // Put initial population in the default job
+  const defaultJobRef = initialState.jobs[initialState.defaultJob];
+  if (defaultJobRef) {
+    defaultJobRef.workers = startingPopulation;
+    defaultJobRef.species = { [DEFAULT_SPECIES_ID]: startingPopulation };
   }
 
   return initialState;

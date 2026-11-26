@@ -175,7 +175,7 @@ describe('starting a rebirth', () => {
 
     const state = engine.getState();
 
-    expect(state.population).toBe(5);
+    expect(engine.getPopulation()).toBe(5);
     expect(state.resources.gold).toBe(REBIRTH_GOLD_COST);
     expect(state.buildingCounts['hut']).toBe(1);
   });
@@ -190,7 +190,7 @@ describe('confirming a rebirth', () => {
 
     const state = engine.getState();
 
-    expect(state.population).toBe(5);
+    expect(engine.getPopulation()).toBe(5);
     expect(state.buildingCounts['hut']).toBe(1);
     expect(state.resources.gold).toBe(0);
     expect(state.resources.wood).toBe(250);
@@ -247,7 +247,7 @@ describe('cancelling a rebirth', () => {
     const state = engine.getState();
 
     expect(engine.getPendingRebirth()).toBeNull();
-    expect(state.population).toBe(5);
+    expect(engine.getPopulation()).toBe(5);
     expect(state.resources.gold).toBe(REBIRTH_GOLD_COST);
   });
 
@@ -348,7 +348,7 @@ describe('a multi-race rebirth', () => {
     expect(state.species['elf']).toBeDefined();
     expect(state.species['human']?.count).toBe(3);
     expect(state.species['elf']?.count).toBe(2);
-    expect(state.population).toBe(5);
+    expect(engine.getPopulation()).toBe(5);
   });
 
   it('carries the improved stats to a species added from the composition', () => {
@@ -414,5 +414,69 @@ describe('a multi-race rebirth', () => {
 
     expect(pending?.before['elf']).toBeDefined();
     expect(pending?.after['elf']).toBeDefined();
+  });
+
+  it('populates the species roster so the population is the sum of species', () => {
+    const engine = worldWithGold(REBIRTH_GOLD_COST);
+
+    engine.getState().rebirthPool = { human: 4, elf: 1 };
+    engine.getState().species['elf'] = {
+      id: 'elf',
+      name: 'Elf',
+      description: 'Long-lived and quick to learn.',
+      stats: { strength: 95, dexterity: 120, constitution: 105, intelligence: 120, wisdom: 120, charisma: 120, manaSensitivity: 100 },
+      count: 0,
+    };
+
+    engine.beginRebirth();
+    engine.setComposition({ human: 4, elf: 1 });
+    engine.confirmRebirth();
+
+    const state = engine.getState();
+
+    // The population equals the sum of species counts.
+    const speciesSum = Object.values(state.species)
+      .reduce((s: number, e) => s + e.count, 0);
+    expect(engine.getPopulation()).toBe(speciesSum);
+    expect(engine.getPopulation()).toBe(5);
+
+    // The elf is in the species roster.
+    expect(state.species['elf']?.count).toBe(1);
+    expect(state.species['human']?.count).toBe(4);
+
+    // All people are accounted for in jobs.
+    const jobTotal = Object.values(state.jobs)
+      .reduce((s: number, j) => s + j.workers, 0);
+    expect(jobTotal).toBe(5);
+  });
+
+  it('derives population from species after a save and reload', () => {
+    const engine = worldWithGold(REBIRTH_GOLD_COST);
+
+    engine.getState().rebirthPool = { human: 3, elf: 2 };
+    engine.getState().species['elf'] = {
+      id: 'elf',
+      name: 'Elf',
+      description: 'Long-lived and quick to learn.',
+      stats: { strength: 95, dexterity: 120, constitution: 105, intelligence: 120, wisdom: 120, charisma: 120, manaSensitivity: 100 },
+      count: 0,
+    };
+
+    engine.beginRebirth();
+    engine.setComposition({ human: 3, elf: 2 });
+    engine.confirmRebirth();
+
+    expect(engine.getPopulation()).toBe(5);
+
+    // Save and reload the world.
+    const payload = serializeState(engine.getState());
+    const loaded = deserializePayload(payload);
+    const reloaded = new GameEngine(loaded);
+
+    // Population is still the sum of species counts after reload.
+    const speciesSum = Object.values(reloaded.getState().species)
+      .reduce((s: number, e) => s + e.count, 0);
+    expect(reloaded.getPopulation()).toBe(speciesSum);
+    expect(reloaded.getPopulation()).toBe(5);
   });
 });

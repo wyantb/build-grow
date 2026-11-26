@@ -303,6 +303,14 @@ export const deserializePayload = (payload: SavePayload): WorldState => {
     };
   }
 
+  // Population is derived from the species roster, not from the save, so a
+  // stale number cannot drift away from the real counts.
+  let totalPopulation = 0;
+  for (const entry of Object.values(state.species)) {
+    totalPopulation += entry.count;
+  }
+  state.population = totalPopulation;
+
   if (DEBUG) {
     console.info('[debug] load — pool from save:', JSON.stringify(payload.rebirthPool),
       '→ deserialized pool:', JSON.stringify(state.rebirthPool));

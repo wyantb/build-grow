@@ -553,7 +553,7 @@ describe('the bookkeeping of the species', () => {
 
     engine.assignWorkers('lumberjack', 1);
 
-    expect(engine.getState().population).toBe(6);
+    expect(engine.getPopulation()).toBe(6);
 
     const total = Object.values(engine.getState().jobs)
       .reduce((sum, job) => sum + job.workers, 0);
@@ -609,7 +609,7 @@ describe('the roster of species', () => {
 
     engine.runTicks(25);
 
-    expect(engine.getState().population).toBe(5);
+    expect(engine.getPopulation()).toBe(5);
     expect(engine.getState().species[DEFAULT_SPECIES_ID]?.count).toBe(5);
   });
 
@@ -623,7 +623,7 @@ describe('the roster of species', () => {
     const counted = Object.values(engine.getState().species)
       .reduce((sum, entry) => sum + entry.count, 0);
 
-    expect(counted).toBe(engine.getState().population);
+    expect(counted).toBe(engine.getPopulation());
   });
 });
 

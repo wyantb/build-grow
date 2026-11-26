@@ -148,7 +148,7 @@ export const useGameState = () => {
     setState((state) => {
       state.tick = engineState.tick;
       state.gameTime = engineState.gameTime;
-      state.population = engineState.population;
+      state.population = gameEngine.getPopulation();
       state.defaultJob = engineState.defaultJob;
       syncArray(state.jobOrder, engineState.jobOrder);
 
@@ -230,7 +230,7 @@ export const useGameState = () => {
     setState((state) => {
       state.tick = engineState.tick;
       state.gameTime = engineState.gameTime;
-      state.population = engineState.population;
+      state.population = gameEngine.getPopulation();
       state.defaultJob = engineState.defaultJob;
 
       state.resources.wood = engineState.resources.wood;

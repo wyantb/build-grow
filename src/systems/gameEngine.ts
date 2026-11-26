@@ -282,15 +282,13 @@ class GameEngine {
       return;
     }
 
-    if (this.state.population >= this.getPopulationCapacity()) {
+    if (this.getPopulation() >= this.getPopulationCapacity()) {
       return;
     }
 
-    if (this.random() >= getBirthChance(this.state.population)) {
+    if (this.random() >= getBirthChance(this.getPopulation())) {
       return;
     }
-
-    this.state.population++;
 
     // A new person joins the default job, which is where the unassigned
     // people live. The child's species is picked by that species' share of
@@ -316,7 +314,7 @@ class GameEngine {
         species.count++;
       }
 
-      console.info(`A child is born. Population is now ${this.state.population}.`);
+      console.info(`A child is born. Population is now ${this.getPopulation()}.`);
 
       return;
     }
@@ -331,7 +329,22 @@ class GameEngine {
       species.count++;
     }
 
-    console.info(`A child is born. Population is now ${this.state.population}.`);
+    console.info(`A child is born. Population is now ${this.getPopulation()}.`);
+  }
+
+  /**
+   * The total people alive in the world.
+   *
+   * Population is derived from the species roster, so it can never drift
+   * out of sync with the actual species counts.
+   */
+  getPopulation(): number {
+    let total = 0;
+    for (const entry of Object.values(this.state.species)) {
+      total += entry.count;
+    }
+
+    return total;
   }
 
   /**
@@ -788,9 +801,6 @@ class GameEngine {
 
     // Build the new village's population from the chosen composition.
     const comp = pending.composition;
-    const totalLives = Object.values(comp).reduce((s, c) => s + c, 0);
-
-    next.population = Math.max(0, totalLives);
 
     // Add any species from the composition that are not in the new world
     // yet (e.g. elf), so they have an entry before we assign counts or
@@ -824,12 +834,8 @@ class GameEngine {
       entry.stats = { ...stats };
     }
 
-    // Put the people into the default job and the species roster.
-    const defaultJobRef = next.jobs[next.defaultJob];
-    if (defaultJobRef) {
-      defaultJobRef.workers = next.population;
-    }
-
+    // Set the species counts from the composition, then the population is
+    // derived from them.
     for (const [speciesId, count] of Object.entries(comp)) {
       const entry = next.species[speciesId];
 
@@ -838,10 +844,6 @@ class GameEngine {
       }
 
       entry.count = count;
-
-      if (defaultJobRef) {
-        defaultJobRef.species[speciesId] = count;
-      }
     }
 
     // Staff the jobs by species quality, then load the world.
@@ -907,7 +909,9 @@ class GameEngine {
     // Put everyone back into the default job as the starting point.
     const defaultJob = state.jobs[state.defaultJob];
     if (defaultJob) {
-      defaultJob.workers = state.population;
+      const totalPopulation = Object.values(state.species)
+        .reduce((sum: number, entry) => sum + entry.count, 0);
+      defaultJob.workers = totalPopulation;
 
       for (const [speciesId, entry] of Object.entries(state.species)) {
         defaultJob.species[speciesId] = entry.count;
