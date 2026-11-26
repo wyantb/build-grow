@@ -565,6 +565,61 @@ class GameEngine {
     return true;
   }
 
+  /**
+   * Move a job to a given place in the priority order.
+   *
+   * The place is counted among the jobs the player can see, so a job that is
+   * not on screen does not take a spot.
+   *
+   * @param jobId - The job to move.
+   * @param targetIndex - The place to move it to, counted among the visible jobs.
+   */
+  reorderJob(jobId: string, targetIndex: number): boolean {
+    if (!this.state.jobs[jobId]) {return false;}
+
+    const visible = getAvailableJobIds(this.state.buildingCounts, this.state.jobOrder);
+    const from = visible.indexOf(jobId);
+
+    if (from < 0) {return false;}
+
+    if (!Number.isInteger(targetIndex) || targetIndex < 0 || targetIndex >= visible.length) {
+      return false;
+    }
+
+    if (from === targetIndex) {return false;}
+
+    // The job leaves its place and goes to the new one.
+    const nextVisible = [...visible];
+    const [moved] = nextVisible.splice(from, 1);
+
+    if (moved === undefined) {return false;}
+
+    nextVisible.splice(targetIndex, 0, moved);
+
+    // The visible jobs keep the places they hold in the full order, so a job
+    // that is not on screen stays where it was.
+    const order = this.state.jobOrder;
+    const slots: number[] = [];
+
+    order.forEach((id, index) => {
+      if (visible.includes(id)) {
+        slots.push(index);
+      }
+    });
+
+    nextVisible.forEach((id, index) => {
+      const slot = slots[index];
+
+      if (slot !== undefined) {
+        order[slot] = id;
+      }
+    });
+
+    this.notify();
+
+    return true;
+  }
+
   // Set the default job (where new workers go)
   setDefaultJob(jobId: string): boolean {
     const job = this.state.jobs[jobId];

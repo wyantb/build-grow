@@ -24,6 +24,7 @@
   ],
   "type": "module",
   "dependencies": {
+    "@solid-primitives/drag-drop": "^0.1.0",
     "@solidjs/web": "2.0.3",
     "solid-js": "2.0.3",
     "zod": "^4.6.7"

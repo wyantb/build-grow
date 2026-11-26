@@ -292,6 +292,23 @@ export const useGameState = () => {
     return true;
   };
 
+  /**
+   * Move a job to a given place in the priority order.
+   *
+   * @param targetIndex - The place to move it to, counted among the visible jobs.
+   */
+  const reorderJob = (jobId: string, targetIndex: number): boolean => {
+    const moved = gameEngine.reorderJob(jobId, targetIndex);
+
+    if (!moved) {
+      return false;
+    }
+
+    mirrorEngineState();
+
+    return true;
+  };
+
   const setDefaultJob = (jobId: string): boolean => {
     const success = gameEngine.setDefaultJob(jobId);
     if (!success) {
@@ -465,6 +482,7 @@ export const useGameState = () => {
     buildBuilding,
     assignWorkers,
     moveJob,
+    reorderJob,
     setDefaultJob,
     getAvailableWorkers,
     getMarketOrders,

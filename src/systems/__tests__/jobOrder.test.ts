@@ -112,6 +112,114 @@ describe('the priority order of the jobs', () => {
   });
 });
 
+describe('moving a job to a place', () => {
+  it('moves a job down to the place it is dropped on', () => {
+    const engine = new GameEngine(createTestWorld({
+      buildings: ['lumberjack'],
+      jobOrder: ['unemployed', 'settler', 'lumberjack'],
+    }));
+
+    expect(engine.reorderJob('unemployed', 1)).toBe(true);
+
+    expect(visibleJobs(engine)).toEqual(['settler', 'unemployed', 'lumberjack']);
+  });
+
+  it('moves a job up to the place it is dropped on', () => {
+    const engine = new GameEngine(createTestWorld({
+      buildings: ['lumberjack'],
+      jobOrder: ['unemployed', 'settler', 'lumberjack'],
+    }));
+
+    expect(engine.reorderJob('lumberjack', 0)).toBe(true);
+
+    expect(visibleJobs(engine)).toEqual(['lumberjack', 'unemployed', 'settler']);
+  });
+
+  it('moves a job to the end of what the player sees', () => {
+    const engine = new GameEngine(createTestWorld({
+      buildings: ['lumberjack'],
+      jobOrder: ['unemployed', 'settler', 'lumberjack'],
+    }));
+
+    expect(engine.reorderJob('unemployed', 2)).toBe(true);
+
+    expect(visibleJobs(engine)).toEqual(['settler', 'lumberjack', 'unemployed']);
+  });
+
+  it('keeps every job in the order after a move', () => {
+    const engine = new GameEngine(createTestWorld({
+      buildings: ['lumberjack'],
+      jobOrder: ['unemployed', 'settler', 'lumberjack'],
+    }));
+
+    engine.reorderJob('unemployed', 2);
+
+    expect([...engine.getState().jobOrder].sort()).toEqual(
+      [...DEFAULT_JOB_ORDER].sort(),
+    );
+  });
+
+  it('does not move a job to the place it already has', () => {
+    const engine = new GameEngine(createTestWorld({
+      buildings: ['lumberjack'],
+      jobOrder: ['unemployed', 'settler', 'lumberjack'],
+    }));
+
+    expect(engine.reorderJob('settler', 1)).toBe(false);
+    expect(visibleJobs(engine)).toEqual(['unemployed', 'settler', 'lumberjack']);
+  });
+
+  it('does not move a job to a place that is not there', () => {
+    const engine = new GameEngine(createTestWorld({
+      buildings: ['lumberjack'],
+      jobOrder: ['unemployed', 'settler', 'lumberjack'],
+    }));
+
+    expect(engine.reorderJob('unemployed', 3)).toBe(false);
+    expect(engine.reorderJob('unemployed', -1)).toBe(false);
+    expect(visibleJobs(engine)).toEqual(['unemployed', 'settler', 'lumberjack']);
+  });
+
+  it('does not move a job the world does not have', () => {
+    const engine = new GameEngine();
+
+    expect(engine.reorderJob('dragon', 0)).toBe(false);
+  });
+
+  it('counts the places among the jobs on screen', () => {
+    // The lumberjack is not available, so it is not on screen. The farmer
+    // moves to the place of the settler, the second job on screen.
+    const engine = new GameEngine(createTestWorld({
+      buildings: ['farm'],
+      jobOrder: ['unemployed', 'lumberjack', 'settler', 'farmer'],
+    }));
+
+    expect(visibleJobs(engine)).toEqual(['unemployed', 'settler', 'farmer']);
+
+    engine.reorderJob('farmer', 1);
+
+    expect(visibleJobs(engine)).toEqual(['unemployed', 'farmer', 'settler']);
+  });
+
+  it('leaves a job that is not on screen where it was', () => {
+    // The lumberjack is not on screen, so the move does not change its place
+    // in the full order.
+    const engine = new GameEngine(createTestWorld({
+      buildings: ['farm'],
+      jobOrder: ['unemployed', 'lumberjack', 'settler', 'farmer'],
+    }));
+
+    engine.reorderJob('farmer', 0);
+
+    expect(engine.getState().jobOrder.slice(0, 4)).toEqual([
+      'farmer',
+      'lumberjack',
+      'unemployed',
+      'settler',
+    ]);
+  });
+});
+
 describe('which jobs the player sees', () => {
   it('hides a job whose building has not been built', () => {
     expect(isJobAvailable('lumberjack', {})).toBe(false);
@@ -166,6 +274,24 @@ describe('the priority order through a save', () => {
 
     expect(loaded.jobOrder[0]).toBe('unemployed');
     expect(loaded.jobOrder[1]).toBe('farmer');
+  });
+
+  it('keeps the order after a drag', () => {
+    const engine = new GameEngine(createTestWorld({
+      buildings: ['lumberjack', 'farm'],
+      jobOrder: ['farmer', 'unemployed', 'lumberjack', 'settler'],
+    }));
+
+    engine.reorderJob('farmer', 2);
+
+    const loaded = deserializePayload(serializeState(engine.getState()));
+
+    expect(loaded.jobOrder.slice(0, 4)).toEqual([
+      'unemployed',
+      'lumberjack',
+      'farmer',
+      'settler',
+    ]);
   });
 
   it('uses the starting order for a save that has none', () => {
