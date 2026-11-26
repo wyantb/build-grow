@@ -1,5 +1,9 @@
 # Tech Debt
 
+
+stat rolls include the original population of 5, not just net change in lives over RB
+
+
 Known issues and planned work that is deliberately not done yet.
 
 ## Saves need a browser with the Compression Streams API
@@ -27,21 +31,6 @@ and import buttons still work in a browser that has the API.
 **Related.** If the state ever grows past the localStorage quota, the storage
 backend should move to IndexedDB, which is asynchronous and has far more room.
 The save format does not need to change for that: only the transport does.
-
-## Save compression runs on the main thread
-
-**Status:** Done. Compression moved into a Web Worker.
-
-**Where:** `src/systems/compression.ts` and `src/systems/compressionWorker.ts`.
-
-**What it does.** Gzipping and gunzipping run in a Web Worker, so the game
-keeps ticking while a save is written. The worker takes the JSON string,
-compresses it, and posts the bytes back.
-
-**What is left.** A browser that blocks workers, or a page opened from a
-`file://` URL, cannot start the worker. The code falls back to compressing on
-the main thread, so the game still saves, but the stutter the worker was meant
-to avoid comes back on those pages.
 
 ## The rebirth rolls use Math.random
 
