@@ -66,7 +66,7 @@ const RebirthView: Component = () => {
       ? (p as Record<string, number>)[raceId] ?? 0
       : 0;
 
-    if (composition()[raceId] ?? 0 >= poolCount) {
+    if ((composition()[raceId] ?? 0) >= poolCount) {
       return;
     }
 
