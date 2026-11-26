@@ -379,4 +379,40 @@ describe('a multi-race rebirth', () => {
     expect(elfEntry).toBeDefined();
     expect(elfEntry?.stats.strength).toBe(promisedElfStats!.strength);
   });
+
+  it('survives a save / reload so the elf is available on the next rebirth', () => {
+    const engine = worldWithGold(REBIRTH_GOLD_COST);
+
+    // First rebirth: confirm it and verify the pool grows.
+    engine.beginRebirth();
+    engine.setComposition({ human: 5 });
+    engine.confirmRebirth();
+
+    // The new world should have one elf in the pool.
+    expect(engine.getRebirthPool()).toEqual({ elf: 1 });
+
+    // Simulate a page reload: serialize the world, deserialize it, create a
+    // new engine from the loaded state.
+    const payload = serializeState(engine.getState());
+    expect(payload.rebirthPool).toEqual({ elf: 1 });
+
+    const loaded = deserializePayload(payload);
+    expect(loaded.rebirthPool).toEqual({ elf: 1 });
+
+    const reloaded = new GameEngine(loaded);
+
+    // The loaded engine sees the same pool.
+    expect(reloaded.getRebirthPool()).toEqual({ elf: 1 });
+
+    // After reaching the gold threshold again, beginRebirth should show the
+    // elf in the pending stats, which is what the UI's availableRaces memo
+    // checks.
+    reloaded.getState().resources.gold = REBIRTH_GOLD_COST;
+    reloaded.beginRebirth();
+
+    const pending = reloaded.getPendingRebirth();
+
+    expect(pending?.before['elf']).toBeDefined();
+    expect(pending?.after['elf']).toBeDefined();
+  });
 });

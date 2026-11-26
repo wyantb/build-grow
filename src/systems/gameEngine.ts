@@ -9,7 +9,7 @@ import {
 } from '../data/jobs.js';
 import { MARKET_RESOURCES } from '../data/market.js';
 import type { MarketResource } from '../data/market.js';
-import { DEFAULT_SPECIES_ID, NEUTRAL_STATS } from '../data/species.js';
+import { DEFAULT_SPECIES_ID, NEUTRAL_STATS, SPECIES } from '../data/species.js';
 import MarketSystem from './marketSystem.js';
 import type { MarketAction, MarketFlow, MarketOrders } from './marketSystem.js';
 import {
@@ -695,18 +695,50 @@ class GameEngine {
       return false;
     }
 
+    // Species already in the roster.
+    const speciesIds = new Set(Object.keys(this.state.species));
+
+    // Species from the rebirth pool that are not in the roster yet.
+    for (const [speciesId, count] of Object.entries(this.state.rebirthPool ?? {})) {
+      if ((count ?? 0) > 0 && !speciesIds.has(speciesId)) {
+        speciesIds.add(speciesId);
+      }
+    }
+
     const before: PendingRebirth['before'] = {};
 
-    for (const [speciesId, entry] of Object.entries(this.state.species)) {
-      before[speciesId] = { ...entry.stats };
+    for (const speciesId of speciesIds) {
+      const entry = this.state.species[speciesId];
+
+      if (entry) {
+        before[speciesId] = { ...entry.stats };
+      } else {
+        // Not yet in the roster; use the catalog's base stats.
+        const template = SPECIES.find((s) => s.id === speciesId);
+
+        if (template) {
+          before[speciesId] = { ...template.baseStats };
+        }
+      }
     }
 
     const speciesStats: Record<string, Stats> = {};
     const speciesCounts: Record<string, number> = {};
 
-    for (const [speciesId, entry] of Object.entries(this.state.species)) {
-      speciesStats[speciesId] = entry.stats;
-      speciesCounts[speciesId] = entry.count;
+    for (const speciesId of speciesIds) {
+      const entry = this.state.species[speciesId];
+
+      if (entry) {
+        speciesStats[speciesId] = entry.stats;
+        speciesCounts[speciesId] = entry.count;
+      } else {
+        const template = SPECIES.find((s) => s.id === speciesId);
+
+        if (template) {
+          speciesStats[speciesId] = { ...template.baseStats };
+          speciesCounts[speciesId] = 0;
+        }
+      }
     }
 
     const after = getRebirthStatsPerSpecies(speciesStats, speciesCounts, this.random);
