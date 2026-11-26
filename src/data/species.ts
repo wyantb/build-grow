@@ -86,9 +86,6 @@ export const NEUTRAL_STATS: Stats = {
 
 /**
  * The species in the world.
- *
- * Only humans exist so far. They are competent at most things and hopeless
- * with magic, which is what the starting population is made of.
  */
 export const SPECIES: SpeciesType[] = [
   {
