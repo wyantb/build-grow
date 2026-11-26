@@ -6,7 +6,7 @@ import type { Stats } from '../../data/species.js';
 import { REBIRTH_DISPLAY_STATS } from '../../systems/rebirth.js';
 import Tooltip from '../ui/Tooltip.js';
 
-type RebirthTab = 'species' | 'confirm';
+type RebirthTab = 'avatar' | 'species' | 'confirm';
 
 const TOTAL_LIVES = 5;
 
@@ -123,11 +123,18 @@ const RebirthView: Component = () => {
     gameState.cancelRebirth();
   };
 
-  const [activeTab, setActiveTab] = createSignal<RebirthTab>('species');
+  const [activeTab, setActiveTab] = createSignal<RebirthTab>('avatar');
 
   return (
     <div class="rebirth-view" id="rebirth-view">
       <div class="tabs">
+        <button
+          class={`tab ${activeTab() === 'avatar' ? 'active' : ''}`}
+          type="button"
+          onClick={() => setActiveTab('avatar')}
+        >
+          Avatar
+        </button>
         <button
           class={`tab ${activeTab() === 'species' ? 'active' : ''}`}
           type="button"
@@ -145,6 +152,11 @@ const RebirthView: Component = () => {
       </div>
 
       <div class="tab-content">
+        <div class={`tab-pane ${activeTab() === 'avatar' ? 'active' : ''}`} id="rebirth-avatar-tab">
+          <h2>Avatar</h2>
+          <p class="rebirth-blob">This is You!</p>
+        </div>
+
         <div class={`tab-pane ${activeTab() === 'species' ? 'active' : ''}`} id="rebirth-species-tab">
           <div class="species-tabs">
             <For each={viewableSpecies()}>
