@@ -450,7 +450,7 @@ export const writeLocalSave = async (envelope: SaveEnvelope): Promise<SaveResult
     const encoded = await encodeEnvelope(envelope);
 
     if (DEBUG) {
-      console.info('[debug] save payload:', JSON.stringify(envelope.state));
+      console.info('[debug] save payload:', envelope.state);
     }
 
     localStorage.setItem(SAVE_STORAGE_KEY, STORAGE_PREFIX + encoded);
