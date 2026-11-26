@@ -733,6 +733,12 @@ class GameEngine {
       return false;
     }
 
+    // The gold rebirth grants one elf to the pool.
+    this.state.rebirthPool = {
+      human: REBIRTH_LIVES,
+      elf: (this.state.rebirthPool?.elf ?? 0) + 1,
+    };
+
     // Species already in the roster.
     const speciesIds = new Set(Object.keys(this.state.species));
 
@@ -809,12 +815,8 @@ class GameEngine {
 
     const next = createInitialState();
 
-    // One more elf is added to the pool each time the player confirms a
-    // rebirth, and humans are reset to REBIRTH_LIVES.
-    next.rebirthPool = {
-      human: REBIRTH_LIVES,
-      elf: (this.state.rebirthPool?.elf ?? 0) + 1,
-    };
+    // The pool persists into the new world as the player left it.
+    next.rebirthPool = { ...this.state.rebirthPool };
 
     // Build the new village's population from the chosen composition.
     const comp = pending.composition;
@@ -867,7 +869,10 @@ class GameEngine {
     this.autoStaffJobs(next);
 
     if (DEBUG) {
-      console.info('[debug] confirmRebirth — old pool:', JSON.stringify(this.state.rebirthPool),
+      console.info('[debug] confirmRebirth — composition:', JSON.stringify(comp),
+        '→ species before load:', Object.keys(next.species),
+        '→ species counts:', JSON.stringify(Object.fromEntries(Object.entries(next.species).map(([id, e]) => [id, e.count]))),
+        '→ old pool:', JSON.stringify(this.state.rebirthPool),
         '→ new pool:', JSON.stringify(next.rebirthPool));
     }
 
