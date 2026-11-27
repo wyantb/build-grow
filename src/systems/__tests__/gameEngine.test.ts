@@ -71,6 +71,33 @@ describe('GameEngine resource rates', () => {
   });
 });
 
+describe('GameEngine research accumulation', () => {
+  it('accumulates research over a batch of ticks', () => {
+    let seed = 46;
+    const rng = () => {
+      seed = (seed * 1664525 + 1013904223) & 0xffffffff;
+
+      return seed / 0xffffffff;
+    };
+
+    // 5 population, well-fed so nobody starves.
+    const engine = new GameEngine(createTestWorld({
+      population: 5,
+      workers: { unemployed: 5 },
+      buildings: ['farm'],
+      resources: { food: 1000 },
+    }), rng);
+
+    expect(engine.getState().resources.research).toBe(0);
+    expect(engine.getTickRates().research).toBeCloseTo(0.1, 10);
+
+    engine.runTicks(50);
+
+    // 5 humans * 0.02 research/tick * 50 ticks = 5.0
+    expect(engine.getState().resources.research).toBeCloseTo(5.0, 6);
+  });
+});
+
 describe('GameEngine batch ticking', () => {
   it('applies the same food growth over a batch of ticks as over a single tick loop', () => {
     let seed = 46;

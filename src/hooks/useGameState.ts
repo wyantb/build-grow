@@ -159,6 +159,7 @@ export const useGameState = () => {
       state.resources.stone = engineState.resources.stone;
       state.resources.food = engineState.resources.food;
       state.resources.gold = engineState.resources.gold;
+      state.resources.research = engineState.resources.research;
 
       for (const [jobId, job] of Object.entries(engineState.jobs)) {
         if (state.jobs[jobId]) {
@@ -241,6 +242,7 @@ export const useGameState = () => {
       state.resources.stone = engineState.resources.stone;
       state.resources.food = engineState.resources.food;
       state.resources.gold = engineState.resources.gold;
+      state.resources.research = engineState.resources.research;
 
       // The order is written onto the array the store already holds, so
       // only the places that really moved notify their readers.
