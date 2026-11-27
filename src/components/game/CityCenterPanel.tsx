@@ -145,36 +145,46 @@ const CityCenterPanel: Component = () => {
                 { name: 'Stone', amount: maxStone(), center: gameState.state.cityCenter.storageWoodStone, buildings: storageBuildings.filter((b) => b.storageBonus?.woodStone) },
                 { name: 'Food', amount: maxFood(), center: gameState.state.cityCenter.storageFood, buildings: storageBuildings.filter((b) => b.storageBonus?.food) },
               ]}>
-                {(group) => (
-                  <>
-                    <div class="dialog-resource-header">{group.name}</div>
-                    <div class="dialog-row">
-                      <span class="dialog-label">City Storage</span>
-                      <span class="dialog-value">{formatNumber(group.center)}</span>
-                    </div>
-                    <For each={group.buildings}>
-                      {(type) => {
-                        const count = createMemo(() => gameState.getBuildingCounts()[type.id] ?? 0);
-                        const perBuilding = type.storageBonus!.woodStone ?? type.storageBonus!.food!;
-                        const total = createMemo(() => count() * perBuilding);
+                {(group) => {
+                  const ceramistWorkers = createMemo(() => gameState.state.jobs['ceramist']?.workers ?? 0);
+                  const ceramistShedMultiplier = createMemo(() => 1 + 0.05 * ceramistWorkers());
+                  const isCeramistAffected = group.buildings.some((b) => b.storageBonus?.woodStone);
 
-                        return (
-                          <Show when={count() > 0}>
-                            <div class="dialog-row">
-                              <span class="dialog-label">{type.name}s ({count()})</span>
-                              <span class="dialog-value">+{formatNumber(total())}</span>
-                            </div>
-                          </Show>
-                        );
-                      }}
-                    </For>
-                    <div class="dialog-row dialog-total-row">
-                      <span class="dialog-label">Total {group.name}</span>
-                      <span class="dialog-value">{formatNumber(group.amount)}</span>
-                    </div>
-                    <div class="dialog-divider" />
-                  </>
-                )}
+                  return (
+                    <>
+                      <div class="dialog-resource-header">{group.name}</div>
+                      <div class="dialog-row">
+                        <span class="dialog-label">City Storage</span>
+                        <span class="dialog-value">{formatNumber(group.center)}</span>
+                      </div>
+                      <For each={group.buildings}>
+                        {(type) => {
+                          const count = createMemo(() => gameState.getBuildingCounts()[type.id] ?? 0);
+                          const perBuilding = type.storageBonus!.woodStone ?? type.storageBonus!.food!;
+                          const total = createMemo(() => {
+                            const base = count() * perBuilding;
+
+                            return isCeramistAffected ? base * ceramistShedMultiplier() : base;
+                          });
+
+                          return (
+                            <Show when={count() > 0}>
+                              <div class="dialog-row">
+                                <span class="dialog-label">{type.name}s ({count()})</span>
+                                <span class="dialog-value">+{formatNumber(total())}</span>
+                              </div>
+                            </Show>
+                          );
+                        }}
+                      </For>
+                      <div class="dialog-row dialog-total-row">
+                        <span class="dialog-label">Total {group.name}</span>
+                        <span class="dialog-value">{formatNumber(group.amount)}</span>
+                      </div>
+                      <div class="dialog-divider" />
+                    </>
+                  );
+                }}
               </For>
             </div>
           </div>

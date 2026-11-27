@@ -672,7 +672,7 @@ export const useGameState = () => {
     switch (resource) {
       case 'wood':
       case 'stone':
-        return state.cityCenter.storageWoodStone + woodStoneBonus;
+        return state.cityCenter.storageWoodStone + woodStoneBonus * ceramistShedMultiplier;
       case 'food':
         return state.cityCenter.storageFood + foodBonus;
       case 'research':
@@ -698,6 +698,9 @@ export const useGameState = () => {
   ): Array<{ label: string; value: number }> => {
     const entries: Array<{ label: string; value: number }> = [];
 
+    const ceramistWorkers = state.jobs['ceramist']?.workers ?? 0;
+    const ceramistShedMultiplier = 1 + 0.05 * ceramistWorkers;
+
     if (resource === 'wood' || resource === 'stone') {
       entries.push({ label: 'City Center', value: state.cityCenter.storageWoodStone });
       for (const type of BUILDING_TYPES) {
@@ -705,7 +708,7 @@ export const useGameState = () => {
         if (!bonus) {continue;}
         const count = state.buildingCounts[type.id] ?? 0;
         if (count === 0) {continue;}
-        entries.push({ label: type.name, value: count * bonus });
+        entries.push({ label: type.name, value: count * bonus * ceramistShedMultiplier });
       }
     } else if (resource === 'food') {
       entries.push({ label: 'City Center', value: state.cityCenter.storageFood });
@@ -720,8 +723,6 @@ export const useGameState = () => {
       entries.push({ label: 'City Center', value: state.cityCenter.storageResearch });
     } else if (resource === 'clay') {
       entries.push({ label: 'City Center', value: state.cityCenter.storageClay });
-      const ceramistWorkers = state.jobs['ceramist']?.workers ?? 0;
-      const ceramistShedMultiplier = 1 + 0.05 * ceramistWorkers;
       for (const type of BUILDING_TYPES) {
         const bonus = type.storageBonus?.clay;
         if (!bonus) {continue;}
