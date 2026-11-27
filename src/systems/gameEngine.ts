@@ -248,7 +248,6 @@ class GameEngine {
       this.state.resources.food += job.production.food * job.workers * factor;
       this.state.resources.gold += job.production.gold * job.workers * factor;
       this.state.resources.clay += job.production.clay * job.workers * factor;
-      this.state.resources.research += job.production.research * job.workers * factor;
 
       // Job consumption
       this.state.resources.wood -= job.consumption.wood * job.workers;
@@ -259,6 +258,8 @@ class GameEngine {
     }
 
     // Species-based consumption and research from the whole population.
+    let naturalResearch = 0;
+
     for (const [speciesId, entry] of Object.entries(this.state.species)) {
       if (entry.count <= 0) {continue;}
 
@@ -273,6 +274,16 @@ class GameEngine {
 
       // Every person of this species produces their base research per tick.
       this.state.resources.research += speciesData.baseResearch * entry.count;
+      naturalResearch += speciesData.baseResearch * entry.count;
+    }
+
+    // Chief job: each chief adds research equal to the total natural population
+    // research, modified by the chief's stats (wisdom primary, charisma secondary).
+    const chiefJob = this.state.jobs['chief'];
+    if (chiefJob && chiefJob.workers > 0 && naturalResearch > 0) {
+      const chiefStats = this.getJobAverageStats(chiefJob);
+      const chiefFactor = getJobFactor({ primary: 'wisdom', secondary: 'charisma' }, chiefStats);
+      this.state.resources.research += naturalResearch * chiefJob.workers * chiefFactor;
     }
 
     // Clamp resources to their storage caps.
@@ -1419,6 +1430,15 @@ class GameEngine {
       rates.stone -= speciesData.baseConsumption.stone * entry.count;
       rates.gold -= speciesData.baseConsumption.gold * entry.count;
       rates.research += speciesData.baseResearch * entry.count;
+    }
+
+    // Chief job: each chief adds research equal to the total natural population
+    // research, modified by the chief's stats (wisdom primary, charisma secondary).
+    const chiefJob = this.state.jobs['chief'];
+    if (chiefJob && chiefJob.workers > 0) {
+      const chiefStats = this.getJobAverageStats(chiefJob);
+      const chiefFactor = getJobFactor({ primary: 'wisdom', secondary: 'charisma' }, chiefStats);
+      rates.research += rates.research * chiefJob.workers * chiefFactor;
     }
 
     return rates;

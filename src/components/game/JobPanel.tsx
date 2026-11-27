@@ -4,6 +4,7 @@ import type { JSX } from '@solidjs/web';
 import { createDragContext, createDraggable, createDroppable } from '@solid-primitives/drag-drop';
 import { getGameState } from '../../hooks/useGameState.js';
 import { getAvailableJobIds, JOB_STATS } from '../../data/jobs.js';
+import { SPECIES } from '../../data/species.js';
 import type { JobStats } from '../../systems/stats.js';
 import { getWeightedStatFactor, getAverageStats, PRIMARY_WEIGHT, SECONDARY_WEIGHT } from '../../systems/stats.js';
 import { NEUTRAL_STAT, STAT_LABELS } from '../../data/species.js';
@@ -31,8 +32,9 @@ const getJobTooltip = (
   }
 
   const jobStats: JobStats | undefined = JOB_STATS[jobId];
+  const hasWorkers = Object.values(species).some((c) => c > 0);
 
-  if (!jobStats || !Object.values(species).some((c) => c > 0)) {
+  if (!jobStats && jobId !== 'chief' && !hasWorkers) {
     return <div class="tooltip-description">{job.description}</div>;
   }
 
@@ -64,10 +66,10 @@ const getJobTooltip = (
     return `Avg ${label}: ${value} (from ${parts})`;
   };
 
-  const primaryFactor = jobStats.primary
+  const primaryFactor = jobStats?.primary
     ? getWeightedStatFactor(avg[jobStats.primary], PRIMARY_WEIGHT)
     : 1;
-  const secondaryFactor = jobStats.secondary
+  const secondaryFactor = jobStats?.secondary
     ? getWeightedStatFactor(avg[jobStats.secondary], SECONDARY_WEIGHT)
     : 1;
 
@@ -75,14 +77,52 @@ const getJobTooltip = (
   const producedResource = Object.entries(job.production)
     .find(([, rate]) => rate > 0);
 
+  // Chief special case: shows stats and research bonus based on pop.
+  if (jobId === 'chief' && hasWorkers) {
+    const chiefFactor = getWeightedStatFactor(avg['wisdom'], PRIMARY_WEIGHT)
+      * getWeightedStatFactor(avg['charisma'], SECONDARY_WEIGHT);
+
+    // Compute natural research from the whole population.
+    // baseResearch is on the catalog SPECIES array, not on state species.
+    let naturalResearch = 0;
+    for (const [speciesId, entry] of Object.entries(state.species)) {
+      if (entry.count <= 0) {continue;}
+      const catalog = SPECIES.find((s) => s.id === speciesId);
+      if (catalog) {
+        naturalResearch += catalog.baseResearch * entry.count;
+      }
+    }
+    const bonus = naturalResearch * job.workers * chiefFactor;
+
+    return (
+      <div class="tooltip-job">
+        <div class="tooltip-description">{job.description}</div>
+        <div class="tooltip-divider" />
+        <div class="tooltip-stat">{statLine('wisdom')}</div>
+        <div class="tooltip-stat">{statLine('charisma')}</div>
+        <div class="tooltip-divider" />
+        <div class="tooltip-stat">Net research bonus:</div>
+        <div class="tooltip-stat">
+          {`${naturalResearch.toFixed(2)} natural/tick`}
+        </div>
+        <div class="tooltip-stat">
+          {`× ${chiefFactor.toFixed(2)} (wisdom ${primaryFactor.toFixed(2)}, charisma ${secondaryFactor.toFixed(2)})`}
+        </div>
+        <div class="tooltip-stat">
+          {`= +${bonus.toFixed(2)}/tick`}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div class="tooltip-job">
       <div class="tooltip-description">{job.description}</div>
       <div class="tooltip-divider" />
-      {jobStats.primary && (
+      {jobStats?.primary && (
         <div class="tooltip-stat">{statLine(jobStats.primary)}</div>
       )}
-      {jobStats.secondary && (
+      {jobStats?.secondary && (
         <div class="tooltip-stat">{statLine(jobStats.secondary)}</div>
       )}
       <div class="tooltip-divider" />
@@ -92,12 +132,12 @@ const getJobTooltip = (
           <div class="tooltip-stat">
             {`${producedResource[1].toFixed(2)} ${producedResource[0]}/tick`}
           </div>
-          {jobStats.primary && (
+          {jobStats?.primary && (
             <div class="tooltip-stat">
               {`× ${primaryFactor.toFixed(2)} (from ${STAT_LABELS[jobStats.primary]})`}
             </div>
           )}
-          {jobStats.secondary && (
+          {jobStats?.secondary && (
             <div class="tooltip-stat">
               {`× ${secondaryFactor.toFixed(2)} (from ${STAT_LABELS[jobStats.secondary]})`}
             </div>

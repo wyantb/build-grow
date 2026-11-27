@@ -3,7 +3,7 @@ import GameEngine from '../gameEngine.js';
 import { createTestWorld } from './testWorld.js';
 
 describe('chief research', () => {
-  it('chief produces base research per tick, modified by stats', () => {
+  it('one chief doubles total natural research', () => {
     const totalPop = 5;
 
     // Baseline: all 5 are farmers, no chief
@@ -14,10 +14,10 @@ describe('chief research', () => {
     }));
 
     const baselineRates = baseline.getTickRates();
-    // 5 humans * 0.02 natural research
+    // 5 humans * 0.02 = 0.1
     expect(baselineRates.research).toBeCloseTo(0.1, 4);
 
-    // With chief: 4 farmers + 1 chief (neutral stats, so factor = 1)
+    // With chief: 4 farmers + 1 chief (neutral stats, factor = 1)
     const withChief = new GameEngine(createTestWorld({
       population: totalPop,
       buildings: ['farm', 'estate'],
@@ -25,49 +25,50 @@ describe('chief research', () => {
     }));
 
     const chiefRates = withChief.getTickRates();
-    // 5 * 0.02 species + 1 * 0.02 * 1.0 (neutral stats) = 0.12
-    expect(chiefRates.research).toBeCloseTo(0.12, 4);
+    // Natural: 5 * 0.02 = 0.1, Chief bonus: 0.1 * 1 * 1.0 = 0.1, Total: 0.2
+    expect(chiefRates.research).toBeCloseTo(0.2, 4);
 
-    // Also verify the actual tick
+    // Verify tick() applies the same bonus
     baseline.runTicks(1);
     withChief.runTicks(1);
 
     const baselineAfter = baseline.getState().resources.research;
     const chiefAfter = withChief.getState().resources.research;
 
-    expect(chiefAfter).toBeGreaterThan(baselineAfter);
+    expect(chiefAfter).toBeCloseTo(baselineAfter * 2, 4);
+  });
+
+  it('two chiefs triples total natural research', () => {
+    const totalPop = 5;
+
+    const withTwoChiefs = new GameEngine(createTestWorld({
+      population: totalPop,
+      buildings: ['farm', 'estate'],
+      workers: { farmer: 3, chief: 2 },
+    }));
+
+    const rates = withTwoChiefs.getTickRates();
+    // Natural: 5 * 0.02 = 0.1, Chief bonus: 0.1 * 2 * 1.0 = 0.2, Total: 0.3
+    expect(rates.research).toBeCloseTo(0.3, 4);
   });
 
   it('chief research scales with wisdom (primary) and charisma (secondary)', () => {
-    // Chief with high wisdom and charisma, 1 unemployed
+    const totalPop = 5;
+
+    // 4 farmers + 1 chief with high stats
     const withStatChief = new GameEngine(createTestWorld({
-      population: 2,
-      buildings: ['estate'],
-      workers: { chief: 1 },
+      population: totalPop,
+      buildings: ['farm', 'estate'],
+      workers: { farmer: 4, chief: 1 },
       species: { human: { wisdom: 150, charisma: 120 } },
     }));
 
-    // Species base research: 2 * 0.02 = 0.04
-    // Primary wisdom: 150/100 = 1.5, full weight
-    // Secondary charisma: 120/100 = 1.2, half weight => 1 + (1.2-1)*0.5 = 1.1
-    // Chief job: 0.02 * 1.5 * 1.1 = 0.033
-    // Total: 0.04 + 0.033 = 0.073
     const rates = withStatChief.getTickRates();
-    expect(rates.research).toBeCloseTo(0.073, 4);
-  });
-
-  it('chief job produces research on top of species base', () => {
-    // 1 chief, 1 unemployed — total pop 2 but only chief has a job
-    const chiefWorld = new GameEngine(createTestWorld({
-      population: 2,
-      buildings: ['estate'],
-      workers: { chief: 1 },
-    }));
-
-    const rates = chiefWorld.getTickRates();
-    // Species: 2 * 0.02 = 0.04
-    // Chief job: 1 * 0.02 * 1.0 = 0.02
-    // Total: 0.06
-    expect(rates.research).toBeCloseTo(0.06, 4);
+    // Natural: 5 * 0.02 = 0.1
+    // Chief factor: wisdom 150/100=1.5 (full) * charisma 120/100=1.2 (half weight => 1+(0.2)*0.5=1.1)
+    // = 1.5 * 1.1 = 1.65
+    // Chief bonus: 0.1 * 1 * 1.65 = 0.165
+    // Total: 0.1 + 0.165 = 0.265
+    expect(rates.research).toBeCloseTo(0.265, 4);
   });
 });
