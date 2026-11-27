@@ -1762,7 +1762,7 @@ body.light-mode .race-btn:hover:not(:disabled) {
 /* --- Research panel --- */
 .research-panel {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 8px;
   padding: 10px 0;
 }
@@ -1784,6 +1784,7 @@ body.light-mode .race-btn:hover:not(:disabled) {
   white-space: nowrap;
   transition: background-color 0.15s, border-color 0.15s;
   min-width: 120px;
+  flex: 0 1 auto;
 }
 
 body.light-mode .research-btn {
@@ -1842,6 +1843,17 @@ body.light-mode .research-btn-done {
 
 body.light-mode .tooltip-time {
   color: #b8860b;
+}
+
+/* --- Tooltip: availability with resources --- */
+.tooltip-available {
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: #6fbf73;
+}
+
+body.light-mode .tooltip-available {
+  color: #2e7d32;
 }
 
 /* --- Tooltip for research --- */

@@ -10,12 +10,41 @@ import type { BuildingType, BuildingCategory } from '../../data/buildings.js';
 import type { Resource } from '../../types/worldState.js';
 
 /**
- * How many seconds it takes to afford a cost at current income.
+ * How many seconds to accumulate a cost at current income rates,
+ * ignoring what the player already has.
  *
  * When multiple resources are needed, the slowest one decides.
- * Returns undefined when the cost is already met or no resources are needed.
+ * Returns undefined when the cost has no resources.
  */
-const timeToAfford = (cost: Resource, gameState: ReturnType<typeof getGameState>): number | undefined => {
+const timeToIncome = (cost: Resource, gameState: ReturnType<typeof getGameState>): number | undefined => {
+  const rates = gameState.getResourceRates();
+
+  let maxTime = 0;
+  let hasCost = false;
+
+  for (const key of ['wood', 'stone', 'food', 'gold'] as const) {
+    const needed = cost[key];
+    if (needed <= 0) {continue;}
+
+    hasCost = true;
+
+    const rate = rates[key];
+    const time = rate > 0 ? needed / rate : Infinity;
+    if (time > maxTime) {
+      maxTime = time;
+    }
+  }
+
+  return hasCost ? maxTime : undefined;
+};
+
+/**
+ * How many seconds until the player can afford a cost,
+ * taking current resources into account.
+ *
+ * Returns undefined when already affordable.
+ */
+const timeToAvailable = (cost: Resource, gameState: ReturnType<typeof getGameState>): number | undefined => {
   const rates = gameState.getResourceRates();
   const resources = gameState.getResources();
 
@@ -51,7 +80,7 @@ const timeToAfford = (cost: Resource, gameState: ReturnType<typeof getGameState>
  * >86400s: "24+ hours"
  */
 const formatTime = (seconds: number): string => {
-  if (seconds <= 0) {return '0s';}
+  if (seconds <= 0) {return 'now';}
   if (seconds < 60) {return `${Math.ceil(seconds)}s`;}
   if (seconds < 3600) {return `${(seconds / 60).toFixed(1)} min`;}
   if (seconds <= 86400) {return `${(seconds / 3600).toFixed(1)} h`;}
@@ -157,7 +186,8 @@ const BuildingGrid: Component = () => {
                                 }}
                               </Show>
                               <div class="tooltip-divider" />
-                              <div class="tooltip-time">To buy at current income: {affordable() ? 'now' : (formatTime(timeToAfford(scaledCost(), gameState) ?? 0))}</div>
+                              <div class="tooltip-time">To buy at current income: {affordable() ? 'now' : (formatTime(timeToIncome(scaledCost(), gameState) ?? 0))}</div>
+                              <div class="tooltip-available">Available in: {affordable() ? 'now' : (formatTime(timeToAvailable(scaledCost(), gameState) ?? 0))}</div>
                             </div>
                           }
                           placement="top"

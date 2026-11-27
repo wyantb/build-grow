@@ -23,14 +23,14 @@ const ResearchPanel: Component = () => {
   };
 
   /**
-   * How many seconds it takes to afford a technology at current income.
+   * How many seconds to accumulate the cost at current income rates,
+   * ignoring what the player already has.
    *
    * When multiple resources are needed, the slowest one decides.
-   * Returns undefined when the technology costs no resources.
+   * Returns undefined when the cost has no resources.
    */
-  const timeToAfford = (tech: TechnologyType): number | undefined => {
+  const timeToIncome = (tech: TechnologyType): number | undefined => {
     const rates = gameState.getResourceRates();
-    const resources = gameState.getResources();
     const cost = tech.cost;
 
     let maxTime = 0;
@@ -42,13 +42,8 @@ const ResearchPanel: Component = () => {
 
       hasCost = true;
 
-      const have = resources[key];
       const rate = rates[key];
-
-      if (have >= needed) {continue;}
-
-      const deficit = needed - have;
-      const time = rate > 0 ? deficit / rate : Infinity;
+      const time = rate > 0 ? needed / rate : Infinity;
       if (time > maxTime) {
         maxTime = time;
       }
@@ -58,15 +53,41 @@ const ResearchPanel: Component = () => {
   };
 
   /**
-   * Format a duration in seconds for display.
+   * How many seconds until the player can afford a technology,
+   * taking current resources into account.
    *
-   * <60s: whole seconds, rounded up
-   * 60s–3600s: X.Y minutes
-   * 3600s–86400s: X.Y hours
-   * >86400s: "24+ hours"
+   * Returns undefined when already affordable.
    */
+  const timeToAvailable = (tech: TechnologyType): number | undefined => {
+    const rates = gameState.getResourceRates();
+    const resources = gameState.getResources();
+    const cost = tech.cost;
+
+    let maxTime = 0;
+    let hasDeficit = false;
+
+    for (const key of ['wood', 'stone', 'food', 'gold', 'research'] as const) {
+      const needed = cost[key] ?? 0;
+      if (needed <= 0) {continue;}
+
+      const have = resources[key];
+      if (have >= needed) {continue;}
+
+      hasDeficit = true;
+
+      const deficit = needed - have;
+      const rate = rates[key];
+      const time = rate > 0 ? deficit / rate : Infinity;
+      if (time > maxTime) {
+        maxTime = time;
+      }
+    }
+
+    return hasDeficit ? maxTime : undefined;
+  };
+
   const formatTime = (seconds: number): string => {
-    if (seconds <= 0) {return '0s';}
+    if (seconds <= 0) {return 'now';}
     if (seconds < 60) {return `${Math.ceil(seconds)}s`;}
     if (seconds < 3600) {return `${(seconds / 60).toFixed(1)} min`;}
     if (seconds <= 86400) {return `${(seconds / 3600).toFixed(1)} h`;}
@@ -82,10 +103,16 @@ const ResearchPanel: Component = () => {
           const prereqsMet = () => canResearchTech(tech().id);
           const affordable = () => canAffordTech(tech().id);
 
-          const buyTime = () => {
-            const time = timeToAfford(tech());
+          const incomeTime = () => {
+            const time = timeToIncome(tech());
 
             return time !== undefined ? formatTime(time) : null;
+          };
+
+          const availableTime = () => {
+            const time = timeToAvailable(tech());
+
+            return affordable() ? 'now' : (time !== undefined ? formatTime(time) : null);
           };
 
           return (
@@ -99,8 +126,10 @@ const ResearchPanel: Component = () => {
                       <span class="cost">{tech().cost.research} research</span>
                     </Show>
                   </div>
-                  <Show when={!isResearched() && buyTime()}>
-                    <div class="tooltip-time">To buy at current income: {buyTime()}</div>
+                  <Show when={!isResearched() && incomeTime()}>
+                    <div class="tooltip-divider" />
+                    <div class="tooltip-time">To buy at current income: {incomeTime()}</div>
+                    <div class="tooltip-available">Available in: {availableTime()}</div>
                   </Show>
                 </div>
               }

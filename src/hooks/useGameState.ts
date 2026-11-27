@@ -5,6 +5,7 @@ import { createInitialState } from '../types/worldState.js';
 import { BUILDING_TYPES, getBuildingType } from '../data/buildings.js';
 import type { BuildingType } from '../data/buildings.js';
 import type { TechnologyType } from '../data/technologies.js';
+import { getTechnology } from '../data/technologies.js';
 import { getTradeCapacity } from '../data/market.js';
 import type { MarketResource } from '../data/market.js';
 import type { MarketAction, MarketFlow } from '../systems/marketSystem.js';
@@ -708,12 +709,25 @@ export const useGameState = () => {
   // Technology catalog for the UI
   const getTechnologyCatalog = (): TechnologyType[] => gameEngine.getTechnologyCatalog();
 
+  // Read technology state from the Solid store so the UI reacts when
+  // research points change or a technology is completed.
   const isTechnologyResearched = (techId: string): boolean =>
-    gameEngine.isTechnologyResearched(techId);
+    state.researchedTechnologies.includes(techId);
 
-  const canResearch = (techId: string): boolean => gameEngine.canResearch(techId);
+  const canResearch = (techId: string): boolean => {
+    const tech = getTechnology(techId);
+    if (!tech) {return false;}
+    if (isTechnologyResearched(techId)) {return false;}
 
-  const canAffordResearch = (techId: string): boolean => gameEngine.canAffordResearch(techId);
+    return tech.prereqs.every((prereq) => isTechnologyResearched(prereq));
+  };
+
+  const canAffordResearch = (techId: string): boolean => {
+    const tech = getTechnology(techId);
+    if (!tech) {return false;}
+
+    return state.resources.research >= (tech.cost.research ?? 0);
+  };
 
   const doResearch = (techId: string): boolean => {
     const researched = gameEngine.researchTechnology(techId);
