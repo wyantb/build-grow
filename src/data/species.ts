@@ -7,7 +7,7 @@
  */
 
 /** Resource keys the engine tracks. */
-type Resource = { wood: number; stone: number; food: number; gold: number };
+type Resource = { wood: number; stone: number; food: number; gold: number; research: number; clay: number };
 
 /** The stats a creature has. */
 export interface Stats {
@@ -108,7 +108,7 @@ export const SPECIES: SpeciesType[] = [
       charisma: 80,
       manaSensitivity: 5,
     },
-    baseConsumption: { wood: 0, stone: 0, food: 0.025, gold: 0 },
+    baseConsumption: { wood: 0, stone: 0, food: 0.025, gold: 0, research: 0, clay: 0 },
     baseResearch: 0.02,
   },
   {
@@ -124,7 +124,7 @@ export const SPECIES: SpeciesType[] = [
       charisma: 120,
       manaSensitivity: 100,
     },
-    baseConsumption: { wood: 0, stone: 0, food: 0.020, gold: 0 },
+    baseConsumption: { wood: 0, stone: 0, food: 0.020, gold: 0, research: 0, clay: 0 },
     baseResearch: 0.022,
   },
 ];

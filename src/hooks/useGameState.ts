@@ -131,6 +131,7 @@ export const useGameState = () => {
     food: 0,
     gold: 0,
     research: 0,
+    clay: 0,
   });
 
   // Set resource rates from external source (game engine)
@@ -162,6 +163,7 @@ export const useGameState = () => {
       state.resources.food = engineState.resources.food;
       state.resources.gold = engineState.resources.gold;
       state.resources.research = engineState.resources.research;
+      state.resources.clay = engineState.resources.clay;
 
       for (const [jobId, job] of Object.entries(engineState.jobs)) {
         if (state.jobs[jobId]) {
@@ -248,6 +250,7 @@ export const useGameState = () => {
       state.resources.food = engineState.resources.food;
       state.resources.gold = engineState.resources.gold;
       state.resources.research = engineState.resources.research;
+      state.resources.clay = engineState.resources.clay;
 
       // The order is written onto the array the store already holds, so
       // only the places that really moved notify their readers.
@@ -596,6 +599,7 @@ export const useGameState = () => {
     food: 0,
     gold: 0,
     research: 0,
+    clay: 0,
   });
 
   // The market's own per-second rates, with no job production mixed in.
@@ -605,6 +609,7 @@ export const useGameState = () => {
     food: 0,
     gold: 0,
     research: 0,
+    clay: 0,
   });
 
   // The units bought and sold per second, split by direction.
@@ -636,10 +641,13 @@ export const useGameState = () => {
    * Gold is uncapped. Read from the mirrored building counts so the figure
    * stays reactive. Each building that declares a storageBonus in the catalog
    * adds its per-copy amount to the relevant cap.
+   * Clay storage is only revealed once clay making is researched.
+   * Each ceramist employed makes sheds 5% more spacious.
    */
-  const getMaxStorage = (resource: 'wood' | 'stone' | 'food' | 'research'): number => {
+  const getMaxStorage = (resource: 'wood' | 'stone' | 'food' | 'research' | 'clay'): number => {
     let woodStoneBonus = 0;
     let foodBonus = 0;
+    let clayBonus = 0;
 
     for (const type of BUILDING_TYPES) {
       const bonus = type.storageBonus;
@@ -652,7 +660,14 @@ export const useGameState = () => {
       if (bonus.food) {
         foodBonus += count * bonus.food;
       }
+      if (bonus.clay) {
+        clayBonus += count * bonus.clay;
+      }
     }
+
+    // Each ceramist makes sheds 5% more spacious.
+    const ceramistWorkers = state.jobs['ceramist']?.workers ?? 0;
+    const ceramistShedMultiplier = 1 + 0.05 * ceramistWorkers;
 
     switch (resource) {
       case 'wood':
@@ -662,6 +677,12 @@ export const useGameState = () => {
         return state.cityCenter.storageFood + foodBonus;
       case 'research':
         return state.cityCenter.storageResearch;
+      case 'clay':
+        if (!isTechnologyResearched('clay_making')) {
+          return 0;
+        }
+
+        return state.cityCenter.storageClay + clayBonus * ceramistShedMultiplier;
     }
   };
 
@@ -673,7 +694,7 @@ export const useGameState = () => {
    * non-zero count).
    */
   const getStorageBreakdown = (
-    resource: 'wood' | 'stone' | 'food' | 'research',
+    resource: 'wood' | 'stone' | 'food' | 'research' | 'clay',
   ): Array<{ label: string; value: number }> => {
     const entries: Array<{ label: string; value: number }> = [];
 
@@ -686,7 +707,7 @@ export const useGameState = () => {
         if (count === 0) {continue;}
         entries.push({ label: type.name, value: count * bonus });
       }
-    } else {
+    } else if (resource === 'food') {
       entries.push({ label: 'City Center', value: state.cityCenter.storageFood });
       for (const type of BUILDING_TYPES) {
         const bonus = type.storageBonus?.food;
@@ -694,6 +715,19 @@ export const useGameState = () => {
         const count = state.buildingCounts[type.id] ?? 0;
         if (count === 0) {continue;}
         entries.push({ label: type.name, value: count * bonus });
+      }
+    } else if (resource === 'research') {
+      entries.push({ label: 'City Center', value: state.cityCenter.storageResearch });
+    } else if (resource === 'clay') {
+      entries.push({ label: 'City Center', value: state.cityCenter.storageClay });
+      const ceramistWorkers = state.jobs['ceramist']?.workers ?? 0;
+      const ceramistShedMultiplier = 1 + 0.05 * ceramistWorkers;
+      for (const type of BUILDING_TYPES) {
+        const bonus = type.storageBonus?.clay;
+        if (!bonus) {continue;}
+        const count = state.buildingCounts[type.id] ?? 0;
+        if (count === 0) {continue;}
+        entries.push({ label: type.name, value: count * bonus * ceramistShedMultiplier });
       }
     }
 

@@ -11,6 +11,7 @@ export const ResourceSchema = z.object({
   food: z.number(),
   gold: z.number(),
   research: z.number(),
+  clay: z.number(),
 });
 
 export type Resource = z.infer<typeof ResourceSchema>;
@@ -159,6 +160,8 @@ export const CityCenterSchema = z.object({
   storageFood: z.number(),
   /** Base storage capacity for research. */
   storageResearch: z.number(),
+  /** Base storage capacity for clay (revealed once clay making is researched). */
+  storageClay: z.number(),
 });
 
 export type CityCenterState = z.infer<typeof CityCenterSchema>;
@@ -227,6 +230,7 @@ export const createInitialState = (): WorldState => {
       food: 500,
       gold: 0,
       research: 0,
+      clay: 0,
     },
     population: startingPopulation,
     jobs: Object.fromEntries(
@@ -270,6 +274,7 @@ export const createInitialState = (): WorldState => {
       storageWoodStone: 750,
       storageFood: 500,
       storageResearch: 200,
+      storageClay: 250,
     },
     rebirthPool: {
       human: 5,

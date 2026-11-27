@@ -513,6 +513,16 @@ body.light-mode .resources-display > .resource-row:not(.population-row) {
   border-bottom: 1px solid #e0e0e0;
 }
 
+/* Solid divider between resource groups */
+.resource-divider {
+  border-bottom: 2px solid #555;
+  margin: 2px 0;
+}
+
+body.light-mode .resource-divider {
+  border-bottom: 2px solid #ccc;
+}
+
 .header-name, .resource-name {
   font-weight: bold;
   flex: 1;

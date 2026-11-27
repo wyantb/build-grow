@@ -20,6 +20,7 @@ export interface BuildingType {
   storageBonus?: {
     woodStone?: number;
     food?: number;
+    clay?: number;
   };
 }
 
@@ -28,59 +29,73 @@ export const BUILDING_TYPES: BuildingType[] = [
     id: 'hut',
     name: 'Hut',
     description: 'Basic housing for your population; provides 2 base pop capacity.',
-    cost: { wood: 20, stone: 10, food: 0, gold: 0, research: 0 },
+    cost: { wood: 20, stone: 10, food: 0, gold: 0, research: 0, clay: 0 },
     category: 'Residential Block',
   },
   {
     id: 'market',
     name: 'Market',
     description: 'Provides 1 merchant job; enabling resource trading.',
-    cost: { wood: 30, stone: 30, food: 15, gold: 0, research: 0 },
+    cost: { wood: 30, stone: 30, food: 15, gold: 0, research: 0, clay: 0 },
     category: 'Commercial District',
   },
   {
     id: 'caravanserai',
     name: 'Caravanserai',
     description: 'A trading house on the caravan route. It has no staff of its own, but it gives every merchant room for one more trade position.',
-    cost: { wood: 500, stone: 500, food: 0, gold: 0, research: 0 },
+    cost: { wood: 500, stone: 500, food: 0, gold: 0, research: 0, clay: 0 },
     category: 'Commercial District',
   },
   {
     id: 'lumberjack',
     name: 'Lumberjack Post',
     description: 'Provides work for lumberjacks; increasing wood production.',
-    cost: { wood: 25, stone: 15, food: 0, gold: 0, research: 0 },
+    cost: { wood: 25, stone: 15, food: 0, gold: 0, research: 0, clay: 0 },
     category: 'Rural District',
   },
   {
     id: 'quarry',
     name: 'Quarry',
     description: 'Provides work for quarry workers; increasing stone production.',
-    cost: { wood: 20, stone: 25, food: 0, gold: 0, research: 0 },
+    cost: { wood: 20, stone: 25, food: 0, gold: 0, research: 0, clay: 0 },
     category: 'Rural District',
   },
   {
     id: 'farm',
     name: 'Farm',
     description: 'Provides work for a farmer; increasing food production.',
-    cost: { wood: 35, stone: 0, food: 0, gold: 0, research: 0 },
+    cost: { wood: 35, stone: 0, food: 0, gold: 0, research: 0, clay: 0 },
     category: 'Rural District',
   },
   {
     id: 'shed',
     name: 'Shed',
     description: 'Stores a small amount of productive resources.',
-    cost: { wood: 30, stone: 10, food: 0, gold: 0, research: 0 },
-    storageBonus: { woodStone: 200 },
+    cost: { wood: 30, stone: 10, food: 0, gold: 0, research: 0, clay: 0 },
+    storageBonus: { woodStone: 200, clay: 50 },
     category: 'Storage',
   },
   {
     id: 'grain_silo',
     name: 'Grain Silo',
     description: 'Stores food for your people.',
-    cost: { wood: 40, stone: 20, food: 0, gold: 0, research: 0 },
+    cost: { wood: 40, stone: 20, food: 0, gold: 0, research: 0, clay: 0 },
     storageBonus: { food: 500 },
     category: 'Storage',
+  },
+  {
+    id: 'pottery_studio',
+    name: 'Pottery Studio',
+    description: 'A workshop for shaping clay into useful wares.',
+    cost: { wood: 30, stone: 80, food: 0, gold: 0, research: 0, clay: 0 },
+    category: 'Commercial District',
+  },
+  {
+    id: 'estate',
+    name: 'Estate',
+    description: 'A grand hall for the chief to govern and inspire.',
+    cost: { wood: 150, stone: 150, food: 0, gold: 0, research: 0, clay: 0 },
+    category: 'Commercial District',
   },
 ];
 
@@ -113,5 +128,6 @@ export function getScaledCost(cost: Resource, count: number): Resource {
     food: Math.ceil(cost.food * factor),
     gold: Math.ceil(cost.gold * factor),
     research: Math.ceil((cost.research ?? 0) * factor),
+    clay: Math.ceil((cost.clay ?? 0) * factor),
   };
 }

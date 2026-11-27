@@ -28,7 +28,7 @@ import type { TechnologyType } from '../data/technologies.js';
 export { TICKS_PER_SECOND };
 
 /** Resource keys the engine tracks. */
-const RESOURCE_KEYS = ['wood', 'stone', 'food', 'gold', 'research'] as const;
+const RESOURCE_KEYS = ['wood', 'stone', 'food', 'gold', 'research', 'clay'] as const;
 
 /**
  * The gold a rebirth costs.
@@ -247,12 +247,25 @@ class GameEngine {
       this.state.resources.stone += job.production.stone * job.workers * factor;
       this.state.resources.food += job.production.food * job.workers * factor;
       this.state.resources.gold += job.production.gold * job.workers * factor;
+      this.state.resources.clay += job.production.clay * job.workers * factor;
 
-      // Job consumption (currently zero; reserved for future tier-2 products).
+      // Job consumption
       this.state.resources.wood -= job.consumption.wood * job.workers;
       this.state.resources.stone -= job.consumption.stone * job.workers;
       this.state.resources.food -= job.consumption.food * job.workers;
       this.state.resources.gold -= job.consumption.gold * job.workers;
+      this.state.resources.clay -= job.consumption.clay * job.workers;
+    }
+
+    // Compute natural population research (before chief bonus).
+    let naturalResearch = 0;
+    for (const [speciesId, entry] of Object.entries(this.state.species)) {
+      if (entry.count <= 0) {continue;}
+
+      const speciesData = SPECIES.find((s) => s.id === speciesId);
+      if (!speciesData) {continue;}
+
+      naturalResearch += speciesData.baseResearch * entry.count;
     }
 
     // Species-based consumption and research from the whole population.
@@ -270,6 +283,12 @@ class GameEngine {
 
       // Every person of this species produces their base research per tick.
       this.state.resources.research += speciesData.baseResearch * entry.count;
+    }
+
+    // Chief job: each chief adds research equal to the natural population research.
+    const chiefJob = this.state.jobs['chief'];
+    if (chiefJob && chiefJob.workers > 0 && naturalResearch > 0) {
+      this.state.resources.research += naturalResearch * chiefJob.workers;
     }
 
     // Clamp resources to their storage caps.
@@ -412,10 +431,13 @@ class GameEngine {
    * its own city-center cap. Research has its own city-center cap.
    * Each building that declares a storageBonus in the catalog adds its
    * per-copy amount to the relevant cap.
+   * Clay storage is only revealed once clay making is researched.
+   * Each ceramist employed makes sheds 5% more spacious.
    */
-  getMaxStorage(resource: 'wood' | 'stone' | 'food' | 'research'): number {
+  getMaxStorage(resource: 'wood' | 'stone' | 'food' | 'research' | 'clay'): number {
     let woodStoneBonus = 0;
     let foodBonus = 0;
+    let clayBonus = 0;
 
     for (const type of BUILDING_TYPES) {
       const bonus = type.storageBonus;
@@ -428,7 +450,14 @@ class GameEngine {
       if (bonus.food) {
         foodBonus += count * bonus.food;
       }
+      if (bonus.clay) {
+        clayBonus += count * bonus.clay;
+      }
     }
+
+    // Each ceramist makes sheds 5% more spacious.
+    const ceramistWorkers = this.state.jobs['ceramist']?.workers ?? 0;
+    const ceramistShedMultiplier = 1 + 0.05 * ceramistWorkers;
 
     switch (resource) {
       case 'wood':
@@ -438,6 +467,12 @@ class GameEngine {
         return this.state.cityCenter.storageFood + foodBonus;
       case 'research':
         return this.state.cityCenter.storageResearch;
+      case 'clay':
+        if (!this.isTechnologyResearched('clay_making')) {
+          return 0;
+        }
+
+        return this.state.cityCenter.storageClay + clayBonus * ceramistShedMultiplier;
     }
   }
 
@@ -463,6 +498,10 @@ class GameEngine {
     this.state.resources.research = Math.min(
       this.state.resources.research,
       this.getMaxStorage('research'),
+    );
+    this.state.resources.clay = Math.min(
+      this.state.resources.clay,
+      this.getMaxStorage('clay'),
     );
   }
 
@@ -1289,6 +1328,7 @@ class GameEngine {
       food: tickRates.food * ticksPerSecond,
       gold: tickRates.gold * ticksPerSecond,
       research: tickRates.research * ticksPerSecond,
+      clay: tickRates.clay * ticksPerSecond,
     };
   }
 
@@ -1364,7 +1404,7 @@ class GameEngine {
    * cannot leak into the rate.
    */
   getTickRates(): Resource {
-    const rates: Resource = { wood: 0, stone: 0, food: 0, gold: 0, research: 0 };
+    const rates: Resource = { wood: 0, stone: 0, food: 0, gold: 0, research: 0, clay: 0 };
 
     for (const job of Object.values(this.state.jobs)) {
       if (job.workers <= 0) {continue;}
@@ -1417,6 +1457,7 @@ class GameEngine {
       food: tickRates.food * ticksPerSecond,
       gold: tickRates.gold * ticksPerSecond,
       research: tickRates.research * ticksPerSecond,
+      clay: tickRates.clay * ticksPerSecond,
     };
   }
 

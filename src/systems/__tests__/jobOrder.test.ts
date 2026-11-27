@@ -14,7 +14,7 @@ const visibleJobs = (engine: GameEngine): string[] =>
   );
 
 // After normalization, defaultable jobs (settler, unemployed) are at the end.
-const normalizedDefaultOrder = ['lumberjack', 'quarrier', 'farmer', 'merchant', 'settler', 'unemployed'];
+const normalizedDefaultOrder = ['lumberjack', 'quarrier', 'farmer', 'merchant', 'ceramist', 'chief', 'settler', 'unemployed'];
 
 describe('the priority order of the jobs', () => {
   it('starts with the normalized catalog order', () => {
@@ -113,7 +113,7 @@ describe('the priority order of the jobs', () => {
     // moves past the quarrier to the top of what the player can see.
     const engine = new GameEngine(createTestWorld({
       buildings: ['quarry', 'farm'],
-      jobOrder: ['lumberjack', 'quarrier', 'farmer', 'merchant', 'settler', 'unemployed'],
+      jobOrder: ['lumberjack', 'quarrier', 'farmer', 'merchant', 'ceramist', 'chief', 'settler', 'unemployed'],
     }));
 
     expect(visibleJobs(engine)).toEqual(['quarrier', 'farmer', 'settler', 'unemployed']);
@@ -126,7 +126,7 @@ describe('the priority order of the jobs', () => {
   it('tells the player when a job cannot move', () => {
     const engine = new GameEngine(createTestWorld({
       buildings: ['quarry', 'farm'],
-      jobOrder: ['lumberjack', 'quarrier', 'farmer', 'merchant', 'settler', 'unemployed'],
+      jobOrder: ['lumberjack', 'quarrier', 'farmer', 'merchant', 'ceramist', 'chief', 'settler', 'unemployed'],
     }));
 
     // The quarrier is the first job on screen, so it cannot move up.
@@ -216,7 +216,7 @@ describe('moving a job to a place', () => {
     // moves to the place of the quarrier, the first job on screen.
     const engine = new GameEngine(createTestWorld({
       buildings: ['quarry', 'farm'],
-      jobOrder: ['lumberjack', 'quarrier', 'farmer', 'merchant', 'settler', 'unemployed'],
+      jobOrder: ['lumberjack', 'quarrier', 'farmer', 'merchant', 'ceramist', 'chief', 'settler', 'unemployed'],
     }));
 
     expect(visibleJobs(engine)).toEqual(['quarrier', 'farmer', 'settler', 'unemployed']);
@@ -231,7 +231,7 @@ describe('moving a job to a place', () => {
     // in the full order.
     const engine = new GameEngine(createTestWorld({
       buildings: ['quarry', 'farm'],
-      jobOrder: ['lumberjack', 'quarrier', 'farmer', 'merchant', 'settler', 'unemployed'],
+      jobOrder: ['lumberjack', 'quarrier', 'farmer', 'merchant', 'ceramist', 'chief', 'settler', 'unemployed'],
     }));
 
     engine.reorderJob('farmer', 0);
@@ -259,7 +259,7 @@ describe('which jobs the player sees', () => {
   it('shows the available jobs in the priority order', () => {
     const engine = new GameEngine(createTestWorld({
       buildings: ['lumberjack', 'farm'],
-      jobOrder: ['farmer', 'lumberjack', 'quarrier', 'merchant', 'settler', 'unemployed'],
+      jobOrder: ['farmer', 'lumberjack', 'quarrier', 'merchant', 'ceramist', 'chief', 'settler', 'unemployed'],
     }));
 
     expect(visibleJobs(engine)).toEqual(['farmer', 'lumberjack', 'settler', 'unemployed']);
@@ -270,7 +270,7 @@ describe('the priority order through a save', () => {
   it('keeps the order through a round trip', () => {
     const engine = new GameEngine(createTestWorld({
       buildings: ['lumberjack', 'farm'],
-      jobOrder: ['farmer', 'lumberjack', 'quarrier', 'merchant', 'settler', 'unemployed'],
+      jobOrder: ['farmer', 'lumberjack', 'quarrier', 'merchant', 'ceramist', 'chief', 'settler', 'unemployed'],
     }));
 
     const payload = serializeState(engine.getState());
@@ -281,6 +281,8 @@ describe('the priority order through a save', () => {
       'lumberjack',
       'quarrier',
       'merchant',
+      'ceramist',
+      'chief',
       'settler',
       'unemployed',
     ]);
@@ -289,7 +291,7 @@ describe('the priority order through a save', () => {
   it('keeps the order after a move', () => {
     const engine = new GameEngine(createTestWorld({
       buildings: ['lumberjack', 'farm'],
-      jobOrder: ['farmer', 'lumberjack', 'quarrier', 'merchant', 'settler', 'unemployed'],
+      jobOrder: ['farmer', 'lumberjack', 'quarrier', 'merchant', 'ceramist', 'chief', 'settler', 'unemployed'],
     }));
 
     engine.moveJob('farmer', 1);
@@ -303,7 +305,7 @@ describe('the priority order through a save', () => {
   it('keeps the order after a drag', () => {
     const engine = new GameEngine(createTestWorld({
       buildings: ['lumberjack', 'farm'],
-      jobOrder: ['farmer', 'lumberjack', 'quarrier', 'merchant', 'settler', 'unemployed'],
+      jobOrder: ['farmer', 'lumberjack', 'quarrier', 'merchant', 'ceramist', 'chief', 'settler', 'unemployed'],
     }));
 
     engine.reorderJob('farmer', 1);
@@ -333,7 +335,7 @@ describe('the priority order through a save', () => {
     const engine = new GameEngine();
     const payload = serializeState(engine.getState());
 
-    payload.jobOrder = ['dragon', 'lumberjack', 'quarrier', 'farmer', 'merchant', 'settler', 'unemployed'];
+    payload.jobOrder = ['dragon', 'lumberjack', 'quarrier', 'farmer', 'merchant', 'ceramist', 'chief', 'settler', 'unemployed'];
 
     const loaded = deserializePayload(payload);
 

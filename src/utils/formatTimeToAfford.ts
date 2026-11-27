@@ -15,7 +15,7 @@ export function timeToIncome(
   let maxTime = 0;
   let hasCost = false;
 
-  for (const key of ['wood', 'stone', 'food', 'gold', 'research'] as const) {
+  for (const key of ['wood', 'stone', 'food', 'gold', 'research', 'clay'] as const) {
     const needed = cost[key] ?? 0;
     if (needed <= 0) {continue;}
 
@@ -47,7 +47,7 @@ export function timeToAvailable(
   let maxTime = 0;
   let hasDeficit = false;
 
-  for (const key of ['wood', 'stone', 'food', 'gold', 'research'] as const) {
+  for (const key of ['wood', 'stone', 'food', 'gold', 'research', 'clay'] as const) {
     const needed = cost[key] ?? 0;
     if (needed <= 0) {continue;}
 
