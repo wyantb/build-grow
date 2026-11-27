@@ -70,7 +70,7 @@ export const JOBS: Record<string, Omit<Job, 'workers' | 'species'>> = {
     capacity: 0, // set dynamically from buildings
     canDefault: false,
     // 2.5 × DEFAULT_CONSUMPTION (0.025) = 0.0625 food/tick
-    production: { wood: 0, stone: 0, food: 0.0625, gold: 0 },
+    production: { wood: 0, stone: 0, food: 0.08, gold: 0 },
     consumption: DEFAULT_CONSUMPTION,
   },
   merchant: {

@@ -79,7 +79,7 @@ export const BUILDING_TYPES: BuildingType[] = [
     description: 'A small storage facility for your various resources.',
     cost: { wood: 30, stone: 10, food: 0, gold: 0 },
     effect: 'Stores a small amount of productive resources.',
-    storageBonus: { woodStone: 200, food: 200 },
+    storageBonus: { woodStone: 200 },
     category: 'Storage',
   },
   {
