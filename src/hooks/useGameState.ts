@@ -213,6 +213,9 @@ export const useGameState = () => {
       state.rebirthPool.human = engineState.rebirthPool.human;
       state.rebirthPool.elf = engineState.rebirthPool.elf;
 
+      syncArray(state.unlockedBuildings, engineState.unlockedBuildings);
+      syncArray(state.researchedTechnologies, engineState.researchedTechnologies);
+
       syncPendingRebirth(state, engineState.pendingRebirth);
     });
 
