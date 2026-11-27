@@ -335,7 +335,7 @@ class GameEngine {
 
       this.balanceWorkers();
 
-      console.info(`A child is born. Population is now ${this.getPopulation()}.`);
+      console.info(`A child (${DEFAULT_SPECIES_ID}) is born. Population is now ${this.getPopulation()}.`);
 
       return;
     }
@@ -352,7 +352,7 @@ class GameEngine {
 
     this.balanceWorkers();
 
-    console.info(`A child is born. Population is now ${this.getPopulation()}.`);
+    console.info(`A child (${birthSpecies}) is born. Population is now ${this.getPopulation()}.`);
   }
 
   /**
