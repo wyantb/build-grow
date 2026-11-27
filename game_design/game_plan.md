@@ -120,7 +120,6 @@ button, which we may not even keep as a permanent mechanic.
 | Tech | Cost | Requires | Unlocks | Effect |
 |------|------|----------|---------|--------|
 | **Currency** | 22 knowledge, 10 wood | Housing (exists) | Gold resource (exists) | — |
-| **Grain Silo** | 80 knowledge | Irrigation, Basic Storage | **Grain Silo** | +500 max food |
 
 ### Tier 2: Bronze Age
 

@@ -21,6 +21,7 @@ export const JOB_STATS: Record<string, JobStats> = {
   quarrier: { primary: 'strength', secondary: 'constitution' },
   farmer: { primary: 'constitution', secondary: 'wisdom' },
   settler: { primary: 'intelligence', secondary: 'charisma' },
+  ceramist: { primary: 'intelligence', secondary: 'dexterity' },
 };
 
 export const JOBS: Record<string, Omit<Job, 'workers' | 'species'>> = {

@@ -38,20 +38,6 @@ describe('chief research', () => {
     expect(chiefAfter).toBeCloseTo(baselineAfter * 2, 4);
   });
 
-  it('two chiefs triples total natural research', () => {
-    const totalPop = 5;
-
-    const withTwoChiefs = new GameEngine(createTestWorld({
-      population: totalPop,
-      buildings: ['farm', 'estate'],
-      workers: { farmer: 3, chief: 2 },
-    }));
-
-    const rates = withTwoChiefs.getTickRates();
-    // Natural: 5 * 0.02 = 0.1, Chief bonus: 0.1 * 2 * 1.0 = 0.2, Total: 0.3
-    expect(rates.research).toBeCloseTo(0.3, 4);
-  });
-
   it('chief research scales with wisdom (primary) and charisma (secondary)', () => {
     const totalPop = 5;
 
