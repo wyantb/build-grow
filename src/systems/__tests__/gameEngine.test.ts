@@ -7,6 +7,8 @@ const TICKS_PER_SECOND = 5;
 describe('GameEngine resource rates', () => {
   it('reports the net per-tick and per-second food rate for one farmer', () => {
     // 4 population: 3 unemployed, 1 farmer.
+    // Each human eats 0.025/tick, so 4 humans = 0.1 consumption.
+    // Farmer produces 0.08/tick at neutral stats.
     const engine = new GameEngine(createTestWorld({
       population: 4,
       workers: { unemployed: 3 },
@@ -14,19 +16,19 @@ describe('GameEngine resource rates', () => {
     }));
     engine.assignWorkers('farmer', 1);
 
-    // Farmer produces 0.0625 food/tick and consumes 0.025 food/tick.
-    expect(engine.getTickRates().food).toBeCloseTo(0.0375, 10);
-    expect(engine.getResourceRates().food).toBeCloseTo(0.1875, 10);
+    expect(engine.getTickRates().food).toBeCloseTo(0.08 - 0.1, 10);
+    expect(engine.getResourceRates().food).toBeCloseTo((0.08 - 0.1) * TICKS_PER_SECOND, 10);
   });
 
-  it('nets unemployed workers to zero food', () => {
+  it('nets unemployed workers to species consumption', () => {
     const engine = new GameEngine(createTestWorld({
       population: 4,
       workers: { unemployed: 4 },
     }));
 
-    expect(engine.getTickRates().food).toBeCloseTo(0, 10);
-    expect(engine.getResourceRates().food).toBeCloseTo(0, 10);
+    // 4 humans each eat 0.025/tick; no food production.
+    expect(engine.getTickRates().food).toBeCloseTo(-0.1, 10);
+    expect(engine.getResourceRates().food).toBeCloseTo(-0.5, 10);
   });
 
   it('multiplies the per-tick rate by the tick frequency to get the per-second rate', () => {
@@ -60,46 +62,62 @@ describe('GameEngine resource rates', () => {
     expect(engine.getResourceRates().food).toBeCloseTo(rateBefore, 10);
   });
 
-  it('reports a rate of zero when no job is staffed', () => {
+  it('reports species consumption and research when no job is staffed', () => {
     const engine = new GameEngine(createTestWorld({ population: 4 }));
 
-    expect(engine.getResourceRates()).toEqual({
-      wood: 0,
-      stone: 0,
-      food: 0,
-      gold: 0,
-    });
+    // 4 humans each eat 0.025/tick and produce 0.02 research/tick.
+    expect(engine.getResourceRates().food).toBeCloseTo(-0.1 * TICKS_PER_SECOND, 10);
+    expect(engine.getResourceRates().research).toBeCloseTo(0.08 * TICKS_PER_SECOND, 10);
   });
 });
 
 describe('GameEngine batch ticking', () => {
   it('applies the same food growth over a batch of ticks as over a single tick loop', () => {
+    let seed = 46;
+    const rng = () => {
+      seed = (seed * 1664525 + 1013904223) & 0xffffffff;
+
+      return seed / 0xffffffff;
+    };
+
     const engine = new GameEngine(createTestWorld({
       population: 4,
       workers: { unemployed: 3 },
       buildings: ['farm'],
-      resources: { food: 200 },
-    }));
+      resources: { food: 3 },
+    }), rng);
     engine.assignWorkers('farmer', 1);
 
     const foodBefore = engine.getState().resources.food;
+    const tickRate = engine.getTickRates().food;
 
     engine.runTicks(100);
 
     const foodAfter = engine.getState().resources.food;
 
-    // 100 ticks at 0.0375 food/tick = 3.75 food.
-    expect(foodAfter - foodBefore).toBeCloseTo(3.75, 6);
+    // 100 ticks at the same net rate.
+    expect(foodAfter - foodBefore).toBeCloseTo(tickRate * 100, 6);
     expect(engine.getState().tick).toBe(100);
   });
 
   it('matches the single-tick path tick for tick', () => {
+    // Both engines get independent RNGs seeded identically so they see the
+    // same birth rolls.
+    const makeRng = () => {
+      let seed = 46;
+
+      return () => {
+        seed = (seed * 1664525 + 1013904223) & 0xffffffff;
+
+        return seed / 0xffffffff;
+      };
+    };
     const build = () => {
       const engine = new GameEngine(createTestWorld({
         population: 4,
         workers: { unemployed: 3 },
         buildings: ['farm'],
-      }));
+      }), makeRng());
       engine.assignWorkers('farmer', 1);
 
       return engine;

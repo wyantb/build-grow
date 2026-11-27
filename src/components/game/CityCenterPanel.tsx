@@ -7,7 +7,7 @@ import { BUILDING_TYPES } from '../../data/buildings.js';
 import { POPULATION_PER_HUT } from '../../systems/population.js';
 
 /** A shared dialog that is currently open. */
-type ActiveDialog = 'housing' | 'storage' | null;
+type ActiveDialog = 'housing' | 'storage' | 'research' | null;
 
 const CityCenterPanel: Component = () => {
   const gameState = getGameState();
@@ -19,6 +19,7 @@ const CityCenterPanel: Component = () => {
   const maxWood = createMemo(() => gameState.getMaxStorage('wood'));
   const maxStone = createMemo(() => gameState.getMaxStorage('stone'));
   const maxFood = createMemo(() => gameState.getMaxStorage('food'));
+  const maxResearch = createMemo(() => gameState.getMaxStorage('research'));
 
   // Storage bonus buildings
   const storageBuildings = BUILDING_TYPES.filter((b) => b.storageBonus);
@@ -75,6 +76,31 @@ const CityCenterPanel: Component = () => {
           >
             <span class="city-source-name">City Storage</span>
             <span class="city-source-value">{formatNumber(maxWood())} wood/stone, {formatNumber(maxFood())} food</span>
+          </button>
+        </Tooltip>
+      </section>
+
+      {/* Research Section */}
+      <section class="city-section">
+        <h3 class="city-section-heading">Research</h3>
+        <Tooltip
+          content={
+            <div class="tooltip-city-item">
+              <div class="tooltip-city-title">City Library</div>
+              <div class="tooltip-divider" />
+              <div class="tooltip-description">The city library provides a place to store the knowledge your people discover.</div>
+              <div class="tooltip-divider" />
+              <div class="tooltip-city-stat">Capacity: {formatNumber(gameState.state.cityCenter.storageResearch)} research</div>
+            </div>
+          }
+          placement="top"
+        >
+          <button
+            class="city-source-btn"
+            onClick={() => openDialog('research')}
+          >
+            <span class="city-source-name">City Library</span>
+            <span class="city-source-value">{formatNumber(maxResearch())} research</span>
           </button>
         </Tooltip>
       </section>
@@ -150,6 +176,28 @@ const CityCenterPanel: Component = () => {
                   </>
                 )}
               </For>
+            </div>
+          </div>
+        </div>
+      </Show>
+
+      {/* Research Breakdown Dialog */}
+      <Show when={activeDialog() === 'research'}>
+        <div class="dialog-overlay" onClick={closeDialog}>
+          <div class="dialog-panel" onClick={(e) => e.stopPropagation()}>
+            <div class="dialog-header">
+              <h3>Research Capacity</h3>
+              <button class="dialog-close" onClick={closeDialog} aria-label="Close">✕</button>
+            </div>
+            <div class="dialog-body">
+              <div class="dialog-row">
+                <span class="dialog-label">City Library</span>
+                <span class="dialog-value">{formatNumber(gameState.state.cityCenter.storageResearch)}</span>
+              </div>
+              <div class="dialog-row dialog-total-row">
+                <span class="dialog-label">Total Research</span>
+                <span class="dialog-value">{formatNumber(maxResearch())}</span>
+              </div>
             </div>
           </div>
         </div>

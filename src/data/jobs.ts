@@ -6,8 +6,8 @@ import type { JobStats } from '../systems/stats.js';
 // Lumberjack: 5 wood/s → 1.0/tick
 // Quarrier: 4 stone/s → 0.8/tick
 
-const ZERO: Resource = { wood: 0, stone: 0, food: 0, gold: 0 };
-const DEFAULT_CONSUMPTION = { wood: 0, stone: 0, food: 0.025, gold: 0 };
+const ZERO: Resource = { wood: 0, stone: 0, food: 0, gold: 0, research: 0 };
+const DEFAULT_CONSUMPTION = { wood: 0, stone: 0, food: 0, gold: 0, research: 0 };
 
 /**
  * The stats each job leans on.
@@ -30,7 +30,7 @@ export const JOBS: Record<string, Omit<Job, 'workers' | 'species'>> = {
     description: 'Workers with no role yet. From harvesting, they\'ll just manage to feed themselves.',
     capacity: 0, // uncapped
     canDefault: true,
-    production: { wood: 0, stone: 0, food: 0.025, gold: 0 },
+    production: { wood: 0, stone: 0, food: 0, gold: 0, research: 0 },
     consumption: DEFAULT_CONSUMPTION,
   },
   settler: {
@@ -40,7 +40,7 @@ export const JOBS: Record<string, Omit<Job, 'workers' | 'species'>> = {
     capacity: 0, // uncapped
     canDefault: true,
     // Per tick (5 ticks/sec): 0.5/5=0.1 wood, 0.2/5=0.04 stone, 0.1/5=0.02 food
-    production: { wood: 0.1, stone: 0.04, food: 0.01, gold: 0 },
+    production: { wood: 0.1, stone: 0.04, food: 0.01, gold: 0, research: 0 },
     consumption: DEFAULT_CONSUMPTION,
   },
   lumberjack: {
@@ -50,7 +50,7 @@ export const JOBS: Record<string, Omit<Job, 'workers' | 'species'>> = {
     capacity: 0, // set dynamically from buildings
     canDefault: false,
     // 5 wood/s → 1.0/tick
-    production: { wood: 1.0, stone: 0, food: 0, gold: 0 },
+    production: { wood: 1.0, stone: 0, food: 0, gold: 0, research: 0 },
     consumption: DEFAULT_CONSUMPTION,
   },
   quarrier: {
@@ -60,7 +60,7 @@ export const JOBS: Record<string, Omit<Job, 'workers' | 'species'>> = {
     capacity: 0, // set dynamically from buildings
     canDefault: false,
     // 4 stone/s → 0.8/tick
-    production: { wood: 0, stone: 0.8, food: 0, gold: 0 },
+    production: { wood: 0, stone: 0.8, food: 0, gold: 0, research: 0 },
     consumption: DEFAULT_CONSUMPTION,
   },
   farmer: {
@@ -69,8 +69,8 @@ export const JOBS: Record<string, Omit<Job, 'workers' | 'species'>> = {
     description: 'Grows food on farmland to feed the population.',
     capacity: 0, // set dynamically from buildings
     canDefault: false,
-    // 2.5 × DEFAULT_CONSUMPTION (0.025) = 0.0625 food/tick
-    production: { wood: 0, stone: 0, food: 0.08, gold: 0 },
+    // 2.5 × old DEFAULT_CONSUMPTION (0.025) = 0.0625 food/tick
+    production: { wood: 0, stone: 0, food: 0.08, gold: 0, research: 0 },
     consumption: DEFAULT_CONSUMPTION,
   },
   merchant: {

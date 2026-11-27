@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import GameEngine from '../gameEngine.js';
 import { JOBS, JOB_STATS } from '../../data/jobs.js';
-import { DEFAULT_SPECIES_ID, NEUTRAL_STATS } from '../../data/species.js';
+import { DEFAULT_SPECIES_ID, NEUTRAL_STATS, SPECIES } from '../../data/species.js';
 import type { Stats } from '../../types/worldState.js';
 import { getAverageStats, getJobFactor, getStatFactor, getWeightedStatFactor } from '../stats.js';
 import { createTestWorld } from './testWorld.js';
@@ -161,7 +161,7 @@ describe('a job staffed by one species', () => {
     expect(produced).toBeCloseTo(expected, 6);
   });
 
-  it('leaves the consumption of the job alone', () => {
+  it('leaves the consumption of the species alone', () => {
     const engine = new GameEngine(createTestWorld({
       population: 4,
       workers: { unemployed: 3 },
@@ -171,9 +171,9 @@ describe('a job staffed by one species', () => {
 
     engine.assignWorkers('lumberjack', 1);
 
-    // A lumberjack eats the same whatever their stats are, so the food
-    // the job costs is the same.
-    const expected = (baseRate('lumberjack', 'food') - JOBS['lumberjack']!.consumption.food);
+    // Consumption comes from the species, not the job, and is never scaled
+    // by stats. A lumberjack produces no food and the species eats its base.
+    const expected = -SPECIES.find((s) => s.id === 'human')!.baseConsumption.food * 4;
 
     expect(engine.getTickRates().food).toBeCloseTo(expected, 10);
   });
@@ -263,11 +263,11 @@ describe('a job with the stats of the design', () => {
 
     engine.assignWorkers('farmer', 1);
 
-    // A farmer produces food and eats food, so the food rate is the
-    // production scaled by the stats, less what the worker eats.
+    // A farmer produces food scaled by stats; consumption comes from the
+    // species and is not scaled.
     const rate = engine.getTickRates().food;
     const base = baseRate('farmer', 'food');
-    const eaten = JOBS['farmer']!.consumption.food;
+    const eaten = SPECIES.find((s) => s.id === 'human')!.baseConsumption.food * 4;
 
     expect(rate).toBeCloseTo((base * 0.8 * 0.95) - eaten, 10);
   });

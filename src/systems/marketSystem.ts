@@ -358,7 +358,7 @@ class MarketSystem {
    * reflects what the market actually does.
    */
   getTickRates(): Resource {
-    const rates: Resource = { wood: 0, stone: 0, food: 0, gold: 0 };
+    const rates: Resource = { wood: 0, stone: 0, food: 0, gold: 0, research: 0 };
 
     const plan = this.planTrades();
 

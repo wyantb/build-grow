@@ -9,7 +9,7 @@ describe('GameEngine.loadState', () => {
 
     const loaded = createTestWorld({
       population: 30,
-      resources: { wood: 999, stone: 0, food: 0, gold: 0 },
+      resources: { wood: 999, stone: 0, food: 0, gold: 0, research: 0 },
       workers: { lumberjack: 4 },
       buildings: ['hut', 'farm'],
     });
@@ -58,7 +58,7 @@ describe('GameEngine.loadState', () => {
 
     const loaded = createTestWorld({
       population: 10,
-      resources: { wood: 400, stone: 0, food: 0, gold: 0 },
+      resources: { wood: 400, stone: 0, food: 0, gold: 0, research: 0 },
       buildings: ['market'],
       workers: { merchant: 2 },
       marketSells: { wood: 2 },

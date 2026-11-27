@@ -128,6 +128,7 @@ export const useGameState = () => {
     stone: 0,
     food: 0,
     gold: 0,
+    research: 0,
   });
 
   // Set resource rates from external source (game engine)
@@ -587,6 +588,7 @@ export const useGameState = () => {
     stone: 0,
     food: 0,
     gold: 0,
+    research: 0,
   });
 
   // The market's own per-second rates, with no job production mixed in.
@@ -595,6 +597,7 @@ export const useGameState = () => {
     stone: 0,
     food: 0,
     gold: 0,
+    research: 0,
   });
 
   // The units bought and sold per second, split by direction.
@@ -627,7 +630,7 @@ export const useGameState = () => {
    * stays reactive. Each building that declares a storageBonus in the catalog
    * adds its per-copy amount to the relevant cap.
    */
-  const getMaxStorage = (resource: 'wood' | 'stone' | 'food'): number => {
+  const getMaxStorage = (resource: 'wood' | 'stone' | 'food' | 'research'): number => {
     let woodStoneBonus = 0;
     let foodBonus = 0;
 
@@ -650,6 +653,8 @@ export const useGameState = () => {
         return state.cityCenter.storageWoodStone + woodStoneBonus;
       case 'food':
         return state.cityCenter.storageFood + foodBonus;
+      case 'research':
+        return state.cityCenter.storageResearch;
     }
   };
 
@@ -661,7 +666,7 @@ export const useGameState = () => {
    * non-zero count).
    */
   const getStorageBreakdown = (
-    resource: 'wood' | 'stone' | 'food',
+    resource: 'wood' | 'stone' | 'food' | 'research',
   ): Array<{ label: string; value: number }> => {
     const entries: Array<{ label: string; value: number }> = [];
 

@@ -6,10 +6,10 @@ import { formatExact, formatNumber } from '../../utils/formatNumber.js';
 import Tooltip from '../ui/Tooltip.js';
 
 type ResourceRowDef = {
-  key: 'wood' | 'stone' | 'food' | 'gold';
+  key: 'wood' | 'stone' | 'food' | 'gold' | 'research';
   label: string;
   description: string;
-  cappedKey?: 'wood' | 'stone' | 'food';
+  cappedKey?: 'wood' | 'stone' | 'food' | 'research';
 };
 
 const RESOURCE_ROWS: ResourceRowDef[] = [
@@ -35,6 +35,12 @@ const RESOURCE_ROWS: ResourceRowDef[] = [
     key: 'gold',
     label: 'Gold',
     description: 'Gold pays for trade and unlocks the market.',
+  },
+  {
+    key: 'research',
+    label: 'Research',
+    description: 'Research accumulates from everyday discoveries. Future thinker jobs will produce more.',
+    cappedKey: 'research',
   },
 ] as const;
 
