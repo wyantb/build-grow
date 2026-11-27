@@ -9,6 +9,7 @@ describe('GameEngine resource rates', () => {
     // 4 population: 3 unemployed, 1 farmer.
     // Each human eats 0.025/tick, so 4 humans = 0.1 consumption.
     // Farmer produces 0.08/tick at neutral stats.
+    // Unemployed produce 0.025/tick each, so 3 × 0.025 = 0.075.
     const engine = new GameEngine(createTestWorld({
       population: 4,
       workers: { unemployed: 3 },
@@ -16,8 +17,8 @@ describe('GameEngine resource rates', () => {
     }));
     engine.assignWorkers('farmer', 1);
 
-    expect(engine.getTickRates().food).toBeCloseTo(0.08 - 0.1, 10);
-    expect(engine.getResourceRates().food).toBeCloseTo((0.08 - 0.1) * TICKS_PER_SECOND, 10);
+    expect(engine.getTickRates().food).toBeCloseTo(0.08 + 0.075 - 0.1, 10);
+    expect(engine.getResourceRates().food).toBeCloseTo((0.08 + 0.075 - 0.1) * TICKS_PER_SECOND, 10);
   });
 
   it('nets unemployed workers to species consumption', () => {
@@ -26,9 +27,10 @@ describe('GameEngine resource rates', () => {
       workers: { unemployed: 4 },
     }));
 
-    // 4 humans each eat 0.025/tick; no food production.
-    expect(engine.getTickRates().food).toBeCloseTo(-0.1, 10);
-    expect(engine.getResourceRates().food).toBeCloseTo(-0.5, 10);
+    // 4 humans each eat 0.025/tick; unemployed also produce 0.025/tick each.
+    // Net: (4 × 0.025) - (4 × 0.025) = 0.
+    expect(engine.getTickRates().food).toBeCloseTo(0, 10);
+    expect(engine.getResourceRates().food).toBeCloseTo(0, 10);
   });
 
   it('multiplies the per-tick rate by the tick frequency to get the per-second rate', () => {

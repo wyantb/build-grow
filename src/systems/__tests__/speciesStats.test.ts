@@ -173,9 +173,11 @@ describe('a job staffed by one species', () => {
 
     // Consumption comes from the species, not the job, and is never scaled
     // by stats. A lumberjack produces no food and the species eats its base.
-    const expected = -SPECIES.find((s) => s.id === 'human')!.baseConsumption.food * 4;
+    // Unemployed produce 0.025/tick each, so 3 × 0.025 = 0.075.
+    const speciesEats = SPECIES.find((s) => s.id === 'human')!.baseConsumption.food * 4;
+    const unemployedProduces = 3 * 0.025;
 
-    expect(engine.getTickRates().food).toBeCloseTo(expected, 10);
+    expect(engine.getTickRates().food).toBeCloseTo(unemployedProduces - speciesEats, 10);
   });
 });
 
@@ -264,12 +266,13 @@ describe('a job with the stats of the design', () => {
     engine.assignWorkers('farmer', 1);
 
     // A farmer produces food scaled by stats; consumption comes from the
-    // species and is not scaled.
+    // species and is not scaled. Unemployed also produce 0.025/tick each.
     const rate = engine.getTickRates().food;
     const base = baseRate('farmer', 'food');
     const eaten = SPECIES.find((s) => s.id === 'human')!.baseConsumption.food * 4;
+    const unemployedProduces = 3 * 0.025;
 
-    expect(rate).toBeCloseTo((base * 0.8 * 0.95) - eaten, 10);
+    expect(rate).toBeCloseTo((base * 0.8 * 0.95) + unemployedProduces - eaten, 10);
   });
 
   it('scales a settler with the stats of its own job', () => {
