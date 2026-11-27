@@ -457,7 +457,7 @@ class GameEngine {
     switch (resource) {
       case 'wood':
       case 'stone':
-        return this.state.cityCenter.storageWoodStone + woodStoneBonus;
+        return this.state.cityCenter.storageWoodStone + woodStoneBonus * ceramistShedMultiplier;
       case 'food':
         return this.state.cityCenter.storageFood + foodBonus;
       case 'research':

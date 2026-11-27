@@ -95,6 +95,9 @@ const BuildingGrid: Component = () => {
                                   if (bonus().food) {
                                     parts.push(`${bonus().food} food`);
                                   }
+                                  if (bonus().clay) {
+                                    parts.push(`${bonus().clay} clay`);
+                                  }
                                   if (parts.length === 0) {
                                     return null;
                                   }
