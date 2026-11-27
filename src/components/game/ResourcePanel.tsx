@@ -4,21 +4,31 @@ import { getGameState } from '../../hooks/useGameState.js';
 import { formatExact, formatNumber } from '../../utils/formatNumber.js';
 import Tooltip from '../ui/Tooltip.js';
 
-const RESOURCE_ROWS = [
+type ResourceRowDef = {
+  key: 'wood' | 'stone' | 'food' | 'gold';
+  label: string;
+  description: string;
+  cappedKey?: 'wood' | 'stone' | 'food';
+};
+
+const RESOURCE_ROWS: ResourceRowDef[] = [
   {
     key: 'wood',
     label: 'Wood',
     description: 'Wood is the basic building material. Used for construction and upkeep.',
+    cappedKey: 'wood',
   },
   {
     key: 'stone',
     label: 'Stone',
     description: 'Stone is mined for sturdy buildings and fortifications.',
+    cappedKey: 'stone',
   },
   {
     key: 'food',
     label: 'Food',
     description: 'Food keeps your population fed. A shortage stalls growth.',
+    cappedKey: 'food',
   },
   {
     key: 'gold',
@@ -30,7 +40,6 @@ const RESOURCE_ROWS = [
 const ResourcePanel: Component = () => {
   const gameState = getGameState();
 
-  // Get resource rates from game state
   const rates = createMemo(() => gameState.getResourceRates());
 
   return (
@@ -40,6 +49,18 @@ const ResourcePanel: Component = () => {
         <span class="header-amount">Amount</span>
         <span class="header-rate">Rate/s</span>
       </div>
+      <div class="resource-row population-row">
+        <Tooltip
+          content="Your people. Assign them to jobs to produce resources and grow the civilization."
+          placement="right"
+        >
+          <span class="resource-name">Population</span>
+        </Tooltip>
+        <span class="resource-amount">
+          {gameState.getPopulation()} / {gameState.getPopulationCapacity()}
+        </span>
+        <span class="resource-rate">-</span>
+      </div>
       <For each={RESOURCE_ROWS}>
         {(row) => (
           <div class="resource-row">
@@ -48,7 +69,9 @@ const ResourcePanel: Component = () => {
             </Tooltip>
             <Tooltip content={formatExact(gameState.getResources()[row.key])} placement="right">
               <span class="resource-amount" tabindex="0">
-                {formatNumber(gameState.getResources()[row.key])}
+                {row.cappedKey
+                  ? `${formatNumber(gameState.getResources()[row.key])} / ${formatNumber(gameState.getMaxStorage(row.cappedKey))}`
+                  : formatNumber(gameState.getResources()[row.key])}
               </span>
             </Tooltip>
             <Tooltip content={`Changes by ${formatNumber(rates()[row.key])} per second.`} placement="right">
@@ -63,18 +86,6 @@ const ResourcePanel: Component = () => {
           </div>
         )}
       </For>
-      <div class="resource-row">
-        <Tooltip
-          content="Your people. Assign them to jobs to produce resources and grow the civilization."
-          placement="right"
-        >
-          <span class="resource-name">Population</span>
-        </Tooltip>
-        <span class="resource-amount">
-          {gameState.getPopulation()} / {gameState.getPopulationCapacity()}
-        </span>
-        <span class="resource-rate">-</span>
-      </div>
     </div>
   );
 };

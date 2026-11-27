@@ -480,12 +480,12 @@ body.light-mode .resource-value {
   justify-content: space-between;
   padding: 8px 0;
   font-weight: bold;
-  border-bottom: 1px solid #555;
+  border-bottom: 2px solid #555;
   font-size: 0.9rem;
 }
 
 body.light-mode .resource-header {
-  border-bottom: 1px solid #ccc;
+  border-bottom: 2px solid #ccc;
 }
 
 .resource-row {
@@ -493,11 +493,24 @@ body.light-mode .resource-header {
   justify-content: space-between;
   padding: 6px 0;
   font-size: 0.9rem;
-  border-bottom: 1px solid #333;
 }
 
-body.light-mode .resource-row {
-  border-bottom: 1px solid #ddd;
+/* Population row sits directly under the header with a normal divider */
+.population-row {
+  border-bottom: 1px solid #555;
+}
+
+body.light-mode .population-row {
+  border-bottom: 1px solid #ccc;
+}
+
+/* Resource rows below population get faint dividers */
+.resources-display > .resource-row:not(.population-row) {
+  border-bottom: 1px solid #2a2a2a;
+}
+
+body.light-mode .resources-display > .resource-row:not(.population-row) {
+  border-bottom: 1px solid #e0e0e0;
 }
 
 .header-name, .resource-name {
