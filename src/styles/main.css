@@ -1042,6 +1042,243 @@ body.light-mode .tooltip {
   opacity: 0.85;
 }
 
+/* City Center Panel */
+.city-center-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.city-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.city-section-heading {
+  font-size: 1rem;
+  margin: 0 0 4px 0;
+  color: #ffd700;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #444;
+}
+
+body.light-mode .city-section-heading {
+  color: #b8860b;
+  border-bottom-color: #ccc;
+}
+
+.city-source-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 0 20px;
+  border: 1px solid #555;
+  border-radius: 6px;
+  background-color: #2a2a2a;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+body.light-mode .city-source-btn {
+  background-color: #f5f5f5;
+  color: #333;
+  border-color: #ccc;
+}
+
+.city-source-btn:hover {
+  background-color: #3a3a3a;
+  border-color: #777;
+}
+
+body.light-mode .city-source-btn:hover {
+  background-color: #eee;
+  border-color: #aaa;
+}
+
+.city-source-name {
+  font-weight: 600;
+}
+
+.city-source-value {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+/* City item tooltip content */
+.tooltip-city-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 200px;
+}
+
+.tooltip-city-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.tooltip-city-stat {
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: #8ab4f8;
+}
+
+body.light-mode .tooltip-city-stat {
+  color: #3b82f6;
+}
+
+/* Dialog overlay and panel */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dialog-panel {
+  background-color: #1a1a1a;
+  border: 1px solid #444;
+  border-radius: 8px;
+  max-width: 420px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+}
+
+body.light-mode .dialog-panel {
+  background-color: #fff;
+  border-color: #ccc;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #444;
+}
+
+body.light-mode .dialog-header {
+  border-bottom-color: #ccc;
+}
+
+.dialog-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #ffd700;
+}
+
+body.light-mode .dialog-header h3 {
+  color: #b8860b;
+}
+
+.dialog-close {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.dialog-close:hover {
+  background-color: #333;
+  color: #fff;
+}
+
+body.light-mode .dialog-close:hover {
+  background-color: #eee;
+  color: #333;
+}
+
+.dialog-body {
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dialog-divider {
+  height: 1px;
+  background-color: #444;
+  margin: 8px 0;
+}
+
+body.light-mode .dialog-divider {
+  background-color: #ccc;
+}
+
+.dialog-total {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #ffd700;
+}
+
+body.light-mode .dialog-total {
+  color: #b8860b;
+}
+
+.dialog-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 0.9rem;
+}
+
+.dialog-label {
+  font-weight: 500;
+}
+
+.dialog-value {
+  color: #8ab4f8;
+  font-variant-numeric: tabular-nums;
+}
+
+body.light-mode .dialog-value {
+  color: #3b82f6;
+}
+
+.dialog-total-row {
+  font-weight: 700;
+  padding-top: 6px;
+  border-top: 1px solid #333;
+}
+
+body.light-mode .dialog-total-row {
+  border-top-color: #ddd;
+}
+
+.dialog-resource-header {
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #ffd700;
+  margin-top: 4px;
+}
+
+body.light-mode .dialog-resource-header {
+  color: #b8860b;
+}
+
 /* Settings */
 .settings-panel {
   max-width: 520px;
