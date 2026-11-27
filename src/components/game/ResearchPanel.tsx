@@ -1,8 +1,26 @@
-import { For, Show } from 'solid-js';
+import { createSignal, For, Show } from 'solid-js';
+import { createRoot } from 'solid-js';
 import type { Component } from 'solid-js';
 import { getGameState } from '../../hooks/useGameState.js';
 import Tooltip from '../ui/Tooltip.js';
 import { timeToIncome, timeToAvailable, formatTime } from '../../utils/formatTimeToAfford.js';
+
+const SHOW_COMPLETED_KEY = 'build-grow:research-show-completed';
+
+/**
+ * A persisted signal shared across component mounts.
+ */
+const [showCompleted, setShowCompleted] = createRoot(() => {
+  const initial = localStorage.getItem(SHOW_COMPLETED_KEY) === 'true';
+  const [signal, set] = createSignal(initial);
+
+  const persist = (v: boolean) => {
+    localStorage.setItem(SHOW_COMPLETED_KEY, String(v));
+    set(v);
+  };
+
+  return [signal, persist] as const;
+});
 
 const ResearchPanel: Component = () => {
   const gameState = getGameState();
@@ -22,9 +40,28 @@ const ResearchPanel: Component = () => {
     gameState.doResearch(techId);
   };
 
+  const visibleTechs = () => {
+    const catalog = techCatalog();
+    const show = showCompleted();
+
+    return show
+      ? catalog
+      : catalog.filter((t) => !researched(t.id));
+  };
+
   return (
     <div class="research-panel">
-      <For each={techCatalog()} keyed={(t) => t.id}>
+      <div class="research-toolbar">
+        <label class="research-toggle">
+          <input
+            type="checkbox"
+            checked={showCompleted()}
+            onChange={(e) => setShowCompleted(e.currentTarget.checked)}
+          />
+          Show completed
+        </label>
+      </div>
+      <For each={visibleTechs()} keyed={(t) => t.id}>
         {(tech) => {
           const isResearched = () => researched(tech().id);
           const prereqsMet = () => canResearchTech(tech().id);
@@ -80,6 +117,9 @@ const ResearchPanel: Component = () => {
           );
         }}
       </For>
+      <Show when={!showCompleted() && visibleTechs().length === 0}>
+        <div class="research-empty">All technologies researched</div>
+      </Show>
     </div>
   );
 };

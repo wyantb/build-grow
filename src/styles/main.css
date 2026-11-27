@@ -1767,6 +1767,42 @@ body.light-mode .race-btn:hover:not(:disabled) {
   padding: 10px 0;
 }
 
+/* --- Research toolbar --- */
+.research-toolbar {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 4px;
+}
+
+.research-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #ccc;
+  cursor: pointer;
+  user-select: none;
+}
+
+.research-toggle input {
+  accent-color: #4d9de0;
+  margin: 0;
+}
+
+body.light-mode .research-toggle {
+  color: #555;
+}
+
+.research-empty {
+  width: 100%;
+  text-align: center;
+  padding: 24px 0;
+  color: #888;
+  font-size: 0.9rem;
+}
+
 .research-btn {
   position: relative;
   display: flex;
