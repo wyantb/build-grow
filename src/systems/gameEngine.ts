@@ -890,6 +890,9 @@ class GameEngine {
     // The pool persists into the new world as the player left it.
     next.rebirthPool = { ...this.state.rebirthPool };
 
+    // The player's preferred job order persists into the new world.
+    next.jobOrder = [...this.state.jobOrder];
+
     // Build the new village's population from the chosen composition.
     const comp = pending.composition;
 

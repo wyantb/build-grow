@@ -10,6 +10,7 @@ import {
 } from '../rebirth.js';
 import { DEFAULT_SPECIES_ID, NEUTRAL_STATS } from '../../data/species.js';
 import { deserializePayload, serializeState } from '../saveSystem.js';
+import { createTestWorld } from './testWorld.js';
 import type { Stats } from '../../types/worldState.js';
 
 /**
@@ -478,5 +479,69 @@ describe('a multi-race rebirth', () => {
       .reduce((s: number, e) => s + e.count, 0);
     expect(reloaded.getPopulation()).toBe(speciesSum);
     expect(reloaded.getPopulation()).toBe(5);
+  });
+});
+
+describe('job order after a rebirth', () => {
+  it('carries the preferred order into the new world', () => {
+    const engine = new GameEngine(createTestWorld({
+      buildings: ['lumberjack', 'quarry', 'farm'],
+    }));
+
+    // Set up a rebirth-worthy world with enough gold.
+    engine.getState().resources.gold = REBIRTH_GOLD_COST;
+
+    // Put quarrier, lumberjack, farmer as the preferred order.
+    engine.reorderJob('quarrier', 0);
+    engine.reorderJob('lumberjack', 1);
+    engine.reorderJob('farmer', 2);
+
+    const beforeOrder = [...engine.getState().jobOrder];
+
+    // Start and confirm a rebirth.
+    engine.beginRebirth();
+    engine.setComposition({ human: 5 });
+    engine.confirmRebirth();
+
+    const afterOrder = engine.getState().jobOrder;
+
+    // The visible jobs kept the same relative order.
+    expect(afterOrder.indexOf('quarrier')).toBeLessThan(afterOrder.indexOf('lumberjack'));
+    expect(afterOrder.indexOf('lumberjack')).toBeLessThan(afterOrder.indexOf('farmer'));
+
+    // The order is a permutation of the full job list, not just the
+    // visible subset.
+    expect(afterOrder.length).toBe(beforeOrder.length);
+  });
+
+  it('applies later reorderings instead of the old order', () => {
+    const engine = new GameEngine(createTestWorld({
+      buildings: ['lumberjack', 'quarry', 'farm'],
+    }));
+
+    engine.getState().resources.gold = REBIRTH_GOLD_COST;
+
+    // Farmer before lumberjack before quarrier.
+    engine.reorderJob('farmer', 0);
+    engine.reorderJob('lumberjack', 1);
+    engine.reorderJob('quarrier', 2);
+
+    engine.beginRebirth();
+    engine.setComposition({ human: 5 });
+    engine.confirmRebirth();
+
+    // After rebirth, build the same buildings so the jobs are visible again.
+    const state = engine.getState();
+    state.buildingCounts.lumberjack = 1;
+    state.buildingCounts.quarry = 1;
+    state.buildingCounts.farm = 1;
+    engine.recalculateJobCapacities();
+
+    // Reorder so quarrier is first.
+    engine.reorderJob('quarrier', 0);
+
+    const order = engine.getState().jobOrder;
+    expect(order.indexOf('quarrier')).toBeLessThan(order.indexOf('farmer'));
+    expect(order.indexOf('quarrier')).toBeLessThan(order.indexOf('lumberjack'));
   });
 });
