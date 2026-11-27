@@ -308,18 +308,14 @@ describe('a job staffed by more than one species', () => {
   it('averages the stats of the species working it', () => {
     const engine = new GameEngine(createTestWorld({
       population: 4,
-      workers: { unemployed: 2 },
+      workers: { lumberjack: 2, unemployed: 2 },
       buildings: ['lumberjack', 'lumberjack'],
       species: {
         human: { strength: 80, intelligence: 100 },
         elf: { strength: 120, intelligence: 100 },
       },
-      jobSpecies: { unemployed: { human: 1, elf: 1 } },
+      jobSpecies: { lumberjack: { human: 1, elf: 1 }, unemployed: { human: 1, elf: 1 } },
     }));
-
-    // One human and one elf, whose average strength is 100.
-    engine.assignWorkers('lumberjack', 1, 'human');
-    engine.assignWorkers('lumberjack', 1, 'elf');
 
     const rate = engine.getTickRates().wood;
     const base = baseRate('lumberjack', 'wood');
@@ -331,17 +327,14 @@ describe('a job staffed by more than one species', () => {
   it('works at the rate of the weaker species when one is much worse', () => {
     const engine = new GameEngine(createTestWorld({
       population: 4,
-      workers: { unemployed: 2 },
+      workers: { lumberjack: 2, unemployed: 2 },
       buildings: ['lumberjack', 'lumberjack'],
       species: {
         human: { strength: 100, intelligence: 100 },
         elf: { strength: 60, intelligence: 100 },
       },
-      jobSpecies: { unemployed: { human: 1, elf: 1 } },
+      jobSpecies: { lumberjack: { human: 1, elf: 1 }, unemployed: { human: 1, elf: 1 } },
     }));
-
-    engine.assignWorkers('lumberjack', 1, 'human');
-    engine.assignWorkers('lumberjack', 1, 'elf');
 
     const rate = engine.getTickRates().wood;
     const base = baseRate('lumberjack', 'wood');
@@ -408,13 +401,10 @@ describe('the species of a job', () => {
   it('counts the workers of a job that has more than one species', () => {
     const engine = new GameEngine(createTestWorld({
       population: 5,
-      workers: { unemployed: 5 },
+      workers: { lumberjack: 2, unemployed: 3 },
       buildings: ['lumberjack', 'lumberjack'],
-      jobSpecies: { unemployed: { human: 2, elf: 3 } },
+      jobSpecies: { lumberjack: { human: 1, elf: 1 }, unemployed: { human: 1, elf: 2 } },
     }));
-
-    engine.assignWorkers('lumberjack', 1, 'human');
-    engine.assignWorkers('lumberjack', 1, 'elf');
 
     expect(engine.getState().jobs['lumberjack']?.species).toEqual({ human: 1, elf: 1 });
     expect(engine.getState().jobs['lumberjack']?.workers).toBe(2);

@@ -530,6 +530,9 @@ class GameEngine {
     // Free the market slots held by merchants that are no longer assigned.
     this.marketSystem.trimAllocationsToMerchants();
 
+    // Rebalance species across jobs without changing worker counts.
+    this.balanceWorkers();
+
     this.notify();
 
     return true;
@@ -953,80 +956,65 @@ class GameEngine {
   }
 
   /**
-   * Rebalance all workers across jobs based on the job priority order.
+   * Rebalance species across jobs while preserving each job's worker count.
    *
-   * This clears every job assignment and redistributes the population from
-   * scratch: jobs with a capacity slot are filled first (in priority order),
-   * then uncapped jobs. For each job the best available species is picked
-   * based on the job's stat factors.
-   *
-   * Called after: assigning workers, births, job reordering, capacity
-   * changes, and confirming a rebirth.
+   * Each job keeps its current number of workers; only the species
+   * composition changes.  Jobs are processed in priority order so that
+   * higher-priority jobs get the best species first.
    */
   balanceWorkers(): void {
     const state = this.state;
-    const capacityJobs: string[] = [];
 
-    for (const jobId of state.jobOrder) {
-      const job = state.jobs[jobId];
+    // Snapshot each job's current worker count — these must not change.
+    const preservedWorkers: Record<string, number> = {};
+    for (const [jobId, job] of Object.entries(state.jobs)) {
+      preservedWorkers[jobId] = job.workers;
+    }
 
-      if (!job) {
-        continue;
+    // Put everyone back into the default job.
+    const defaultJob = state.jobs[state.defaultJob];
+    for (const job of Object.values(state.jobs)) {
+      if (job !== defaultJob) {
+        job.workers = 0;
       }
-
-      if (job.capacity > 0 && job.workers > 0) {
-        capacityJobs.push(jobId);
+      job.species = {};
+    }
+    if (defaultJob) {
+      defaultJob.workers = 0;
+      defaultJob.species = {};
+      for (const [speciesId, entry] of Object.entries(state.species)) {
+        if (entry.count > 0) {
+          defaultJob.species[speciesId] = entry.count;
+          defaultJob.workers += entry.count;
+        }
       }
     }
 
     // Track how many of each species are still free to assign.
     const remaining: Record<string, number> = {};
-
     for (const [speciesId, entry] of Object.entries(state.species)) {
       remaining[speciesId] = entry.count;
     }
 
-    // Clear all job assignments.
-    for (const job of Object.values(state.jobs)) {
-      job.workers = 0;
-      job.species = {};
-    }
-
-    // Put everyone back into the default job as the starting point.
-    const defaultJob = state.jobs[state.defaultJob];
-    if (defaultJob) {
-      const totalPopulation = Object.values(state.species)
-        .reduce((sum: number, entry) => sum + entry.count, 0);
-      defaultJob.workers = totalPopulation;
-
-      for (const [speciesId, entry] of Object.entries(state.species)) {
-        defaultJob.species[speciesId] = entry.count;
-      }
-    }
-
-    // Pull people from the default job into each capacity-limited job.
-    // Uncapped jobs are not auto-filled — whoever is left over stays in the
-    // default job, and the player assigns them by hand.
-    const staffingOrder = [...capacityJobs];
-
-    for (const jobId of staffingOrder) {
+    // Fill non-default jobs in priority order, capped at their preserved
+    // worker count. The default job keeps whatever is left over.
+    for (const jobId of state.jobOrder) {
       const job = state.jobs[jobId];
+      if (!job || job === defaultJob) continue;
 
-      if (!job || job.capacity <= 0) {
-        continue;
-      }
+      const target = preservedWorkers[jobId] ?? 0;
+      if (target <= 0) continue;
 
-      const available = job.capacity;
       let filled = 0;
 
       const sortedSpecies = this.sortedSpeciesForJob(job, remaining, state);
 
       for (const speciesId of sortedSpecies) {
-        if (filled >= available) {
+        if (filled >= target) {
           break;
         }
 
-        const canTake = Math.min(remaining[speciesId] ?? 0, available - filled);
+        const canTake = Math.min(remaining[speciesId] ?? 0, target - filled);
 
         if (canTake <= 0) {
           continue;
@@ -1049,7 +1037,8 @@ class GameEngine {
   }
 
   /**
-   * Staff the jobs in a given world state by species quality.
+   * Staff the jobs in a given world state by species quality, filling
+   * capacity-limited jobs from scratch.
    *
    * Used during rebirth to staff the new world before it is loaded.
    */
@@ -1057,6 +1046,13 @@ class GameEngine {
     // Swap the engine's state pointer temporarily, run balance, restore.
     const saved = this.state;
     this.state = state;
+
+    // Clear all job assignments so rebirth fills from scratch.
+    for (const job of Object.values(state.jobs)) {
+      job.workers = 0;
+      job.species = {};
+    }
+
     this.balanceWorkers();
     this.state = saved;
   }
