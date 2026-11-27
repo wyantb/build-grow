@@ -248,10 +248,14 @@ const RebirthView: Component = () => {
                 const species = SPECIES.find((s) => s.id === raceId);
                 if (!species) return null;
 
-                const after = raceAfterStats()[raceId];
-                const total = after
-                  ? REBIRTH_DISPLAY_STATS.reduce((s, key) => s + after[key], 0)
-                  : 0;
+                const after = createMemo(() => raceAfterStats()[raceId]);
+                const total = createMemo(() => {
+                  const stats = after();
+
+                  return stats
+                    ? REBIRTH_DISPLAY_STATS.reduce((s, key) => s + stats[key], 0)
+                    : 0;
+                });
 
                 const count = createMemo(() => composition()[raceId] ?? 0);
                 const poolCount = createMemo(() => {
@@ -263,13 +267,21 @@ const RebirthView: Component = () => {
                 return (
                   <div class="race-row">
                     <Tooltip
-                      content={REBIRTH_DISPLAY_STATS
-                        .map((key) => `${STAT_LABELS[key]}: ${after?.[key] ?? '?'}`)
-                        .join('\n')}
+                      content={
+                        <div class="tooltip-job">
+                          <For each={REBIRTH_DISPLAY_STATS}>
+                            {(key) => (
+                              <div class="tooltip-stat">
+                                {`${STAT_LABELS[key]}: ${after()?.[key] ?? '?'}`}
+                              </div>
+                            )}
+                          </For>
+                        </div>
+                      }
                       placement="top"
                     >
                       <span class="race-name">
-                        {species.name} ({total})
+                        {species.name} ({total()})
                       </span>
                     </Tooltip>
 

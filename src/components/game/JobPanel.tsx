@@ -1,100 +1,114 @@
 import { For, createMemo, untrack } from 'solid-js';
 import type { Component } from 'solid-js';
+import type { JSX } from '@solidjs/web';
 import { createDragContext, createDraggable, createDroppable } from '@solid-primitives/drag-drop';
 import { getGameState } from '../../hooks/useGameState.js';
 import { getAvailableJobIds, JOB_STATS } from '../../data/jobs.js';
 import type { JobStats } from '../../systems/stats.js';
-import { getWeightedStatFactor, getAverageStats } from '../../systems/stats.js';
+import { getWeightedStatFactor, getAverageStats, PRIMARY_WEIGHT, SECONDARY_WEIGHT } from '../../systems/stats.js';
 import { NEUTRAL_STAT, STAT_LABELS } from '../../data/species.js';
 import type { StatName } from '../../data/species.js';
 import Tooltip from '../ui/Tooltip.js';
 import { DragHandleIcon } from '../ui/icons.js';
 
-/** The divider line between tooltip sections. */
-const DIVIDER = '───────────────────';
-
 /**
  * Build the tooltip content for a job row.
  *
  * Shows the job description, the average stats of its workers (with a
- * species breakdown), and the net productivity calculation.
+ * species breakdown), and the net productivity calculation. Every stat
+ * gets a line of its own, and the section breaks are rules rather than
+ * text, so the tooltip reads the same however narrow the screen is.
  */
 const getJobTooltip = (
   jobId: string,
   species: Record<string, number>,
   state: ReturnType<typeof getGameState>['state'],
-): string => {
+): JSX.Element => {
   const job = state.jobs[jobId];
 
   if (!job) {
     return '';
   }
 
-  const lines: string[] = [job.description];
-
   const jobStats: JobStats | undefined = JOB_STATS[jobId];
 
-  if (jobStats && Object.values(species).some((c) => c > 0)) {
-    const avg = getAverageStats(species, (speciesId) =>
-      state.species[speciesId]?.stats ?? {
-        strength: NEUTRAL_STAT,
-        dexterity: NEUTRAL_STAT,
-        constitution: NEUTRAL_STAT,
-        intelligence: NEUTRAL_STAT,
-        wisdom: NEUTRAL_STAT,
-        charisma: NEUTRAL_STAT,
-        manaSensitivity: NEUTRAL_STAT,
-      },
-    );
-
-    const parts = Object.entries(species)
-      .filter(([, c]) => c > 0)
-      .map(([id, c]) => {
-        const name = state.species[id]?.name ?? id;
-
-        return `${c} ${name}`;
-      })
-      .join(' + ');
-
-    lines.push(DIVIDER);
-
-    if (jobStats.primary) {
-      const label = STAT_LABELS[jobStats.primary as StatName] ?? jobStats.primary;
-      const value = Math.round(avg[jobStats.primary as keyof typeof avg]);
-      lines.push(`Avg ${label}: ${value} (from ${parts})`);
-    }
-
-    if (jobStats.secondary) {
-      const label = STAT_LABELS[jobStats.secondary as StatName] ?? jobStats.secondary;
-      const value = Math.round(avg[jobStats.secondary as keyof typeof avg]);
-      lines.push(`Avg ${label}: ${value} (from ${parts})`);
-    }
-
-    lines.push(DIVIDER);
-    lines.push('Net productivity:');
-
-    const primaryFactor = jobStats.primary
-      ? getWeightedStatFactor(avg[jobStats.primary as keyof typeof avg], 1)
-      : 1;
-    const secondaryFactor = jobStats.secondary
-      ? getWeightedStatFactor(avg[jobStats.secondary as keyof typeof avg], 0.5)
-      : 1;
-
-    // Find the resource this job produces (first non-zero entry).
-    const producedResource = Object.entries(job.production)
-      .find(([, rate]) => rate > 0);
-
-    if (producedResource) {
-      const [resourceId, baseRate] = producedResource;
-      const netRate = baseRate * primaryFactor * secondaryFactor;
-
-      lines.push(
-        `${baseRate.toFixed(2)} (${resourceId}/tick) × ${primaryFactor.toFixed(2)} (from ${STAT_LABELS[jobStats.primary as StatName] ?? jobStats.primary}) × ${secondaryFactor.toFixed(2)} (from ${STAT_LABELS[jobStats.secondary as StatName] ?? jobStats.secondary}) = ${netRate.toFixed(2)}/tick`,
-      );
-    }
+  if (!jobStats || !Object.values(species).some((c) => c > 0)) {
+    return <div class="tooltip-description">{job.description}</div>;
   }
 
-  return lines.join('\n');
+  const avg = getAverageStats(species, (speciesId) =>
+    state.species[speciesId]?.stats ?? {
+      strength: NEUTRAL_STAT,
+      dexterity: NEUTRAL_STAT,
+      constitution: NEUTRAL_STAT,
+      intelligence: NEUTRAL_STAT,
+      wisdom: NEUTRAL_STAT,
+      charisma: NEUTRAL_STAT,
+      manaSensitivity: NEUTRAL_STAT,
+    },
+  );
+
+  const parts = Object.entries(species)
+    .filter(([, c]) => c > 0)
+    .map(([id, c]) => {
+      const name = state.species[id]?.name ?? id;
+
+      return `${c} ${name}`;
+    })
+    .join(' + ');
+
+  const statLine = (statName: StatName): string => {
+    const label = STAT_LABELS[statName] ?? statName;
+    const value = Math.round(avg[statName]);
+
+    return `Avg ${label}: ${value} (from ${parts})`;
+  };
+
+  const primaryFactor = jobStats.primary
+    ? getWeightedStatFactor(avg[jobStats.primary], PRIMARY_WEIGHT)
+    : 1;
+  const secondaryFactor = jobStats.secondary
+    ? getWeightedStatFactor(avg[jobStats.secondary], SECONDARY_WEIGHT)
+    : 1;
+
+  // Find the resource this job produces (first non-zero entry).
+  const producedResource = Object.entries(job.production)
+    .find(([, rate]) => rate > 0);
+
+  return (
+    <div class="tooltip-job">
+      <div class="tooltip-description">{job.description}</div>
+      <div class="tooltip-divider" />
+      {jobStats.primary && (
+        <div class="tooltip-stat">{statLine(jobStats.primary)}</div>
+      )}
+      {jobStats.secondary && (
+        <div class="tooltip-stat">{statLine(jobStats.secondary)}</div>
+      )}
+      <div class="tooltip-divider" />
+      <div class="tooltip-stat">Net productivity:</div>
+      {producedResource && (
+        <>
+          <div class="tooltip-stat">
+            {`${producedResource[1].toFixed(2)} ${producedResource[0]}/tick`}
+          </div>
+          {jobStats.primary && (
+            <div class="tooltip-stat">
+              {`× ${primaryFactor.toFixed(2)} (from ${STAT_LABELS[jobStats.primary]})`}
+            </div>
+          )}
+          {jobStats.secondary && (
+            <div class="tooltip-stat">
+              {`× ${secondaryFactor.toFixed(2)} (from ${STAT_LABELS[jobStats.secondary]})`}
+            </div>
+          )}
+          <div class="tooltip-stat">
+            {`= ${(producedResource[1] * primaryFactor * secondaryFactor).toFixed(2)}/tick`}
+          </div>
+        </>
+      )}
+    </div>
+  );
 };
 
 const JobPanel: Component = () => {

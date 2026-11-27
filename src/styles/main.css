@@ -432,6 +432,19 @@ body.light-mode .tooltip-divider {
   line-height: 1.4;
 }
 
+/* --- Tooltip for jobs --- */
+.tooltip-job {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 200px;
+}
+
+.tooltip-stat {
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
 .resource-item {
   display: flex;
   justify-content: space-between;
@@ -982,6 +995,8 @@ body.light-mode .market-note {
   color: #fff;
   font-size: 0.8rem;
   line-height: 1.4;
+  /* Keep the line breaks a plain-text tooltip asks for. */
+  white-space: pre-wrap;
   pointer-events: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
 }
