@@ -21,6 +21,7 @@ export const JOB_STATS: Record<string, JobStats> = {
   quarrier: { primary: 'strength', secondary: 'constitution' },
   farmer: { primary: 'constitution', secondary: 'wisdom' },
   settler: { primary: 'intelligence', secondary: 'charisma' },
+  chief: { primary: 'wisdom', secondary: 'charisma' },
 };
 
 export const JOBS: Record<string, Omit<Job, 'workers' | 'species'>> = {
@@ -97,7 +98,7 @@ export const JOBS: Record<string, Omit<Job, 'workers' | 'species'>> = {
     description: 'Keeps the settlement organized and harnesses ideas for the greater good.',
     capacity: 0, // set dynamically from buildings
     canDefault: false,
-    production: ZERO,
+    production: { wood: 0, stone: 0, food: 0, gold: 0, research: 0.02, clay: 0 },
     consumption: DEFAULT_CONSUMPTION,
   },
 };

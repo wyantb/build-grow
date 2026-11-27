@@ -44,9 +44,17 @@ const ResearchPanel: Component = () => {
     const catalog = techCatalog();
     const show = showCompleted();
 
-    return show
-      ? catalog
-      : catalog.filter((t) => !researched(t.id));
+    return catalog.filter((t) => {
+      if (researched(t.id)) {return show;}
+      // Hide techs whose prerequisites have not all been researched.
+      for (const prereq of t.prereqs ?? []) {
+        if (!researched(prereq)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
   };
 
   return (

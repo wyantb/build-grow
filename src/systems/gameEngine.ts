@@ -248,6 +248,7 @@ class GameEngine {
       this.state.resources.food += job.production.food * job.workers * factor;
       this.state.resources.gold += job.production.gold * job.workers * factor;
       this.state.resources.clay += job.production.clay * job.workers * factor;
+      this.state.resources.research += job.production.research * job.workers * factor;
 
       // Job consumption
       this.state.resources.wood -= job.consumption.wood * job.workers;
@@ -255,17 +256,6 @@ class GameEngine {
       this.state.resources.food -= job.consumption.food * job.workers;
       this.state.resources.gold -= job.consumption.gold * job.workers;
       this.state.resources.clay -= job.consumption.clay * job.workers;
-    }
-
-    // Compute natural population research (before chief bonus).
-    let naturalResearch = 0;
-    for (const [speciesId, entry] of Object.entries(this.state.species)) {
-      if (entry.count <= 0) {continue;}
-
-      const speciesData = SPECIES.find((s) => s.id === speciesId);
-      if (!speciesData) {continue;}
-
-      naturalResearch += speciesData.baseResearch * entry.count;
     }
 
     // Species-based consumption and research from the whole population.
@@ -283,12 +273,6 @@ class GameEngine {
 
       // Every person of this species produces their base research per tick.
       this.state.resources.research += speciesData.baseResearch * entry.count;
-    }
-
-    // Chief job: each chief adds research equal to the natural population research.
-    const chiefJob = this.state.jobs['chief'];
-    if (chiefJob && chiefJob.workers > 0 && naturalResearch > 0) {
-      this.state.resources.research += naturalResearch * chiefJob.workers;
     }
 
     // Clamp resources to their storage caps.
@@ -1435,13 +1419,6 @@ class GameEngine {
       rates.stone -= speciesData.baseConsumption.stone * entry.count;
       rates.gold -= speciesData.baseConsumption.gold * entry.count;
       rates.research += speciesData.baseResearch * entry.count;
-    }
-
-    // Chief job: each chief adds research equal to the natural population research.
-    const chiefJob = this.state.jobs['chief'];
-    if (chiefJob && chiefJob.workers > 0) {
-      const naturalResearch = rates.research;
-      rates.research += naturalResearch * chiefJob.workers;
     }
 
     return rates;
