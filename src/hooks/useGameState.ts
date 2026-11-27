@@ -7,13 +7,9 @@ import type { BuildingType } from '../data/buildings.js';
 import { getTradeCapacity } from '../data/market.js';
 import type { MarketResource } from '../data/market.js';
 import type { MarketAction, MarketFlow } from '../systems/marketSystem.js';
-import { getPopulationCapacity as getCapacityFromHuts, CITY_CENTER_HOUSING_CAPACITY } from '../systems/population.js';
+import { getPopulationCapacity as getCapacityFromHuts } from '../systems/population.js';
 import GameEngine, {
   REBIRTH_GOLD_COST,
-  CITY_CENTER_STORAGE_WOOD_STONE,
-  CITY_CENTER_STORAGE_FOOD,
-  SHED_STORAGE,
-  GRAIN_SILO_STORAGE,
 } from '../systems/gameEngine.js';
 
 /**
@@ -621,28 +617,39 @@ export const useGameState = () => {
    * Read from the mirrored building counts so the figure stays reactive.
    */
   const getPopulationCapacity = (): number =>
-    CITY_CENTER_HOUSING_CAPACITY
+    state.cityCenter.housing
     + getCapacityFromHuts(state.buildingCounts['hut'] ?? 0);
 
   /**
    * The maximum amount of a resource the storage structures can hold.
    *
    * Gold is uncapped. Read from the mirrored building counts so the figure
-   * stays reactive.
+   * stays reactive. Each building that declares a storageBonus in the catalog
+   * adds its per-copy amount to the relevant cap.
    */
   const getMaxStorage = (resource: 'wood' | 'stone' | 'food'): number => {
-    const shedCount = state.buildingCounts['shed'] ?? 0;
-    const siloCount = state.buildingCounts['grain_silo'] ?? 0;
+    let woodStoneBonus = 0;
+    let foodBonus = 0;
 
-    const shedBonus = shedCount * SHED_STORAGE;
-    const siloBonus = siloCount * GRAIN_SILO_STORAGE;
+    for (const type of BUILDING_TYPES) {
+      const bonus = type.storageBonus;
+      if (!bonus) {continue;}
+      const count = state.buildingCounts[type.id] ?? 0;
+      if (count === 0) {continue;}
+      if (bonus.woodStone) {
+        woodStoneBonus += count * bonus.woodStone;
+      }
+      if (bonus.food) {
+        foodBonus += count * bonus.food;
+      }
+    }
 
     switch (resource) {
       case 'wood':
       case 'stone':
-        return CITY_CENTER_STORAGE_WOOD_STONE + shedBonus;
+        return state.cityCenter.storageWoodStone + woodStoneBonus;
       case 'food':
-        return CITY_CENTER_STORAGE_FOOD + shedBonus + siloBonus;
+        return state.cityCenter.storageFood + foodBonus;
     }
   };
 

@@ -10,6 +10,18 @@ export interface BuildingType {
   effect: string;
   /** Display category — groups buttons under section headings. */
   category: BuildingCategory;
+  /**
+   * How much storage this building adds per copy.
+   *
+   * Absent or zero means the building does not increase storage.
+   * The engine sums these across all copies of the building to
+   * derive the cap at runtime; the UI reads the same values so
+   * tooltips and the city-center panel stay in sync.
+   */
+  storageBonus?: {
+    woodStone?: number;
+    food?: number;
+  };
 }
 
 export const BUILDING_TYPES: BuildingType[] = [
@@ -66,7 +78,8 @@ export const BUILDING_TYPES: BuildingType[] = [
     name: 'Shed',
     description: 'A small storage facility for your various resources.',
     cost: { wood: 30, stone: 10, food: 0, gold: 0 },
-    effect: 'Increases wood, stone, and food storage by 200.',
+    effect: 'Stores a small amount of productive resources.',
+    storageBonus: { woodStone: 200, food: 200 },
     category: 'Storage',
   },
   {
@@ -74,7 +87,8 @@ export const BUILDING_TYPES: BuildingType[] = [
     name: 'Grain Silo',
     description: 'A sealed silo for long-term grain storage.',
     cost: { wood: 40, stone: 20, food: 0, gold: 0 },
-    effect: 'Increases food storage by 500.',
+    effect: 'Stores food for your people.',
+    storageBonus: { food: 500 },
     category: 'Storage',
   },
 ];

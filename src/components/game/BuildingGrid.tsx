@@ -87,6 +87,27 @@ const BuildingGrid: Component = () => {
                               </div>
                               <div class="tooltip-divider" />
                               <div class="tooltip-effects">{type().effect}</div>
+                              <Show when={type().storageBonus}>
+                                {(bonus) => {
+                                  const parts: string[] = [];
+                                  if (bonus().woodStone) {
+                                    parts.push(`${bonus().woodStone} wood/stone`);
+                                  }
+                                  if (bonus().food) {
+                                    parts.push(`${bonus().food} food`);
+                                  }
+                                  if (parts.length === 0) {
+                                    return null;
+                                  }
+
+                                  return (
+                                    <>
+                                      <div class="tooltip-divider" />
+                                      <div class="tooltip-storage">+{parts.join(', ')} per building</div>
+                                    </>
+                                  );
+                                }}
+                              </Show>
                             </div>
                           }
                           placement="top"

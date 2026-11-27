@@ -16,14 +16,6 @@ import { TICKS_PER_SECOND } from './ticks.js';
 /** How many people one hut houses. */
 export const POPULATION_PER_HUT = 2;
 
-/**
- * The population capacity the city center provides.
- *
- * This is the starting housing, present from village creation. The player
- * cannot build or destroy it.
- */
-export const CITY_CENTER_HOUSING_CAPACITY = 5;
-
 /** How often the world rolls for a birth, in ticks. */
 export const GROWTH_INTERVAL_TICKS = 25;
 

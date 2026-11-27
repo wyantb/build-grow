@@ -432,6 +432,16 @@ body.light-mode .tooltip-divider {
   line-height: 1.4;
 }
 
+.tooltip-storage {
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: #8ab4f8;
+}
+
+body.light-mode .tooltip-storage {
+  color: #3b82f6;
+}
+
 /* --- Tooltip for jobs --- */
 .tooltip-job {
   display: flex;

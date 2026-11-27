@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import GameEngine from '../gameEngine.js';
 import {
   BIRTH_CHANCE_BONUS,
-  CITY_CENTER_HOUSING_CAPACITY,
   GROWTH_INTERVAL_SECONDS,
   GROWTH_INTERVAL_TICKS,
   MAX_BIRTH_CHANCE,
@@ -44,7 +43,8 @@ describe('population capacity', () => {
     // No starting hut — the city center provides the housing.
     expect(engine.getState().buildingCounts['hut']).toBeUndefined();
     expect(engine.getState().buildings['hut-0']).toBeUndefined();
-    expect(engine.getPopulationCapacity()).toBe(CITY_CENTER_HOUSING_CAPACITY);
+    expect(engine.getState().cityCenter.housing).toBe(5);
+    expect(engine.getPopulationCapacity()).toBe(5);
     expect(engine.getPopulation()).toBe(5);
   });
 
@@ -58,7 +58,7 @@ describe('population capacity', () => {
 
     expect(engine.getState().buildings['hut-0']).toBeDefined();
     expect(engine.getPopulationCapacity()).toBe(
-      CITY_CENTER_HOUSING_CAPACITY + POPULATION_PER_HUT,
+      5 + POPULATION_PER_HUT,
     );
   });
 });

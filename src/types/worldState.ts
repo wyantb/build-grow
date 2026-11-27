@@ -141,6 +141,25 @@ export const MarketSchema = z.object({
 
 export type MarketState = z.infer<typeof MarketSchema>;
 
+/**
+ * The city center — a virtual building that is always present.
+ *
+ * It grants housing and storage from the start, and can be upgraded through
+ * rebirth and other mechanics. The values here are the current capacities,
+ * not the base values; mechanics that improve the city center bump these
+ * numbers directly.
+ */
+export const CityCenterSchema = z.object({
+  /** How many people the city center can house. */
+  housing: z.number(),
+  /** Base storage capacity for wood and stone (wood and stone share this cap). */
+  storageWoodStone: z.number(),
+  /** Base storage capacity for food (before sheds and grain silos). */
+  storageFood: z.number(),
+});
+
+export type CityCenterState = z.infer<typeof CityCenterSchema>;
+
 // Define the main world state schema
 export const WorldStateSchema = z.object({
   version: z.string(),
@@ -164,6 +183,13 @@ export const WorldStateSchema = z.object({
   gameTime: z.number(), // in seconds
   defaultJob: z.string(), // id of the job new workers go to
   market: MarketSchema,
+  /**
+   * The city center — a virtual building that is always present.
+   *
+   * It grants housing and storage from the start, and can be upgraded
+   * through rebirth and other mechanics.
+   */
+  cityCenter: CityCenterSchema,
   /**
    * A rebirth the player has started but not confirmed.
    *
@@ -226,6 +252,16 @@ export const createInitialState = (): WorldState => {
     market: {
       buys: {},
       sells: {},
+    },
+    /**
+     * The city center — a virtual building that is always present.
+     *
+     * Initial values can be upgraded through rebirth and other mechanics.
+     */
+    cityCenter: {
+      housing: 5,
+      storageWoodStone: 750,
+      storageFood: 500,
     },
     rebirthPool: {
       human: 5,
