@@ -78,6 +78,7 @@ describe('GameEngine batch ticking', () => {
       population: 4,
       workers: { unemployed: 3 },
       buildings: ['farm'],
+      resources: { food: 200 },
     }));
     engine.assignWorkers('farmer', 1);
 

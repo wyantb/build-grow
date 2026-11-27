@@ -15,6 +15,7 @@ import MarketSystem from './marketSystem.js';
 import type { MarketAction, MarketFlow, MarketOrders } from './marketSystem.js';
 import {
   GROWTH_INTERVAL_TICKS,
+  CITY_CENTER_HOUSING_CAPACITY,
   getBirthChance,
   getPopulationCapacity,
 } from './population.js';
@@ -24,6 +25,26 @@ import { TICKS_PER_SECOND } from './ticks.js';
 import { DEBUG } from '../utils/debug.js';
 
 export { TICKS_PER_SECOND };
+
+/**
+ * The storage capacity the city center provides.
+ *
+ * This is the starting storage, present from village creation. The player
+ * cannot build or destroy it. Wood and stone share one cap; food has its
+ * own lower cap.
+ */
+export const CITY_CENTER_STORAGE_WOOD_STONE = 750;
+
+/**
+ * The food storage capacity the city center provides.
+ */
+export const CITY_CENTER_STORAGE_FOOD = 500;
+
+/** How much one shed adds to each storage cap (wood, stone, food). */
+export const SHED_STORAGE = 200;
+
+/** How much one grain silo adds to food storage. */
+export const GRAIN_SILO_STORAGE = 500;
 
 /** Resource keys the engine tracks. */
 const RESOURCE_KEYS = ['wood', 'stone', 'food', 'gold'] as const;
@@ -197,6 +218,9 @@ class GameEngine {
     // Process market trades
     this.marketSystem.processTrades();
 
+    // Clamp resources after market trades too.
+    this.clampResources();
+
     // Process population growth
     this.processPopulationGrowth();
   }
@@ -250,6 +274,9 @@ class GameEngine {
       this.state.resources.food -= job.consumption.food * job.workers;
       this.state.resources.gold -= job.consumption.gold * job.workers;
     }
+
+    // Clamp resources to their storage caps.
+    this.clampResources();
   }
 
   /**
@@ -371,13 +398,57 @@ class GameEngine {
   }
 
   /**
-   * The people the huts can hold.
+   * The people the huts and the city center can hold.
    *
    * Every hut counts, because a building is finished the moment it is paid
-   * for.
+   * for. The city center provides its own housing from village creation.
    */
   getPopulationCapacity(): number {
-    return getPopulationCapacity(this.state.buildingCounts['hut'] ?? 0);
+    return CITY_CENTER_HOUSING_CAPACITY
+      + getPopulationCapacity(this.state.buildingCounts['hut'] ?? 0);
+  }
+
+  /**
+   * The maximum amount of a resource the storage structures can hold.
+   *
+   * Gold is uncapped. Wood and stone share the city-center cap; food has
+   * its own lower city-center cap plus the grain silo bonus.
+   */
+  getMaxStorage(resource: 'wood' | 'stone' | 'food'): number {
+    const shedCount = this.state.buildingCounts['shed'] ?? 0;
+    const siloCount = this.state.buildingCounts['grain_silo'] ?? 0;
+
+    const shedBonus = shedCount * SHED_STORAGE;
+    const siloBonus = siloCount * GRAIN_SILO_STORAGE;
+
+    switch (resource) {
+      case 'wood':
+      case 'stone':
+        return CITY_CENTER_STORAGE_WOOD_STONE + shedBonus;
+      case 'food':
+        return CITY_CENTER_STORAGE_FOOD + shedBonus + siloBonus;
+    }
+  }
+
+  /**
+   * Clamp all resources to their storage caps.
+   *
+   * Gold is never capped. Production can overshoot the cap within a tick,
+   * so this is called after every production step.
+   */
+  private clampResources(): void {
+    this.state.resources.wood = Math.min(
+      this.state.resources.wood,
+      this.getMaxStorage('wood'),
+    );
+    this.state.resources.stone = Math.min(
+      this.state.resources.stone,
+      this.getMaxStorage('stone'),
+    );
+    this.state.resources.food = Math.min(
+      this.state.resources.food,
+      this.getMaxStorage('food'),
+    );
   }
 
   // Build a building

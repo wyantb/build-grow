@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import GameEngine from '../gameEngine.js';
 import {
   BIRTH_CHANCE_BONUS,
+  CITY_CENTER_HOUSING_CAPACITY,
   GROWTH_INTERVAL_SECONDS,
   GROWTH_INTERVAL_TICKS,
   MAX_BIRTH_CHANCE,
@@ -27,22 +28,23 @@ const alwaysBirths = () => 0;
 const neverBirths = () => 1;
 
 describe('population capacity', () => {
-  it('houses five people in a hut', () => {
-    expect(POPULATION_PER_HUT).toBe(5);
-    expect(getPopulationCapacity(1)).toBe(5);
-    expect(getPopulationCapacity(3)).toBe(15);
+  it('houses two people in a hut', () => {
+    expect(POPULATION_PER_HUT).toBe(2);
+    expect(getPopulationCapacity(1)).toBe(2);
+    expect(getPopulationCapacity(3)).toBe(6);
   });
 
   it('houses nobody without a hut', () => {
     expect(getPopulationCapacity(0)).toBe(0);
   });
 
-  it('starts a new game with one hut and room for five', () => {
+  it('starts a new game with city center housing and room for five', () => {
     const engine = new GameEngine();
 
-    expect(engine.getState().buildingCounts['hut']).toBe(1);
-    expect(engine.getState().buildings['hut-0']).toBeDefined();
-    expect(engine.getPopulationCapacity()).toBe(5);
+    // No starting hut — the city center provides the housing.
+    expect(engine.getState().buildingCounts['hut']).toBeUndefined();
+    expect(engine.getState().buildings['hut-0']).toBeUndefined();
+    expect(engine.getPopulationCapacity()).toBe(CITY_CENTER_HOUSING_CAPACITY);
     expect(engine.getPopulation()).toBe(5);
   });
 
@@ -55,90 +57,94 @@ describe('population capacity', () => {
     engine.addBuilding('hut');
 
     expect(engine.getState().buildings['hut-0']).toBeDefined();
-    expect(engine.getPopulationCapacity()).toBe(5);
+    expect(engine.getPopulationCapacity()).toBe(
+      CITY_CENTER_HOUSING_CAPACITY + POPULATION_PER_HUT,
+    );
   });
 });
 
 describe('population growth', () => {
   it('does not grow past the capacity of the huts', () => {
     const engine = new GameEngine(createTestWorld({
-      population: 5,
+      population: 7,
       buildings: ['hut'],
     }), alwaysBirths);
 
-    // The only hut is full, so no birth can happen.
+    // City center (5) + one hut (2) = 7. Full, so no birth can happen.
     engine.runTicks(GROWTH_INTERVAL_TICKS * 10);
 
-    expect(engine.getPopulation()).toBe(5);
+    expect(engine.getPopulation()).toBe(7);
   });
 
   it('grows when there is room in the huts', () => {
     const engine = new GameEngine(createTestWorld({
-      population: 4,
+      population: 6,
       buildings: ['hut'],
     }), alwaysBirths);
 
     engine.runTicks(GROWTH_INTERVAL_TICKS);
 
-    expect(engine.getPopulation()).toBe(5);
+    // City center (5) + one hut (2) = 7 capacity.
+    expect(engine.getPopulation()).toBe(7);
   });
 
   it('grows by one person per check, not by more', () => {
     const engine = new GameEngine(createTestWorld({
-      population: 4,
+      population: 8,
       buildings: ['hut', 'hut'],
     }), alwaysBirths);
 
     engine.runTicks(GROWTH_INTERVAL_TICKS);
 
-    expect(engine.getPopulation()).toBe(5);
+    // City center (5) + two huts (4) = 9 capacity. Grows from 8 to 9.
+    expect(engine.getPopulation()).toBe(9);
   });
 
   it('only rolls on the growth interval', () => {
     const engine = new GameEngine(createTestWorld({
-      population: 4,
+      population: 6,
       buildings: ['hut'],
     }), alwaysBirths);
 
     // One tick short of the interval, so no roll has happened yet.
     engine.runTicks(GROWTH_INTERVAL_TICKS - 1);
 
-    expect(engine.getPopulation()).toBe(4);
+    expect(engine.getPopulation()).toBe(6);
 
     engine.runTicks(1);
 
-    expect(engine.getPopulation()).toBe(5);
+    expect(engine.getPopulation()).toBe(7);
   });
 
   it('never grows when the roll fails', () => {
     const engine = new GameEngine(createTestWorld({
-      population: 4,
+      population: 6,
       buildings: ['hut'],
     }), neverBirths);
 
     engine.runTicks(GROWTH_INTERVAL_TICKS * 20);
 
-    expect(engine.getPopulation()).toBe(4);
+    expect(engine.getPopulation()).toBe(6);
   });
 
   it('puts a new person in the default job', () => {
     const engine = new GameEngine(createTestWorld({
-      population: 4,
-      workers: { unemployed: 4 },
+      population: 6,
+      workers: { unemployed: 6 },
       buildings: ['hut'],
     }), alwaysBirths);
 
     engine.runTicks(GROWTH_INTERVAL_TICKS);
 
-    expect(engine.getPopulation()).toBe(5);
-    expect(engine.getState().jobs['unemployed']?.workers).toBe(5);
+    expect(engine.getPopulation()).toBe(7);
+    expect(engine.getState().jobs['unemployed']?.workers).toBe(7);
   });
 
   it('does not run the roll before the first interval', () => {
     let rolls = 0;
 
     const engine = new GameEngine(createTestWorld({
-      population: 4,
+      population: 6,
       buildings: ['hut'],
     }), () => {
       rolls++;
@@ -233,7 +239,7 @@ describe('the store', () => {
 
     const gameState = getGameState();
 
-    // A new world has one hut, so the population fills it exactly.
+    // A new world has city center housing (5) and no huts, so the population fills it exactly.
     expect(gameState.getPopulation()).toBe(5);
     expect(gameState.getPopulationCapacity()).toBe(5);
 
@@ -249,7 +255,8 @@ describe('the store', () => {
     gameState.gameEngine.runTicks(10);
     gameState.mirrorEngineState();
 
-    expect(gameState.getPopulationCapacity()).toBe(10);
+    // City center (5) + one hut (2) = 7.
+    expect(gameState.getPopulationCapacity()).toBe(7);
 
     resetGameState();
   });
@@ -258,15 +265,15 @@ describe('the store', () => {
 describe('population through a save', () => {
   it('keeps the population and the capacity through a round trip', () => {
     const engine = new GameEngine(createTestWorld({
-      population: 8,
+      population: 9,
       buildings: ['hut', 'hut'],
     }));
 
     const restored = deserializePayload(serializeState(engine.getState()));
 
-    expect(restored.population).toBe(8);
+    expect(restored.population).toBe(9);
     expect(restored.buildingCounts['hut']).toBe(2);
-    expect(getPopulationCapacity(restored.buildingCounts['hut'] ?? 0)).toBe(10);
+    expect(getPopulationCapacity(restored.buildingCounts['hut'] ?? 0)).toBe(4);
   });
 
   it('does not give a saved world the hut a new game starts with', () => {

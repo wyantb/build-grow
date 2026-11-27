@@ -178,12 +178,13 @@ describe('starting a rebirth', () => {
 
     expect(engine.getPopulation()).toBe(5);
     expect(state.resources.gold).toBe(REBIRTH_GOLD_COST);
-    expect(state.buildingCounts['hut']).toBe(1);
+    // No starting hut — the city center provides housing.
+    expect(state.buildingCounts['hut']).toBeUndefined();
   });
 });
 
 describe('confirming a rebirth', () => {
-  it('starts a new world with the same population and the same hut', () => {
+  it('starts a new world with the same population and no hut', () => {
     const engine = worldWithGold(REBIRTH_GOLD_COST);
 
     engine.beginRebirth();
@@ -192,7 +193,8 @@ describe('confirming a rebirth', () => {
     const state = engine.getState();
 
     expect(engine.getPopulation()).toBe(5);
-    expect(state.buildingCounts['hut']).toBe(1);
+    // No starting hut — the city center provides housing.
+    expect(state.buildingCounts['hut']).toBeUndefined();
     expect(state.resources.gold).toBe(0);
     expect(state.resources.wood).toBe(250);
   });
@@ -532,10 +534,13 @@ describe('job order after a rebirth', () => {
 
     // After rebirth, build the same buildings so the jobs are visible again.
     const state = engine.getState();
-    state.buildingCounts.lumberjack = 1;
-    state.buildingCounts.quarry = 1;
-    state.buildingCounts.farm = 1;
-    engine.recalculateJobCapacities();
+    state.buildingCounts['lumberjack'] = 1;
+    state.buildingCounts['quarry'] = 1;
+    state.buildingCounts['farm'] = 1;
+    // Build the instances so capacities are recalculated.
+    engine.addBuilding('lumberjack');
+    engine.addBuilding('quarry');
+    engine.addBuilding('farm');
 
     // Reorder so quarrier is first.
     engine.reorderJob('quarrier', 0);

@@ -7,8 +7,14 @@ import type { BuildingType } from '../data/buildings.js';
 import { getTradeCapacity } from '../data/market.js';
 import type { MarketResource } from '../data/market.js';
 import type { MarketAction, MarketFlow } from '../systems/marketSystem.js';
-import { getPopulationCapacity as getCapacityFromHuts } from '../systems/population.js';
-import GameEngine, { REBIRTH_GOLD_COST } from '../systems/gameEngine.js';
+import { getPopulationCapacity as getCapacityFromHuts, CITY_CENTER_HOUSING_CAPACITY } from '../systems/population.js';
+import GameEngine, {
+  REBIRTH_GOLD_COST,
+  CITY_CENTER_STORAGE_WOOD_STONE,
+  CITY_CENTER_STORAGE_FOOD,
+  SHED_STORAGE,
+  GRAIN_SILO_STORAGE,
+} from '../systems/gameEngine.js';
 
 /**
  * Bring a store array in line with a plain array, in place.
@@ -610,12 +616,35 @@ export const useGameState = () => {
   const getPopulation = () => state.population;
 
   /**
-   * The people the huts can hold.
+   * The people the huts and the city center can hold.
    *
    * Read from the mirrored building counts so the figure stays reactive.
    */
   const getPopulationCapacity = (): number =>
-    getCapacityFromHuts(state.buildingCounts['hut'] ?? 0);
+    CITY_CENTER_HOUSING_CAPACITY
+    + getCapacityFromHuts(state.buildingCounts['hut'] ?? 0);
+
+  /**
+   * The maximum amount of a resource the storage structures can hold.
+   *
+   * Gold is uncapped. Read from the mirrored building counts so the figure
+   * stays reactive.
+   */
+  const getMaxStorage = (resource: 'wood' | 'stone' | 'food'): number => {
+    const shedCount = state.buildingCounts['shed'] ?? 0;
+    const siloCount = state.buildingCounts['grain_silo'] ?? 0;
+
+    const shedBonus = shedCount * SHED_STORAGE;
+    const siloBonus = siloCount * GRAIN_SILO_STORAGE;
+
+    switch (resource) {
+      case 'wood':
+      case 'stone':
+        return CITY_CENTER_STORAGE_WOOD_STONE + shedBonus;
+      case 'food':
+        return CITY_CENTER_STORAGE_FOOD + shedBonus + siloBonus;
+    }
+  };
 
   const getJobs = () => state.jobs;
   const getBuildings = () => state.buildings;
@@ -633,6 +662,7 @@ export const useGameState = () => {
     getResources,
     getPopulation,
     getPopulationCapacity,
+    getMaxStorage,
     getJobs,
     getBuildings,
     getGameTime,

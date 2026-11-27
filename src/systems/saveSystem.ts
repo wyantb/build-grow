@@ -192,9 +192,6 @@ export const deserializePayload = (payload: SavePayload): WorldState => {
   state.defaultJob = payload.defaultJob;
   state.jobOrder = normalizeJobOrder(payload.jobOrder);
 
-  // A new game starts with a hut, but a save holds the whole set of
-  // buildings. The saved ones replace the starting ones, so a world that
-  // had no hut does not inherit one.
   state.buildings = {};
   state.buildingCounts = { ...payload.buildingCounts };
 

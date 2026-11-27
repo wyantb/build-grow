@@ -1,6 +1,6 @@
 import type { Resource } from '../types/worldState.js';
 
-export type BuildingCategory = 'Residential Block' | 'Commercial District' | 'Rural District';
+export type BuildingCategory = 'Residential Block' | 'Commercial District' | 'Rural District' | 'Storage';
 
 export interface BuildingType {
   id: string;
@@ -18,7 +18,7 @@ export const BUILDING_TYPES: BuildingType[] = [
     name: 'Hut',
     description: 'Basic housing for your population.',
     cost: { wood: 20, stone: 10, food: 0, gold: 0 },
-    effect: 'Houses 5 people. The population cannot grow past the housing.',
+    effect: 'Houses 2 people. The population cannot grow past the housing.',
     category: 'Residential Block',
   },
   {
@@ -61,6 +61,22 @@ export const BUILDING_TYPES: BuildingType[] = [
     effect: 'Provides work for a farmer and increases food production.',
     category: 'Rural District',
   },
+  {
+    id: 'shed',
+    name: 'Shed',
+    description: 'A small storage facility for your various resources.',
+    cost: { wood: 30, stone: 10, food: 0, gold: 0 },
+    effect: 'Increases wood, stone, and food storage by 200.',
+    category: 'Storage',
+  },
+  {
+    id: 'grain_silo',
+    name: 'Grain Silo',
+    description: 'A sealed silo for long-term grain storage.',
+    cost: { wood: 40, stone: 20, food: 0, gold: 0 },
+    effect: 'Increases food storage by 500.',
+    category: 'Storage',
+  },
 ];
 
 const buildingTypesById = new Map(BUILDING_TYPES.map((type) => [type.id, type]));
@@ -72,6 +88,7 @@ export const BUILDING_CATEGORY_ORDER: BuildingCategory[] = [
   'Residential Block',
   'Commercial District',
   'Rural District',
+  'Storage',
 ];
 
 /** Cost multiplier per existing building of the same type. */

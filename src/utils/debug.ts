@@ -1,3 +1,5 @@
+/// <reference types="vite/client" />
+
 /**
  * Debug flag: true in development, false in production builds.
  *

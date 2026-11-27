@@ -38,12 +38,10 @@ const localStorageStub = (): Storage => {
 let storage: Storage;
 
 /**
- * A new world starts with one hut, so the counts below include it.
- *
- * The starting hut is `hut-0`, so the first hut the player builds is
- * `hut-1`.
+ * The game no longer starts with a hut; the city center provides housing.
+ * The first hut the player builds is `hut-0`.
  */
-const STARTING_HUTS = 1;
+const STARTING_HUTS = 0;
 
 beforeEach(() => {
   storage = localStorageStub();
@@ -122,13 +120,13 @@ describe('saving and loading through the game', () => {
     gameState.gameEngine.runTicks(4);
     gameState.mirrorEngineState();
 
-    // The building is the second hut, because the world starts with one.
-    expect(gameState.getBuildings()['hut-1']?.id).toBe('hut');
+    // The world no longer starts with a hut.
+    expect(gameState.getBuildings()['hut-0']?.id).toBe('hut');
 
     await loadNow();
 
     // The load brings the building back.
-    expect(gameState.getBuildings()['hut-1']?.id).toBe('hut');
+    expect(gameState.getBuildings()['hut-0']?.id).toBe('hut');
     expect(gameState.getBuildingCounts()['hut']).toBe(STARTING_HUTS + 1);
   });
 
@@ -197,7 +195,7 @@ describe('saving and loading through the game', () => {
     }
 
     expect(decoded.envelope.state.buildingCounts['hut']).toBe(STARTING_HUTS + 1);
-    expect(Object.keys(decoded.envelope.state.buildings)).toEqual(['hut-0', 'hut-1']);
+    expect(Object.keys(decoded.envelope.state.buildings)).toEqual(['hut-0']);
   });
 
   it('leaves the engine, the store and the saved file agreeing', async () => {
@@ -341,14 +339,15 @@ describe('saving and loading through the game', () => {
 
     await saveNow();
 
-    expect(gameState.getBuildingCounts()['hut']).toBe(STARTING_HUTS + 1);
+    expect(gameState.getBuildingCounts()['hut']).toBe(1);
 
     hardReset();
 
-    // The world is a brand new one again: the starting hut and the starting
-    // resources, with the population back at its first value.
-    expect(gameState.getBuildingCounts()['hut']).toBe(STARTING_HUTS);
-    expect(Object.keys(gameState.getBuildings())).toEqual(['hut-0']);
+    // The world is a brand new one again: no huts (the city center provides
+    // housing), the starting resources, and the population back at its first
+    // value.
+    expect(gameState.getBuildingCounts()['hut']).toBeUndefined();
+    expect(Object.keys(gameState.getBuildings())).toEqual([]);
     expect(gameState.getResources().wood).toBe(250);
     expect(gameState.getPopulation()).toBe(5);
   });
@@ -363,14 +362,15 @@ describe('saving and loading through the game', () => {
 
     await saveNow();
 
+    // After reset the world is fresh — no huts.
     hardReset();
 
-    expect(gameState.getBuildingCounts()['hut']).toBe(STARTING_HUTS);
+    expect(gameState.getBuildingCounts()['hut']).toBeUndefined();
 
     // The old world comes back.
     await loadNow();
 
-    expect(gameState.getBuildingCounts()['hut']).toBe(STARTING_HUTS + 1);
+    expect(gameState.getBuildingCounts()['hut']).toBe(1);
     expect(gameState.getPopulation()).toBe(5);
   });
 
@@ -407,12 +407,12 @@ describe('saving and loading through the game', () => {
 
     hardReset();
 
-    expect(Object.keys(gameState.getBuildings())).toEqual(['hut-0']);
+    expect(Object.keys(gameState.getBuildings())).toEqual([]);
 
     await loadNow();
 
     // The building is back, and it is counted.
-    expect(gameState.getBuildings()['hut-1']?.id).toBe('hut');
+    expect(gameState.getBuildings()['hut-0']?.id).toBe('hut');
     expect(gameState.getBuildingCounts()['hut']).toBe(STARTING_HUTS + 1);
   });
 
@@ -484,6 +484,6 @@ describe('saving and loading through the game', () => {
 
     expect(result.ok).toBe(false);
     expect(saveStatus()?.kind).toBe('error');
-    expect(Object.keys(gameState.getBuildings())).toEqual(['hut-0', 'hut-1']);
+    expect(Object.keys(gameState.getBuildings())).toEqual(['hut-0']);
   });
 });

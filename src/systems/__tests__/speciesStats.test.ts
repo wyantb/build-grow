@@ -437,6 +437,7 @@ describe('the rate the engine reports', () => {
       population: 5,
       workers: { unemployed: 4 },
       buildings: ['farm'],
+      resources: { food: 200 },
       species: { human: { constitution: 120, wisdom: 110 } },
     }));
 

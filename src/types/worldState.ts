@@ -201,18 +201,8 @@ export const createInitialState = (): WorldState => {
       Object.entries(JOBS).map(([id, job]) => [id, { ...job, workers: 0, species: {} }]),
     ),
     jobOrder: [...DEFAULT_JOB_ORDER],
-    buildings: {
-      // A new world starts with one hut, so the starting population has
-      // somewhere to live. The hut is part of the world, not something the
-      // player builds.
-      'hut-0': {
-        id: 'hut',
-        name: 'Hut',
-        description: 'Basic housing for your population.',
-        cost: { wood: 0, stone: 0, food: 0, gold: 0 },
-      },
-    },
-    buildingCounts: { hut: 1 },
+    buildings: {},
+    buildingCounts: {},
     /**
      * The species in the world.
      *
@@ -229,7 +219,7 @@ export const createInitialState = (): WorldState => {
         count: 0,
       }]),
     ),
-    unlockedBuildings: ['hut', 'market', 'caravanserai', 'lumberjack', 'quarry', 'farm'],
+    unlockedBuildings: ['hut', 'market', 'caravanserai', 'lumberjack', 'quarry', 'farm', 'shed', 'grain_silo'],
     unlockedJobs: ['settler'],
     gameTime: 0,
     defaultJob: 'unemployed',
