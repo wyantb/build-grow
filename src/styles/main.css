@@ -148,7 +148,8 @@ body.light-mode .theme-toggle:hover {
   background-color: #ccc;
 }
 
-.debug-resources {
+.debug-resources,
+.debug-print {
   cursor: pointer;
   font-size: 0.75rem;
   z-index: 10;
@@ -164,11 +165,13 @@ body.light-mode .theme-toggle:hover {
   font-weight: 600;
 }
 
-.debug-resources:hover {
+.debug-resources:hover,
+.debug-print:hover {
   background-color: #444;
 }
 
-body.light-mode .debug-resources:hover {
+body.light-mode .debug-resources:hover,
+body.light-mode .debug-print:hover {
   background-color: #ccc;
 }
 
