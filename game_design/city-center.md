@@ -14,7 +14,7 @@ research.
 | Food            | 25       |
 | Research        | 200      |
 
-The City Center provides the first 5 housing slots (one hut's worth), the
+The City Center provides the first 5 housing slots, the
 base storage for wood and stone (shared), food storage, and research
 storage through the **City Library**.
 

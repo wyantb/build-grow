@@ -22,18 +22,8 @@ second).
 ## Research storage
 
 Research is capped by the **City Library**, a facility that comes with the
-City Center. The starting cap is 200 research. Future buildings may raise
+City Center. The starting cap is 200 research. Future buildings will raise
 this cap.
 
 Research, like other capped resources, is clamped to its storage limit at
 the end of every tick.
-
-## Future: Thinker jobs
-
-As the city grows, you will be able to staff dedicated **thinker** jobs
-that produce research at higher rates than passive generation. Thinkers
-will use species stats (intelligence, wisdom) to scale their output, just
-as other jobs do.
-
-This will let players choose between passive population-driven growth and
-active, high-rate thinker specialization.
