@@ -204,7 +204,8 @@ export const useGameState = () => {
       state.market.sells = { ...engineState.market.sells };
 
       // Mirror the rebirth pool.
-      state.rebirthPool = { ...engineState.rebirthPool };
+      state.rebirthPool.human = engineState.rebirthPool.human;
+      state.rebirthPool.elf = engineState.rebirthPool.elf;
 
       syncPendingRebirth(state, engineState.pendingRebirth);
     });
@@ -272,7 +273,8 @@ export const useGameState = () => {
       state.market.buys = { ...engineState.market.buys };
       state.market.sells = { ...engineState.market.sells };
 
-      state.rebirthPool = { ...engineState.rebirthPool };
+      state.rebirthPool.human = engineState.rebirthPool.human;
+      state.rebirthPool.elf = engineState.rebirthPool.elf;
 
       syncPendingRebirth(state, engineState.pendingRebirth);
     });
