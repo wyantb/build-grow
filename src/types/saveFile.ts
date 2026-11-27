@@ -19,7 +19,7 @@ export const SAVE_FORMAT = 'build-grow.save';
  * This moves only when the shape of a save changes. It is separate from the
  * game version, which moves when the game's rules change.
  */
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 /** Worker counts per job, and who works them. */
 const JobWorkersSchema = z.record(z.string(), z.object({
@@ -94,6 +94,13 @@ export const SavePayloadSchema = z.object({
   buildingCounts: z.record(z.string(), z.number()),
   unlockedBuildings: z.array(z.string()),
   unlockedJobs: z.array(z.string()),
+  /**
+   * The technologies the player has researched.
+   *
+   * A save written before the research system existed does not have this,
+   * so it is optional and defaults to none.
+   */
+  researchedTechnologies: z.array(z.string()).optional(),
   market: MarketSchema,
   /**
    * A rebirth the player has started but not confirmed.

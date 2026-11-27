@@ -150,6 +150,7 @@ export const serializeState = (state: WorldState): SavePayload => {
     buildingCounts: { ...state.buildingCounts },
     unlockedBuildings: [...state.unlockedBuildings],
     unlockedJobs: [...state.unlockedJobs],
+    researchedTechnologies: [...state.researchedTechnologies],
     market: {
       buys: { ...state.market.buys },
       sells: { ...state.market.sells },
@@ -204,6 +205,9 @@ export const deserializePayload = (payload: SavePayload): WorldState => {
     ...state.unlockedBuildings,
   ])];
   state.unlockedJobs = [...payload.unlockedJobs];
+  state.researchedTechnologies = payload.researchedTechnologies
+    ? [...payload.researchedTechnologies]
+    : [];
   state.market = {
     buys: { ...payload.market.buys },
     sells: { ...payload.market.sells },

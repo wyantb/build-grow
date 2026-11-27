@@ -7,7 +7,7 @@
  * the game changes in a way that could affect a saved world, such as a
  * balance change to a job or a building.
  */
-export const GAME_VERSION = '4.0.0';
+export const GAME_VERSION = '4.1.0';
 
 export interface ParsedVersion {
   major: number;
