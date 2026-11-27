@@ -1437,6 +1437,13 @@ class GameEngine {
       rates.research += speciesData.baseResearch * entry.count;
     }
 
+    // Chief job: each chief adds research equal to the natural population research.
+    const chiefJob = this.state.jobs['chief'];
+    if (chiefJob && chiefJob.workers > 0) {
+      const naturalResearch = rates.research;
+      rates.research += naturalResearch * chiefJob.workers;
+    }
+
     return rates;
   }
 
