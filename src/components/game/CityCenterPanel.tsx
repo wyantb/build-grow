@@ -107,7 +107,7 @@ const CityCenterPanel: Component = () => {
 
       {/* Population Breakdown Dialog */}
       <Show when={activeDialog() === 'housing'}>
-        <div class="dialog-overlay" onClick={closeDialog}>
+        <div class="dialog-overlay" onClick={closeDialog} onKeyDown={(e) => { if (e.key === 'Escape') {closeDialog();} }}>
           <div class="dialog-panel" onClick={(e) => e.stopPropagation()}>
             <div class="dialog-header">
               <h3>Maximum Population</h3>
@@ -133,7 +133,7 @@ const CityCenterPanel: Component = () => {
 
       {/* Storage Breakdown Dialog */}
       <Show when={activeDialog() === 'storage'}>
-        <div class="dialog-overlay" onClick={closeDialog}>
+        <div class="dialog-overlay" onClick={closeDialog} onKeyDown={(e) => { if (e.key === 'Escape') {closeDialog();} }}>
           <div class="dialog-panel" onClick={(e) => e.stopPropagation()}>
             <div class="dialog-header">
               <h3>Storage Capacity</h3>
@@ -193,7 +193,7 @@ const CityCenterPanel: Component = () => {
 
       {/* Research Breakdown Dialog */}
       <Show when={activeDialog() === 'research'}>
-        <div class="dialog-overlay" onClick={closeDialog}>
+        <div class="dialog-overlay" onClick={closeDialog} onKeyDown={(e) => { if (e.key === 'Escape') {closeDialog();} }}>
           <div class="dialog-panel" onClick={(e) => e.stopPropagation()}>
             <div class="dialog-header">
               <h3>Research Capacity</h3>
