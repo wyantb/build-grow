@@ -48,11 +48,6 @@ first buildings to reconsider.
 ### Power Grid / Electricity
 Coal Powerplant, Oil Powerplant, Fission Reactor. No MW system.
 
-### Protoplasm / Space Endgame
-Assembly Plant, Nanite Factory, Transmitter, Mass Driver, Fuel Depot,
-Oil Derrick, Wharf, Container Port, Freight Yard, Casino. These are
-endgame/space systems we do not currently have.
-
 ### Challenge-Locked
 Wagon (Gravity Well challenge only).
 
@@ -124,8 +119,6 @@ button, which we may not even keep as a permanent mechanic.
 
 | Tech | Cost | Requires | Unlocks | Effect |
 |------|------|----------|---------|--------|
-| **Agriculture** | 10 knowledge | Sundial (exists) | Farm (exists) | — |
-| **Mining** | 45 knowledge | Sundial | Quarry (exists) | — |
 | **Basic Storage** | 20 knowledge | Sundial, Currency | **Shed** | +storage for all resources |
 | **Currency** | 22 knowledge, 10 wood | Housing (exists) | Gold resource (exists) | — |
 
@@ -177,17 +170,17 @@ Beyond industrial, we will have space/planetary mechanics. Details TBD.
 
 ## Tool Multiplier System
 
-The core mechanic: tool techs provide **stacking multiplicative bonuses**
-to the jobs they serve. The multipliers live in the tech catalog, not on
-buildings.
+The core mechanic: tool techs provide an associated job, e.g. Brazier.
+Brazier is unlocked when an associated tech (bronze pickaxe, axe, hoe, sledge)
+is researched. Based on the associated techs, the braziers boost the associated
+jobs. Based boost can be something small, like 10% per Brazier.
+
+A blacksmith works with Iron and has a similar concept. More will come later.
 
 ### Multiplier Table
 
 | Tool Tech | Jobs Affected | Bonus | Cumulative |
 |-----------|---------------|-------|------------|
-| Bronze Tools | Miner, Lumberjack, Farmer, Quarrier | +20% | 1.20× |
-| Iron Tools | Miner, Lumberjack, Farmer, Quarrier | +35% | 1.52× (1.20 × 1.35) |
-| Steel Tools (TBD) | Miner, Lumberjack, Farmer, Quarrier | +50% | 2.28× |
 | Bronze Pickaxe (if split) | Miner only | +15% | — |
 | Iron Pickaxe (if split) | Miner only | +30% | — |
 | Bronze Axe (if split) | Lumberjack only | +15% | — |
@@ -197,23 +190,6 @@ buildings.
 | Bronze Sledgehammer (if split) | Quarrier only | +20% | — |
 | Iron Sledgehammer (if split) | Quarrier only | +40% | — |
 
-**Decision needed:** Do we keep tool techs as a single "Bronze Tools" /
-"Iron Tools" tech (simpler, fewer techs), or split them into per-job
-tools (more granularity, more techs to research)? The split version gives
-more leverage points for rebirth bonuses ("your bronze pickaxe tech gives
-+50% instead of +20%").
-
-### Implementation
-
-```ts
-// In the engine's tick calculation:
-const toolMultiplier = getToolMultiplier(jobId, world.unlockedTechs);
-const baseRate = job.baseRate * toolMultiplier;
-```
-
-The multiplier is computed at tick time from the catalog of unlocked techs.
-It is not stored on the building or job.
-
 ---
 
 ## New Buildings
@@ -222,7 +198,7 @@ It is not stored on the building or job.
 
 | Building | Cost | Grants | Notes |
 |----------|------|--------|-------|
-| **Shed** | 30 wood | +2000 all-resource storage | |
+| **Shed** | 30 wood | +200 storage for wood, stone, food | |
 | **Mine** | 50 wood, 30 stone | 1 Miner slot | Produces copper (later iron) |
 | **Foundry** | 80 wood, 40 stone, 20 copper | 1 Crafter slot | Crafts bronze, tools |
 | **University** | 100 wood, 60 stone | 1 Professor slot, +500 max knowledge | Knowledge production |
@@ -280,68 +256,18 @@ When knowledge is at capacity (knowledge == max knowledge), automatically
 queue the next available tech. Simple rule:
 - Check if knowledge >= max knowledge
 - Check if a tech is available (requirements met, not yet unlocked)
-- If both true, start researching the highest-priority available tech
-- Priority: follow the dependency tree (deepest unlocked path first)
+- Priority unlock goes to cheapest tech available with no resource requirements
 
 ### Auto-Build
 When a resource is at capacity:
 - If storage-capable resource (wood, stone, food, etc.) is full and we can
   afford a Shed, queue a Shed
-- If food is full and we can afford a Grain Silo, queue a Grain Silo
 - Simple rule-based, not AI
-
-### Why This Matters for Rebirth
-Each automation gives a leverage point for rebirth upgrades:
-- "Auto-research starts at 50% knowledge cap instead of 100%"
-- "Auto-build triggers at 75% capacity instead of 100%"
-- These are small quality-of-life improvements that compound over rebirths
-
----
-
-## Implementation Order
-
-### Phase 1: Foundation
-1. Add Knowledge resource to world state (if not already present)
-2. Add tech system: tech catalog, dependency validation, unlock state
-3. Add Shed building (storage expansion)
-4. Add auto-research rule
-
-### Phase 2: Bronze Age
-5. Add Mine building + Miner job
-6. Add Foundry building + Crafter job
-7. Add University building + Professor job
-8. Add Bank building + Banker job
-9. Add Bronze Tools tech + multiplier system
-10. Add Copper resource
-
-### Phase 3: Iron Age
-11. Add Iron Mining tech + Iron resource
-12. Add Iron Tools tech + multiplier stacking
-13. Add Cement Plant + Cement resource
-14. Add Smelter building
-15. Add Library building
-16. Add Coal Mine + Coal resource
-
-### Phase 4: Steel & Industrial
-17. Add Crucible Steel tech + Steel resource
-18. Add Sawmill, Grain Silo, Mill buildings
-19. Add Trade Post building
-20. Add Metal Refinery + Aluminium resource
-21. Add Research Lab building + Scientist job
-22. Add Black Powder tech
-
-### Phase 5: Polish
-23. Add auto-build rules
-24. Add building queue UI
-25. Balance all numbers
-26. Add tooltips for all new buildings and techs
 
 ---
 
 ## Open Questions
 
-1. **Tool granularity:** Single "Bronze Tools" / "Iron Tools" techs, or
-   split per job (Pickaxe, Axe, Hoes, Sledgehammer)?
 2. **Bronze recipe:** Does bronze need tin, or is it just copper? If tin,
    do we need a Tin resource and Tin Mine?
 3. **Smelter fuel:** Smelters "require fuel" in Evolve. Do we consume coal
@@ -349,12 +275,6 @@ Each automation gives a leverage point for rebirth upgrades:
 4. **Population scaling:** Evolve's Cabin = 1 citizen, Cottage = 2. Our
    Hut = 5. At higher tiers, do we add Apartment-equivalent (+10?) or
    keep it simple?
-5. **Marketplace tech:** Evolve requires Banking + Government + "Not
-   Terrifying" for the market. We already have a Market building. Do we
-   need a Marketplace tech to unlock trading, or is it always available
-   once the building exists?
 6. **Resource crafting:** Bronze is "crafted" in Evolve's Foundry. Do we
    model this as a recipe (2 copper + 1 tin → 1 bronze), or as a flat
    conversion rate?
-7. **Building queue UI:** Evolve calls this "Urban Planning." Do we want
-   a visual queue, or is a simple ordered list sufficient?
