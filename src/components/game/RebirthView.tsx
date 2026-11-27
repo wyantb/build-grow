@@ -254,6 +254,11 @@ const RebirthView: Component = () => {
                   : 0;
 
                 const count = createMemo(() => composition()[raceId] ?? 0);
+                const poolCount = createMemo(() => {
+                  const p = pool();
+
+                  return (p as Record<string, number> | undefined)?.[raceId] ?? 0;
+                });
 
                 return (
                   <div class="race-row">
@@ -277,11 +282,13 @@ const RebirthView: Component = () => {
                       >
                         {'\u2039'}
                       </button>
-                      <span class="race-count">{count()}</span>
+                      <span class="race-count">
+                        {count()} / {poolCount()}
+                      </span>
                       <button
                         class="race-btn"
                         type="button"
-                        disabled={usedLives() >= totalLives()}
+                        disabled={usedLives() >= totalLives() || count() >= poolCount()}
                         onClick={() => increaseRace(raceId)}
                       >
                         {'\u203A'}
