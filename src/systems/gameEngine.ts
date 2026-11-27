@@ -22,6 +22,8 @@ import { getAverageStats, getJobFactor } from './stats.js';
 import { getRebirthStatsPerSpecies, pickBirthSpecies } from './rebirth.js';
 import { TICKS_PER_SECOND } from './ticks.js';
 import { DEBUG } from '../utils/debug.js';
+import { TECHNOLOGIES, getTechnology } from '../data/technologies.js';
+import type { TechnologyType } from '../data/technologies.js';
 
 export { TICKS_PER_SECOND };
 
@@ -1435,6 +1437,68 @@ class GameEngine {
     this.state.resources.gold += amount;
     this.state.resources.research += amount;
     this.notify();
+  }
+
+  /**
+   * The catalog of all technologies.
+   */
+  getTechnologyCatalog(): TechnologyType[] {
+    return [...TECHNOLOGIES];
+  }
+
+  /**
+   * Whether a technology has been researched.
+   */
+  isTechnologyResearched(techId: string): boolean {
+    return this.state.researchedTechnologies.includes(techId);
+  }
+
+  /**
+   * Whether a technology's prereqs are all met.
+   */
+  canResearch(techId: string): boolean {
+    const tech = getTechnology(techId);
+    if (!tech) {return false;}
+    if (this.isTechnologyResearched(techId)) {return false;}
+
+    return tech.prereqs.every((prereq) => this.isTechnologyResearched(prereq));
+  }
+
+  /**
+   * Whether the player can afford the research cost.
+   */
+  canAffordResearch(techId: string): boolean {
+    const tech = getTechnology(techId);
+    if (!tech) {return false;}
+
+    return this.state.resources.research >= (tech.cost.research ?? 0);
+  }
+
+  /**
+   * Research a technology.
+   *
+   * Deducts the research cost, marks the technology as researched, and
+   * unlocks any buildings it grants.
+   */
+  researchTechnology(techId: string): boolean {
+    const tech = getTechnology(techId);
+    if (!tech) {return false;}
+    if (!this.canResearch(techId)) {return false;}
+    if (!this.canAffordResearch(techId)) {return false;}
+
+    this.state.resources.research -= tech.cost.research ?? 0;
+    this.state.researchedTechnologies.push(techId);
+
+    // Unlock buildings this technology grants
+    for (const buildingId of tech.unlocksBuildings) {
+      if (!this.state.unlockedBuildings.includes(buildingId)) {
+        this.state.unlockedBuildings.push(buildingId);
+      }
+    }
+
+    this.notify();
+
+    return true;
   }
 }
 

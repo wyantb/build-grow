@@ -4,6 +4,7 @@ import type { WorldState, Resource, Stats } from '../types/worldState.js';
 import { createInitialState } from '../types/worldState.js';
 import { BUILDING_TYPES, getBuildingType } from '../data/buildings.js';
 import type { BuildingType } from '../data/buildings.js';
+import type { TechnologyType } from '../data/technologies.js';
 import { getTradeCapacity } from '../data/market.js';
 import type { MarketResource } from '../data/market.js';
 import type { MarketAction, MarketFlow } from '../systems/marketSystem.js';
@@ -704,6 +705,25 @@ export const useGameState = () => {
   const getBuildingCatalog = (): BuildingType[] =>
     BUILDING_TYPES.filter((type) => state.unlockedBuildings.includes(type.id));
 
+  // Technology catalog for the UI
+  const getTechnologyCatalog = (): TechnologyType[] => gameEngine.getTechnologyCatalog();
+
+  const isTechnologyResearched = (techId: string): boolean =>
+    gameEngine.isTechnologyResearched(techId);
+
+  const canResearch = (techId: string): boolean => gameEngine.canResearch(techId);
+
+  const canAffordResearch = (techId: string): boolean => gameEngine.canAffordResearch(techId);
+
+  const doResearch = (techId: string): boolean => {
+    const researched = gameEngine.researchTechnology(techId);
+    if (researched) {
+      mirrorEngineState();
+    }
+
+    return researched;
+  };
+
   return {
     state,
     setState,
@@ -720,6 +740,11 @@ export const useGameState = () => {
     getResourceRates,
     setResourceRates: setResourceRatesExternal,
     getBuildingCatalog,
+    getTechnologyCatalog,
+    isTechnologyResearched,
+    canResearch,
+    canAffordResearch,
+    doResearch,
     buildBuilding,
     assignWorkers,
     moveJob,

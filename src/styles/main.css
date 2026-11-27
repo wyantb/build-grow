@@ -1758,3 +1758,96 @@ body.light-mode .race-btn:hover:not(:disabled) {
 .confirm-composition {
   margin: 15px 0;
 }
+
+/* --- Research panel --- */
+.research-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 0;
+}
+
+.research-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 20px;
+  border: 1px solid #555;
+  border-radius: 6px;
+  background-color: #2a2a2a;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s, border-color 0.15s;
+  min-width: 120px;
+}
+
+body.light-mode .research-btn {
+  background-color: #f5f5f5;
+  color: #333;
+  border-color: #ccc;
+}
+
+.research-btn:hover:not(:disabled) {
+  background-color: #3a3a3a;
+  border-color: #777;
+}
+
+body.light-mode .research-btn:hover:not(:disabled) {
+  background-color: #eee;
+  border-color: #aaa;
+}
+
+.research-btn:disabled {
+  background-color: #1e1e1e;
+  color: #666;
+  border-color: #333;
+  cursor: not-allowed;
+}
+
+body.light-mode .research-btn:disabled {
+  background-color: #e0e0e0;
+  color: #999;
+  border-color: #ccc;
+}
+
+.research-btn-done {
+  background-color: #1a3a1a !important;
+  color: #6fbf73 !important;
+  border-color: #2a5a2a !important;
+  cursor: default;
+}
+
+body.light-mode .research-btn-done {
+  background-color: #e0f0e0 !important;
+  color: #2e7d32 !important;
+  border-color: #a0d0a0 !important;
+}
+
+.research-status {
+  margin-left: 8px;
+  font-size: 1rem;
+}
+
+/* --- Tooltip: buy time preview --- */
+.tooltip-time {
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: #f0c040;
+}
+
+body.light-mode .tooltip-time {
+  color: #b8860b;
+}
+
+/* --- Tooltip for research --- */
+.tooltip-research {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 200px;
+}

@@ -9,6 +9,56 @@ import {
 import type { BuildingType, BuildingCategory } from '../../data/buildings.js';
 import type { Resource } from '../../types/worldState.js';
 
+/**
+ * How many seconds it takes to afford a cost at current income.
+ *
+ * When multiple resources are needed, the slowest one decides.
+ * Returns undefined when the cost is already met or no resources are needed.
+ */
+const timeToAfford = (cost: Resource, gameState: ReturnType<typeof getGameState>): number | undefined => {
+  const rates = gameState.getResourceRates();
+  const resources = gameState.getResources();
+
+  let maxTime = 0;
+  let hasDeficit = false;
+
+  for (const key of ['wood', 'stone', 'food', 'gold'] as const) {
+    const needed = cost[key];
+    if (needed <= 0) {continue;}
+
+    const have = resources[key];
+    if (have >= needed) {continue;}
+
+    hasDeficit = true;
+
+    const deficit = needed - have;
+    const rate = rates[key];
+    const time = rate > 0 ? deficit / rate : Infinity;
+    if (time > maxTime) {
+      maxTime = time;
+    }
+  }
+
+  return hasDeficit ? maxTime : undefined;
+};
+
+/**
+ * Format a duration in seconds for display.
+ *
+ * <60s: whole seconds, rounded up
+ * 60s–3600s: X.Y minutes
+ * 3600s–86400s: X.Y hours
+ * >86400s: "24+ hours"
+ */
+const formatTime = (seconds: number): string => {
+  if (seconds <= 0) {return '0s';}
+  if (seconds < 60) {return `${Math.ceil(seconds)}s`;}
+  if (seconds < 3600) {return `${(seconds / 60).toFixed(1)} min`;}
+  if (seconds <= 86400) {return `${(seconds / 3600).toFixed(1)} h`;}
+
+  return '24+ h';
+};
+
 const BuildingGrid: Component = () => {
   const gameState = getGameState();
 
@@ -106,6 +156,8 @@ const BuildingGrid: Component = () => {
                                   );
                                 }}
                               </Show>
+                              <div class="tooltip-divider" />
+                              <div class="tooltip-time">To buy at current income: {affordable() ? 'now' : (formatTime(timeToAfford(scaledCost(), gameState) ?? 0))}</div>
                             </div>
                           }
                           placement="top"

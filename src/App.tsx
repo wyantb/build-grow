@@ -7,6 +7,7 @@ import GameHeader from './components/game/GameHeader.js';
 import ResourcePanel from './components/game/ResourcePanel.js';
 import BuildingGrid from './components/game/BuildingGrid.js';
 import JobPanel from './components/game/JobPanel.js';
+import ResearchPanel from './components/game/ResearchPanel.js';
 import CityCenterPanel from './components/game/CityCenterPanel.js';
 import MarketPanel from './components/game/MarketPanel.js';
 import RebirthPanel from './components/game/RebirthPanel.js';
@@ -25,7 +26,7 @@ declare global {
 /**
  * The tabs of the village.
  */
-type VillageTab = 'buildings' | 'jobs' | 'citycenter' | 'market' | 'rebirth' | 'settings';
+type VillageTab = 'buildings' | 'jobs' | 'research' | 'citycenter' | 'market' | 'rebirth' | 'settings';
 
 // A separate component so the theme signal is read inside JSX, which is a
 // tracking scope. Reading it directly in a component body is a
@@ -125,6 +126,12 @@ const VillageView: Component<{
             Jobs
           </button>
           <button
+            class={`tab ${props.activeTab() === 'research' ? 'active' : ''}`}
+            onClick={() => props.setActiveTab('research')}
+          >
+            Research
+          </button>
+          <button
             class={`tab ${props.activeTab() === 'citycenter' ? 'active' : ''}`}
             onClick={() => props.setActiveTab('citycenter')}
           >
@@ -164,6 +171,13 @@ const VillageView: Component<{
             <h2>Jobs</h2>
             <div id="jobs-list">
               <JobPanel />
+            </div>
+          </div>
+
+          <div id="research-tab" class={`tab-pane ${props.activeTab() === 'research' ? 'active' : ''}`}>
+            <h2>Research</h2>
+            <div id="research-content">
+              <ResearchPanel />
             </div>
           </div>
 

@@ -183,6 +183,8 @@ export const WorldStateSchema = z.object({
   species: z.record(z.string(), SpeciesSchema),
   unlockedBuildings: z.array(z.string()),
   unlockedJobs: z.array(z.string()),
+  /** Technologies the player has researched. */
+  researchedTechnologies: z.array(z.string()),
   gameTime: z.number(), // in seconds
   defaultJob: z.string(), // id of the job new workers go to
   market: MarketSchema,
@@ -249,8 +251,9 @@ export const createInitialState = (): WorldState => {
         count: 0,
       }]),
     ),
-    unlockedBuildings: ['hut', 'market', 'caravanserai', 'lumberjack', 'quarry', 'farm', 'shed', 'grain_silo'],
+    unlockedBuildings: ['hut', 'market', 'caravanserai', 'lumberjack', 'quarry', 'farm', 'shed'],
     unlockedJobs: ['settler'],
+    researchedTechnologies: [],
     gameTime: 0,
     defaultJob: 'unemployed',
     market: {
