@@ -1,4 +1,4 @@
-import { createSignal, createMemo, Show } from 'solid-js';
+import { createSignal, createMemo, createEffect, Show } from 'solid-js';
 import type { Component } from 'solid-js';
 import { useGameLoop } from './hooks/useGameLoop.js';
 import { getGameState } from './hooks/useGameState.js';
@@ -43,6 +43,21 @@ const App: Component = () => {
   // no buildings, no jobs and no resources, so it replaces the whole game
   // content rather than sitting in one of its tabs.
   const rebirthing = createMemo(() => gameState.getPendingRebirth() !== null);
+
+  // When a rebirth ends, the player lands back in the village. Reset the
+  // active tab to Buildings so they do not land on the rebirth tab pane.
+  let wasRebirthing = false;
+
+  createEffect(
+    () => rebirthing(),
+    (now) => {
+      if (wasRebirthing && !now) {
+        setActiveTab('buildings');
+      }
+
+      wasRebirthing = now;
+    },
+  );
 
   // Exposed for debugging and for the browser verification suite.
   window.gameEngine = gameEngine;
