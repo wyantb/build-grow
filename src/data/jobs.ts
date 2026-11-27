@@ -27,10 +27,10 @@ export const JOBS: Record<string, Omit<Job, 'workers' | 'species'>> = {
   unemployed: {
     id: 'unemployed',
     name: 'Unemployed',
-    description: 'Workers with no role yet. From harvesting, they\'ll just manage to feed themselves.',
+    description: 'Workers with no role yet. From harvesting, they\'ll hopefully manage to feed themselves.',
     capacity: 0, // uncapped
     canDefault: true,
-    production: { wood: 0, stone: 0, food: 0, gold: 0, research: 0 },
+    production: { wood: 0, stone: 0, food: 0.025, gold: 0, research: 0 },
     consumption: DEFAULT_CONSUMPTION,
   },
   settler: {

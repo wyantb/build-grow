@@ -119,8 +119,8 @@ button, which we may not even keep as a permanent mechanic.
 
 | Tech | Cost | Requires | Unlocks | Effect |
 |------|------|----------|---------|--------|
-| **Basic Storage** | 20 knowledge | Sundial, Currency | **Shed** | +storage for all resources |
 | **Currency** | 22 knowledge, 10 wood | Housing (exists) | Gold resource (exists) | — |
+| **Grain Silo** | 80 knowledge | Irrigation, Basic Storage | **Grain Silo** | +500 max food |
 
 ### Tier 2: Bronze Age
 
@@ -150,7 +150,6 @@ button, which we may not even keep as a permanent mechanic.
 | **Crucible Steel** | 4,950 knowledge, 25 steel | Smelting, Coal Mining | Steel resource | Smelters can produce steel |
 | **Coal Mining** | 4,320 knowledge | Iron Mining | **Coal Mine** (+1 Coal Miner), Coal resource | Fuel for smelters |
 | **Sawmill** | 3,375 knowledge, 400 iron | Mining, Iron Mining | **Sawmill** | +200 max lumber, +5% lumber production |
-| **Grain Silo** | 80 knowledge | Irrigation, Basic Storage | **Grain Silo** | +500 max food |
 | **Grain Mill** | 5,400 knowledge | Grain Silo, Iron Mining | **Mill** | +Farm efficiency |
 | **Urban Planning** | 2,500 knowledge | Investing, Marketplace | Building Queue UI | Queue building orders |
 
