@@ -1,5 +1,6 @@
 import { createMemo, For } from 'solid-js';
 import type { Component } from 'solid-js';
+import type { JSX } from '@solidjs/web';
 import { getGameState } from '../../hooks/useGameState.js';
 import { formatExact, formatNumber } from '../../utils/formatNumber.js';
 import Tooltip from '../ui/Tooltip.js';
@@ -42,6 +43,32 @@ const ResourcePanel: Component = () => {
 
   const rates = createMemo(() => gameState.getResourceRates());
 
+  const amountTooltip = (row: ResourceRowDef): JSX.Element => {
+    if (!row.cappedKey) {
+      return formatExact(gameState.getResources()[row.key]);
+    }
+
+    const cap = gameState.getMaxStorage(row.cappedKey);
+    const breakdown = gameState.getStorageBreakdown(row.cappedKey);
+
+    return (
+      <div>
+        <div>
+          {formatExact(gameState.getResources()[row.key])} / {formatExact(cap)}
+        </div>
+        <div class="tooltip-divider" />
+        <div class="tooltip-storage-header">Storage</div>
+        <For each={breakdown}>
+          {(entry) => (
+            <div class="tooltip-storage-line">
+              +{formatExact(entry.value)} from {entry.label.toLowerCase()}
+            </div>
+          )}
+        </For>
+      </div>
+    );
+  };
+
   return (
     <div class="resources-display">
       <div class="resource-header">
@@ -67,7 +94,7 @@ const ResourcePanel: Component = () => {
             <Tooltip content={row.description} placement="right">
               <span class="resource-name">{row.label}</span>
             </Tooltip>
-            <Tooltip content={formatExact(gameState.getResources()[row.key])} placement="right">
+            <Tooltip content={amountTooltip(row)} placement="right">
               <span class="resource-amount" tabindex="0">
                 {row.cappedKey
                   ? `${formatNumber(gameState.getResources()[row.key])} / ${formatNumber(gameState.getMaxStorage(row.cappedKey))}`

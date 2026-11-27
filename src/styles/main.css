@@ -1042,6 +1042,25 @@ body.light-mode .tooltip {
   opacity: 0.85;
 }
 
+.tooltip-divider {
+  border-top: 1px solid #444;
+  margin: 4px 0;
+}
+
+body.light-mode .tooltip-divider {
+  border-top-color: #ccc;
+}
+
+.tooltip-storage-header {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.tooltip-storage-line {
+  display: block;
+  opacity: 0.85;
+}
+
 /* City Center Panel */
 .city-center-panel {
   display: flex;

@@ -653,6 +653,41 @@ export const useGameState = () => {
     }
   };
 
+  /**
+   * Break down storage capacity by source for a resource.
+   *
+   * Returns an array of `{ label, value }` pairs, one per source that
+   * contributes (city center always first, then each building with a
+   * non-zero count).
+   */
+  const getStorageBreakdown = (
+    resource: 'wood' | 'stone' | 'food',
+  ): Array<{ label: string; value: number }> => {
+    const entries: Array<{ label: string; value: number }> = [];
+
+    if (resource === 'wood' || resource === 'stone') {
+      entries.push({ label: 'City Center', value: state.cityCenter.storageWoodStone });
+      for (const type of BUILDING_TYPES) {
+        const bonus = type.storageBonus?.woodStone;
+        if (!bonus) {continue;}
+        const count = state.buildingCounts[type.id] ?? 0;
+        if (count === 0) {continue;}
+        entries.push({ label: type.name, value: count * bonus });
+      }
+    } else {
+      entries.push({ label: 'City Center', value: state.cityCenter.storageFood });
+      for (const type of BUILDING_TYPES) {
+        const bonus = type.storageBonus?.food;
+        if (!bonus) {continue;}
+        const count = state.buildingCounts[type.id] ?? 0;
+        if (count === 0) {continue;}
+        entries.push({ label: type.name, value: count * bonus });
+      }
+    }
+
+    return entries;
+  };
+
   const getJobs = () => state.jobs;
   const getBuildings = () => state.buildings;
   const getGameTime = () => state.gameTime;
@@ -670,6 +705,7 @@ export const useGameState = () => {
     getPopulation,
     getPopulationCapacity,
     getMaxStorage,
+    getStorageBreakdown,
     getJobs,
     getBuildings,
     getGameTime,
