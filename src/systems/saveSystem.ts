@@ -312,8 +312,8 @@ export const deserializePayload = (payload: SavePayload): WorldState => {
   state.population = totalPopulation;
 
   if (DEBUG) {
-    console.info('[debug] load — pool from save:', JSON.stringify(payload.rebirthPool),
-      '→ deserialized pool:', JSON.stringify(state.rebirthPool));
+    console.info('[debug] load — pool from save:', payload.rebirthPool,
+      '→ deserialized pool:', state.rebirthPool);
   }
 
   return state;
