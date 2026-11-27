@@ -7,7 +7,6 @@ export interface BuildingType {
   name: string;
   description: string;
   cost: Resource;
-  effect: string;
   /** Display category — groups buttons under section headings. */
   category: BuildingCategory;
   /**
@@ -28,66 +27,58 @@ export const BUILDING_TYPES: BuildingType[] = [
   {
     id: 'hut',
     name: 'Hut',
-    description: 'Basic housing for your population.',
+    description: 'Basic housing for your population; provides 2 base pop capacity.',
     cost: { wood: 20, stone: 10, food: 0, gold: 0, research: 0 },
-    effect: 'Houses 2 people. The population cannot grow past the housing.',
     category: 'Residential Block',
   },
   {
     id: 'market',
     name: 'Market',
-    description: 'Sells resources for gold.',
+    description: 'Provides 1 merchant job; enabling resource trading.',
     cost: { wood: 30, stone: 30, food: 15, gold: 0, research: 0 },
-    effect: 'Provides 1 merchant job and enables resource trading.',
     category: 'Commercial District',
   },
   {
     id: 'caravanserai',
     name: 'Caravanserai',
-    description: 'A trading house on the caravan route. It has no staff of its own, but it gives every merchant room for one more trade.',
+    description: 'A trading house on the caravan route. It has no staff of its own, but it gives every merchant room for one more trade position.',
     cost: { wood: 500, stone: 500, food: 0, gold: 0, research: 0 },
-    effect: 'Each Caravanserai gives every merchant 1 extra trade position.',
     category: 'Commercial District',
   },
   {
     id: 'lumberjack',
     name: 'Lumberjack Post',
-    description: 'Produces wood resources.',
+    description: 'Provides work for lumberjacks; increasing wood production.',
     cost: { wood: 25, stone: 15, food: 0, gold: 0, research: 0 },
-    effect: 'Provides work for lumberjacks and increases wood production.',
     category: 'Rural District',
   },
   {
     id: 'quarry',
     name: 'Quarry',
-    description: 'Produces stone resources.',
+    description: 'Provides work for quarry workers; increasing stone production.',
     cost: { wood: 20, stone: 25, food: 0, gold: 0, research: 0 },
-    effect: 'Provides work for quarry workers and increases stone production.',
     category: 'Rural District',
   },
   {
     id: 'farm',
     name: 'Farm',
-    description: 'Grows food to feed your population.',
+    description: 'Provides work for a farmer; increasing food production.',
     cost: { wood: 35, stone: 0, food: 0, gold: 0, research: 0 },
-    effect: 'Provides work for a farmer and increases food production.',
     category: 'Rural District',
   },
   {
     id: 'shed',
     name: 'Shed',
-    description: 'A small storage facility for your various resources.',
+    description: 'Stores a small amount of productive resources.',
     cost: { wood: 30, stone: 10, food: 0, gold: 0, research: 0 },
-    effect: 'Stores a small amount of productive resources.',
     storageBonus: { woodStone: 200 },
     category: 'Storage',
   },
   {
     id: 'grain_silo',
     name: 'Grain Silo',
-    description: 'A sealed silo for long-term grain storage.',
+    description: 'Stores food for your people.',
     cost: { wood: 40, stone: 20, food: 0, gold: 0, research: 0 },
-    effect: 'Stores food for your people.',
     storageBonus: { food: 500 },
     category: 'Storage',
   },

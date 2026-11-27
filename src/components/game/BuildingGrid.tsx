@@ -85,8 +85,6 @@ const BuildingGrid: Component = () => {
                                   </span>
                                 </Show>
                               </div>
-                              <div class="tooltip-divider" />
-                              <div class="tooltip-effects">{type().effect}</div>
                               <Show when={type().storageBonus}>
                                 {(bonus) => {
                                   const parts: string[] = [];

@@ -2,7 +2,7 @@
 
 Resources are produced and consumed every tick by the jobs you staff. Most
 resources are **capped** — your city cannot hold more than the storage
-capacity allows. Gold is the sole exception: it has no storage cap.
+capacity allows.
 
 ## Capped resources
 
