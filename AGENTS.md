@@ -52,13 +52,6 @@ uncoordinated commits.
 - **Do not break existing working behavior to enable future plans.** If the current
   code handles a case correctly (even awkwardly), leave it alone unless the user's
   request directly touches that area.
-- **A request that names a rule may already be met.** Read the code and the matching
-  `game_design/` doc before changing that area. The population rules (one hut at the
-  start, five people a hut, the capacity limit, a roll every 25 ticks) were already
-  implemented and tested on `main`; only the *shape* of the growth curve was at
-  issue, and changing it was not asked for. Rewriting a working, tested system on
-  the strength of a re-read of the request is a scope violation. When a system
-  already satisfies a stated rule, say so and leave it alone.
 - **Check what the engine already guarantees before adding state.** The species work
   needed to know how many people of a species the world held, and the roster now
   says so. Two real bugs surfaced from that: the pool of free workers was blind to
