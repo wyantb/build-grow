@@ -125,6 +125,10 @@ const ResourcePanel: Component = () => {
       <div class="solid-resource-divider" />
       <For each={RAW_MATERIAL_ROWS}>
         {(row) => {
+          // already in STANDARD
+          if (row.key === "food") {
+            return;
+          }
           const techId = RESOURCES[row.key].unlocksTech;
           const isVisible = () => !techId || gameState.isTechnologyResearched(techId);
 

@@ -125,10 +125,8 @@ button, which we may not even keep as a permanent mechanic.
 
 | Tech | Cost | Requires | Unlocks | Effect |
 |------|------|----------|---------|--------|
-| **Metal Working** | 350 knowledge | Mining | **Mine** (+1 Miner) | Copper from miners |
-| **Foundry** | 675 knowledge | Foundry concept | **Foundry** (+1 Crafter) | Craft bronze, tools |
-| **Scientific Method** | 65 knowledge | Currency | **University** (+1 Professor) | +Knowledge production, +500 max knowledge |
 | **Banking** | 90 knowledge | Currency | **Bank** (+1 Banker slot) | +Gold generation, $1800 max money |
+| **Foundry** | 675 knowledge | Foundry concept | **Foundry** (+1 Crafter) | Craft bronze, tools |
 | **Irrigation** | 55 knowledge | Agriculture | — | Farm food +66% |
 | **Bronze Tools** | 720 knowledge, 50 copper | Metal Working, Foundry | — | +20% to Miner/Lumberjack/Farmer/Quarrier |
 

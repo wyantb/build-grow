@@ -143,7 +143,7 @@ export const BUILDING_TYPES: BuildingType[] = [
     id: 'library',
     name: 'Library',
     description: 'A repository of written knowledge. Provides a librarian job and +100 knowledge storage.',
-    cost: { wood: 100, stone: 100, food: 0, gold: 0, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0, paper: 20 },
+    cost: { wood: 100, stone: 100, food: 0, gold: 0, research: 0, clay: 20, copper: 0, tin: 0, bronze: 0, paper: 20 },
     requiresTechs: ['writing'],
     storageBonus: { knowledge: 100 },
     category: 'Commercial District',
