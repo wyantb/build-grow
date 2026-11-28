@@ -1,4 +1,4 @@
-import type { Job, Resource, ResourceOptional } from '../types/worldState.js';
+import type { Job, ResourceOptional } from '../types/worldState.js';
 import type { JobStats } from '../systems/stats.js';
 
 // Per-tick production rates (engine runs at 5 ticks/sec)
@@ -6,8 +6,7 @@ import type { JobStats } from '../systems/stats.js';
 // Lumberjack: 5 wood/s → 1.0/tick
 // Quarrier: 4 stone/s → 0.8/tick
 
-const ZERO: Resource = { wood: 0, stone: 0, food: 0, gold: 0, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0 };
-const DEFAULT_CONSUMPTION: ResourceOptional = {};
+const ZERO: ResourceOptional = {};
 
 type JobCatalogEntry = Omit<Job, 'workers' | 'species' | 'production' | 'consumption'> & {
   production: ResourceOptional;
@@ -22,7 +21,7 @@ export const JOBS: Record<string, JobCatalogEntry> = {
     capacity: 0, // uncapped
     canDefault: true,
     production: { food: 0.025 },
-    consumption: DEFAULT_CONSUMPTION,
+    consumption: ZERO,
   },
   settler: {
     id: 'settler',
@@ -31,8 +30,8 @@ export const JOBS: Record<string, JobCatalogEntry> = {
     capacity: 0, // uncapped
     canDefault: true,
     // Per tick (5 ticks/sec): 0.5/5=0.1 wood, 0.2/5=0.04 stone, 0.1/5=0.02 food
-    production: { wood: 0.1, stone: 0.04, food: 0.01, gold: 0, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0 },
-    consumption: DEFAULT_CONSUMPTION,
+    production: { wood: 0.1, stone: 0.04, food: 0.01 },
+    consumption: ZERO,
   },
   lumberjack: {
     id: 'lumberjack',
@@ -41,8 +40,8 @@ export const JOBS: Record<string, JobCatalogEntry> = {
     capacity: 0, // set dynamically from buildings
     canDefault: false,
     // 5 wood/s → 1.0/tick
-    production: { wood: 1.0, stone: 0, food: 0, gold: 0, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0 },
-    consumption: DEFAULT_CONSUMPTION,
+    production: { wood: 1.0 },
+    consumption: ZERO,
   },
   quarrier: {
     id: 'quarrier',
@@ -51,8 +50,8 @@ export const JOBS: Record<string, JobCatalogEntry> = {
     capacity: 0, // set dynamically from buildings
     canDefault: false,
     // 4 stone/s → 0.8/tick
-    production: { wood: 0, stone: 0.8, food: 0, gold: 0, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0 },
-    consumption: DEFAULT_CONSUMPTION,
+    production: { stone: 0.8 },
+    consumption: ZERO,
   },
   farmer: {
     id: 'farmer',
@@ -61,8 +60,8 @@ export const JOBS: Record<string, JobCatalogEntry> = {
     capacity: 0, // set dynamically from buildings
     canDefault: false,
     // 2.5 × old DEFAULT_CONSUMPTION (0.025) = 0.0625 food/tick
-    production: { wood: 0, stone: 0, food: 0.08, gold: 0, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0 },
-    consumption: DEFAULT_CONSUMPTION,
+    production: { food: 0.08 },
+    consumption: ZERO,
   },
   merchant: {
     id: 'merchant',
@@ -71,7 +70,7 @@ export const JOBS: Record<string, JobCatalogEntry> = {
     capacity: 0, // set dynamically from buildings
     canDefault: false,
     production: ZERO,
-    consumption: DEFAULT_CONSUMPTION,
+    consumption: ZERO,
   },
   ceramist: {
     id: 'ceramist',
@@ -79,8 +78,8 @@ export const JOBS: Record<string, JobCatalogEntry> = {
     description: 'Shapes clay into useful wares. Each ceramist makes sheds 5% more spacious.',
     capacity: 0, // set dynamically from buildings
     canDefault: false,
-    production: { wood: 0, stone: 0, food: 0, gold: 0, research: 0, clay: 0.2, copper: 0, tin: 0, bronze: 0 },
-    consumption: { wood: 0, stone: 0.6, food: 0, gold: 0, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0 },
+    production: { clay: 0.2 },
+    consumption: { stone: 0.6 },
   },
   chief: {
     id: 'chief',
@@ -89,7 +88,7 @@ export const JOBS: Record<string, JobCatalogEntry> = {
     capacity: 0, // set dynamically from buildings
     canDefault: false,
     production: ZERO,
-    consumption: DEFAULT_CONSUMPTION,
+    consumption: ZERO,
   },
   copper_miner: {
     id: 'copper_miner',
@@ -98,8 +97,8 @@ export const JOBS: Record<string, JobCatalogEntry> = {
     capacity: 0, // set dynamically from buildings
     canDefault: false,
     // 0.3 copper/tick → 1.5/s
-    production: { wood: 0, stone: 0, food: 0, gold: 0, research: 0, clay: 0, copper: 0.3, tin: 0, bronze: 0 },
-    consumption: { wood: 0, stone: 0.4, food: 0, gold: 0, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0 },
+    production: { copper: 0.3 },
+    consumption: { stone: 0.4 },
   },
   tin_miner: {
     id: 'tin_miner',
@@ -108,8 +107,8 @@ export const JOBS: Record<string, JobCatalogEntry> = {
     capacity: 0, // set dynamically from buildings
     canDefault: false,
     // 0.15 tin/tick → 0.75/s (rarer, slower)
-    production: { wood: 0, stone: 0, food: 0, gold: 0, research: 0, clay: 0, copper: 0, tin: 0.15, bronze: 0 },
-    consumption: { wood: 0, stone: 0.3, food: 0, gold: 0, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0 },
+    production: { tin: 0.15 },
+    consumption: { stone: 0.3 },
   },
   bronze_caster: {
     id: 'bronze_caster',
@@ -118,8 +117,8 @@ export const JOBS: Record<string, JobCatalogEntry> = {
     capacity: 0, // set dynamically from buildings
     canDefault: false,
     // 0.25 bronze/tick → 1.25/s
-    production: { wood: 0, stone: 0, food: 0, gold: 0, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0.25 },
-    consumption: { wood: 0, stone: 0, food: 0, gold: 0, research: 0, clay: 0, copper: 0.2, tin: 0.1, bronze: 0 },
+    production: { bronze: 0.25 },
+    consumption: { copper: 0.2, tin: 0.1 },
   },
 };
 
