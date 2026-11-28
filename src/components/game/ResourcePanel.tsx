@@ -4,59 +4,45 @@ import type { JSX } from '@solidjs/web';
 import { getGameState } from '../../hooks/useGameState.js';
 import { formatExact, formatNumber } from '../../utils/formatNumber.js';
 import Tooltip from '../ui/Tooltip.js';
+import { RESOURCES } from '../../data/resources.js';
+import type { ResourceEnum } from '../../data/resources.js';
+
+type CappedResource = 'wood' | 'stone' | 'food' | 'research' | 'clay';
 
 type ResourceRowDef = {
-  key: 'wood' | 'stone' | 'food' | 'gold' | 'research' | 'clay';
-  label: string;
-  description: string;
-  cappedKey?: 'wood' | 'stone' | 'food' | 'research' | 'clay';
+  key: ResourceEnum;
+  cappedKey?: CappedResource;
 };
 
-// Gold, Research, and Food above a divider; Wood and Stone below it.
-// Clay appears below another divider only once clay making is researched.
+/**
+ * The resource rows above the first divider.
+ *
+ * Gold and research are the economy; food is sustenance. None of these
+ * are production-focused, though food has a rate.
+ */
 const STANDARD_ROWS: ResourceRowDef[] = [
-  {
-    key: 'gold',
-    label: 'Gold',
-    description: 'Gold pays for trade and unlocks the market.',
-  },
-  {
-    key: 'research',
-    label: 'Research',
-    description: 'Research accumulates from everyday discoveries. Future thinker jobs will produce more.',
-    cappedKey: 'research',
-  },
-  {
-    key: 'food',
-    label: 'Food',
-    description: 'Food keeps your population fed. A shortage stalls growth.',
-    cappedKey: 'food',
-  },
+  { key: 'gold' },
+  { key: 'research', cappedKey: 'research' },
+  { key: 'food', cappedKey: 'food' },
 ];
 
+/**
+ * The production resources below the divider.
+ */
 const PRODUCTION_ROWS: ResourceRowDef[] = [
-  {
-    key: 'wood',
-    label: 'Wood',
-    description: 'Wood is the basic building material. Used for construction and upkeep.',
-    cappedKey: 'wood',
-  },
-  {
-    key: 'stone',
-    label: 'Stone',
-    description: 'Stone is mined for sturdy buildings and fortifications.',
-    cappedKey: 'stone',
-  },
+  { key: 'wood', cappedKey: 'wood' },
+  { key: 'stone', cappedKey: 'stone' },
 ];
 
+/**
+ * Clay appears below another divider only once clay making is researched.
+ */
 const CLAY_ROW: ResourceRowDef = {
   key: 'clay',
-  label: 'Clay',
-  description: 'Clay is shaped into pottery and other useful wares.',
   cappedKey: 'clay',
 };
 
-const ResourceRow = (props: { row: ResourceRowDef; rates: () => { [K in ResourceRowDef['key']]: number } }) => {
+const ResourceRow = (props: { row: ResourceRowDef; rates: () => { [K in ResourceEnum]: number } }) => {
   const gameState = getGameState();
 
   const amountTooltip = (): JSX.Element => {
@@ -87,8 +73,8 @@ const ResourceRow = (props: { row: ResourceRowDef; rates: () => { [K in Resource
 
   return (
     <div class="resource-row">
-      <Tooltip content={props.row.description} placement="right">
-        <span class="resource-name">{props.row.label}</span>
+      <Tooltip content={RESOURCES[props.row.key].description} placement="right">
+        <span class="resource-name">{RESOURCES[props.row.key].name}</span>
       </Tooltip>
       <Tooltip content={amountTooltip()} placement="right">
         <span class="resource-amount" tabindex="0">
