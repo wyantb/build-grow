@@ -649,6 +649,7 @@ export const useGameState = () => {
     let woodStoneBonus = 0;
     let foodBonus = 0;
     let clayBonus = 0;
+    let knowledgeBonus = 0;
 
     for (const type of BUILDING_TYPES) {
       const bonus = type.storageBonus;
@@ -663,6 +664,9 @@ export const useGameState = () => {
       }
       if (bonus.clay) {
         clayBonus += count * bonus.clay;
+      }
+      if (bonus.knowledge) {
+        knowledgeBonus += count * bonus.knowledge;
       }
     }
 
@@ -703,7 +707,11 @@ export const useGameState = () => {
 
         return state.cityCenter.storageBronze;
       case 'paper':
-        return state.cityCenter.storageKnowledge;
+        if (!isTechnologyResearched('paper_making')) {
+          return 0;
+        }
+
+        return state.cityCenter.storagePaper + knowledgeBonus;
     }
   };
 

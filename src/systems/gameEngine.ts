@@ -24,6 +24,7 @@ import { TICKS_PER_SECOND } from './ticks.js';
 import { DEBUG } from '../utils/debug.js';
 import { TECHNOLOGIES, getTechnology } from '../data/technologies.js';
 import type { TechnologyEntry } from '../data/technologies.js';
+import { CAPPED_RESOURCES } from '../data/resources.js';
 
 export { TICKS_PER_SECOND };
 
@@ -478,7 +479,9 @@ class GameEngine {
    * Clay storage is only revealed once clay making is researched.
    * Each ceramist employed makes sheds 5% more spacious.
    */
-  getMaxStorage(resource: 'wood' | 'stone' | 'food' | 'research' | 'clay' | 'paper' | 'knowledge'): number {
+  getMaxStorage(
+    resource: 'wood' | 'stone' | 'food' | 'research' | 'clay' | 'copper' | 'tin' | 'bronze' | 'paper' | 'knowledge',
+  ): number {
     let woodStoneBonus = 0;
     let foodBonus = 0;
     let clayBonus = 0;
@@ -521,40 +524,44 @@ class GameEngine {
         }
 
         return this.state.cityCenter.storageClay + clayBonus * ceramistShedMultiplier;
+      case 'copper':
+        if (!this.isTechnologyResearched('mining')) {
+          return 0;
+        }
+
+        return this.state.cityCenter.storageCopper;
+      case 'tin':
+        if (!this.isTechnologyResearched('mining')) {
+          return 0;
+        }
+
+        return this.state.cityCenter.storageTin;
+      case 'bronze':
+        if (!this.isTechnologyResearched('bronze_alloy')) {
+          return 0;
+        }
+
+        return this.state.cityCenter.storageBronze;
       case 'paper':
-        return this.state.cityCenter.storageKnowledge + knowledgeBonus;
+        return this.state.cityCenter.storagePaper + knowledgeBonus;
       case 'knowledge':
         return this.state.cityCenter.storageKnowledge + knowledgeBonus;
     }
   }
 
   /**
-   * Clamp all resources to their storage caps.
+   * Clamp all capped resources to their storage limits.
    *
-   * Gold is never capped. Production can overshoot the cap within a tick,
-   * so this is called after every production step.
+   * Gold and research are never capped. Production can overshoot a cap within
+   * a tick, so this is called after every production step.
    */
   private clampResources(): void {
-    this.state.resources.wood = Math.min(
-      this.state.resources.wood,
-      this.getMaxStorage('wood'),
-    );
-    this.state.resources.stone = Math.min(
-      this.state.resources.stone,
-      this.getMaxStorage('stone'),
-    );
-    this.state.resources.food = Math.min(
-      this.state.resources.food,
-      this.getMaxStorage('food'),
-    );
-    this.state.resources.research = Math.min(
-      this.state.resources.research,
-      this.getMaxStorage('research'),
-    );
-    this.state.resources.clay = Math.min(
-      this.state.resources.clay,
-      this.getMaxStorage('clay'),
-    );
+    for (const key of CAPPED_RESOURCES) {
+      this.state.resources[key] = Math.min(
+        this.state.resources[key],
+        this.getMaxStorage(key),
+      );
+    }
   }
 
   // Build a building

@@ -140,6 +140,9 @@ export type ResourceEntry = (typeof RESOURCES)[ResourceEnum];
 /** Resources that have a storage cap (and a capped display in the UI). */
 export type CappedResource = 'wood' | 'stone' | 'food' | 'research' | 'clay' | 'copper' | 'tin' | 'bronze' | 'paper';
 
+/** Runtime array of capped resource keys, derived from the type above. */
+export const CAPPED_RESOURCES: CappedResource[] = ['wood', 'stone', 'food', 'research', 'clay', 'copper', 'tin', 'bronze', 'paper'];
+
 export type Resource = { [K in ResourceEnum]: number };
 /** A resource record where omitted fields default to 0 at runtime. */
 export type ResourceOptional = Partial<Record<ResourceEnum, number>>;

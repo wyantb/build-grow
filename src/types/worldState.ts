@@ -180,6 +180,8 @@ export const CityCenterSchema = z.object({
   storageTin: z.number(),
   /** Base storage capacity for bronze (revealed once bronze alloy is researched). */
   storageBronze: z.number(),
+  /** Base storage capacity for paper (revealed once paper making is researched). */
+  storagePaper: z.number(),
   /** Base storage capacity for knowledge (revealed once writing is researched). */
   storageKnowledge: z.number(),
 });
@@ -311,6 +313,7 @@ export const createInitialState = (): WorldState => {
       storageCopper: 400,
       storageTin: 350,
       storageBronze: 150,
+      storagePaper: 200,
       storageKnowledge: 200,
     },
     rebirthPool: {
