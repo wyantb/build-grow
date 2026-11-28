@@ -1,0 +1,86 @@
+/**
+ * The resource catalog.
+ *
+ * Every physical resource the engine tracks lives here with its market and
+ * rarity metadata. The ResourceSchema in worldState.ts is derived from this
+ * map, so adding a resource only requires one entry.
+ *
+ * INVARIANT (game_design/resources.md): manufactured resources should have
+ * a higher baseFactor and baseRarity than the raw materials they come from.
+ */
+
+/** All resources the engine tracks. */
+export const RESOURCES = {
+  /** The basic building material, harvested by lumberjacks. */
+  wood: {
+    name: 'Wood',
+    description: 'The basic building material. Used for construction and upkeep.',
+    baseFactor: 0.5,
+    baseRarity: 1,
+    tradeable: true,
+    production: 'lumberjack',
+  },
+  /** Mined from quarries; the other basic building material. */
+  stone: {
+    name: 'Stone',
+    description: 'Mined for sturdy buildings and fortifications.',
+    baseFactor: 0.75,
+    baseRarity: 1,
+    tradeable: true,
+    production: 'quarrier',
+  },
+  /** Grown by farmers; consumed by every person. */
+  food: {
+    name: 'Food',
+    description: 'Keeps your population fed. A shortage stalls growth.',
+    baseFactor: 0.4,
+    baseRarity: 1,
+    tradeable: true,
+    production: 'farmer',
+  },
+  /** The medium of exchange; never traded on the market. */
+  gold: {
+    name: 'Gold',
+    description: 'The medium of exchange. Spent and earned, never bought or sold.',
+    baseFactor: 0,
+    baseRarity: 0,
+    tradeable: false,
+    production: null,
+  },
+  /** Accumulates from per-person research; used to unlock technologies. */
+  research: {
+    name: 'Research',
+    description: 'Accumulates from everyday discoveries. Used to unlock technologies.',
+    baseFactor: 0,
+    baseRarity: 0,
+    tradeable: false,
+    production: null,
+  },
+  /** Shaped by ceramists from stone; used for pottery and other wares. */
+  clay: {
+    name: 'Clay',
+    description: 'Shaped into pottery and other useful wares.',
+    baseFactor: 1.0,
+    baseRarity: 2,
+    tradeable: true,
+    production: 'ceramist',
+  },
+} as const;
+
+export type ResourceEnum = keyof typeof RESOURCES;
+export type ResourceEntry = (typeof RESOURCES)[ResourceEnum];
+
+/**
+ * The resource shape used by the engine.
+ *
+ * Every key in RESOURCES maps to a number, so this stays in sync with the
+ * catalog automatically.
+ */
+export type Resource = { [K in ResourceEnum]: number };
+
+/** The tradable resources (those that can be bought or sold at market). */
+export const MARKET_RESOURCES = (
+  Object.entries(RESOURCES) as [ResourceEnum, ResourceEntry][]
+)
+  .filter(([, r]) => r.tradeable)
+  .map(([key]) => key);
