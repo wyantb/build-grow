@@ -8,10 +8,13 @@ before modifying the systems it describes:
 | Area | Doc | What it covers |
 |------|-----|----------------|
 | Buildings | `game_design/buildings.md` | Building catalog, costs, job slots, scaling |
+| City Center | `game_design/city-center.md` | Starting provisions, housing, storage, research caps |
 | Jobs | `game_design/jobs.md` | Job types, production rates, capacity, defaults |
 | Market | `game_design/market.md` | Tick-based orders, merchant trade capacity, prices, rates |
 | Population | `game_design/population.md` | Housing capacity, the birth roll, the growth curve |
 | Rebirth | `game_design/rebirth.md` | The gold cost, the rebirth view, the gene roll |
+| Resources | `game_design/resources.md` | Capped resources, job-based production, species consumption |
+| Technology | `game_design/technology.md` | Per-person research generation, research storage |
 
 When implementing or refactoring features that touch buildings, jobs, markets etc read
 the matching doc first and keep the implementation consistent with it. If the
