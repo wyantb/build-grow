@@ -21,9 +21,6 @@ over with better genes.
   starting population of 5 and the same single hut. The species carry the
   stats the rebirth gave them. The world may end up exactly as it started:
   a rebirth with no luck improves nothing.
-- **Only the species a new game starts with survive.** The new world is
-  built the same way a new game is, so it holds the starting species. A
-  species that has to be unlocked during play is not in that set.
 
 ## The rebirth view
 

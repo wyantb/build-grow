@@ -5,14 +5,7 @@ player starts a new game or rebirths. It is the anchor of your
 civilization and provides the initial capacity for housing, storage, and
 research.
 
-## Starting provisions
-
-| Provision       | Capacity |
-|-----------------|---------:|
-| Housing         | 5        |
-| Wood/Stone      | 50       |
-| Food            | 25       |
-| Research        | 200      |
+## Starting capacity
 
 The City Center provides the first 5 housing slots, the
 base storage for wood and stone (shared), food storage, and research

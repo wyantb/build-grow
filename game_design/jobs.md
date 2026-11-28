@@ -58,7 +58,6 @@ See src/data/jobs.ts
 | Lumberjack Camp | Lumberjack (+1 capacity) |
 | Quarry | Quarrier (+1 capacity) |
 | Market | Merchant (+1 capacity) |
-| Builder's Lodge | TBA |
 
 Not every building appears in this table. A building that grants no job slot
 is listed in `game_design/buildings.md` instead. The Caravanserai is one of

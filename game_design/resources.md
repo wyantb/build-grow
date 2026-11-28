@@ -4,23 +4,14 @@ Resources are produced and consumed every tick by the jobs you staff. Most
 resources are **capped** — your city cannot hold more than the storage
 capacity allows.
 
-## Capped resources
+Most storage comes from buildings' storageBonus.
 
-| Resource | Storage cap | How the cap is raised |
-|----------|------------:|-----------------------|
-| Wood     | 100         | City Center (50) + storage buildings |
-| Stone    | 100         | City Center (50) + storage buildings |
-| Food     | 75          | City Center (25) + storage buildings |
-| Research | 200         | City Library (200) |
-
-The cap for wood and stone is shared; they use the same pool. Each building
-that declares a `storageBonus` in the catalog adds its per-copy amount to
-the relevant cap when built. The engine derives the cap from the current
-building counts; the UI reads the same values so tooltips stay in sync.
+Many resources (e.g. clay, copper, tin, bronze, etc) are not revealed, in storage
+breakdowns, the resources leftnav, or otherwise prior to first production.
 
 ## Job-based production
 
-Every job in the catalog declares a **production** rate per tick for one or
+Most jobs in the catalog declares a **production** rate per tick for one or
 more resources and an optional **consumption** rate for resources it spends.
 
 The per-tick rate for a resource is:
@@ -33,6 +24,17 @@ rate = Σ(staffed_jobs) production[resource] × stat_multiplier - consumption[re
 the job. The production is scaled by the relevant stats (e.g. strength for
 woodcutters, constitution for farmers). Consumption is **not scaled** — it
 is a flat cost the job pays each tick, regardless of who works it.
+
+## Processed resources
+
+Some resources represent raw materials - wood, stone, copper, tin, iron, etc.
+
+Many more resources represent manufactured products - clay (fired stone "earth"),
+bronze (allowed of copper and tin), cement, etc.
+
+INVARIANT: generally speaking, every manufactured resource should have a higher
+resource "base factor" (influences market value) and "rarity" (influences amount
+traded per tick; units traded per tick = the universal base 0.5 / rarity).
 
 ## Species consumption and research
 

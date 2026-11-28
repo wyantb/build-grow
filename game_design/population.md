@@ -5,12 +5,9 @@ grow when there is room for another one.
 
 ## Core Rules
 
-- **A new game starts with one hut.** The hut is part of the starting world,
-  so the starting population of 5 fills it exactly. The resources panel
-  shows `5 / 5`, and no birth is possible until the player builds more
-  housing.
-- **One hut houses five people.** The capacity of the world is
-  `huts × 5`.
+- **A new game starts with maxed capacity.** More pop housing will need to be
+  built for new pops to be born, to populate new jobs.
+- **One hut houses 2 people.**
 - **Every hut counts.** A building is finished the moment it is paid for, so
   a new hut adds its capacity straight away.
 - **The population never exceeds the capacity.** A birth needs somewhere to
@@ -104,25 +101,6 @@ The mean wait is a little pessimistic, because each new person can push the
 population over a step boundary and raise the chance for the next one.
 Filling the first hut from 5 to 10 takes about 100 seconds of expected time,
 and going from 10 to 20 takes about 200.
-
-### Worked example
-
-A world with 20 people and two huts has a capacity of 10, so it is already
-over capacity and no births happen. The player builds a third hut, which
-finishes 30 ticks later. The capacity becomes 15, and the population is
-still 20, so there is still no room.
-
-A world with 12 people and three huts has a capacity of 15. The next roll
-happens at the next multiple of 25 ticks. The population is inside the
-first step, so the chance is 25%, and the mean wait for the next child is
-`5 / 0.25 = 20` seconds. The population climbs to 15 and stops, because the
-huts are full.
-
-A world with 38 people and eight huts has a capacity of 40. The chance is
-still 25%, because 38 is inside the first step. The world rolls every 5
-seconds and produces a child about one time in four, so the population
-creeps to 39 and then to 40. At 40 the rate steps up to 26%, and the mean
-wait drops to 19.2 seconds.
 
 ## Implementation
 
