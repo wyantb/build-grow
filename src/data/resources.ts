@@ -82,6 +82,39 @@ export const RESOURCES = {
     production: 'ceramist',
     unlocksTech: 'clay_making' as TechnologyId,
   },
+  /** Mined by copper miners; a raw material for bronze. */
+  copper: {
+    name: 'Copper',
+    description: 'A reddish metal mined from deep deposits. Used in alloys and tools.',
+    baseFactor: 1.5,
+    baseRarity: 3,
+    tradeable: true,
+    category: 'rawMaterial' as const,
+    production: 'copper_miner',
+    unlocksTech: null as TechnologyId | null,
+  },
+  /** Mined by tin miners; a rarer raw material for bronze. */
+  tin: {
+    name: 'Tin',
+    description: 'A soft, silver-white metal. Rare deposits make it prized.',
+    baseFactor: 2.0,
+    baseRarity: 4,
+    tradeable: true,
+    category: 'rawMaterial' as const,
+    production: 'tin_miner',
+    unlocksTech: null as TechnologyId | null,
+  },
+  /** Cast from copper and tin; a strong alloy for tools and weapons. */
+  bronze: {
+    name: 'Bronze',
+    description: 'A strong alloy of copper and tin. Superior to either metal alone.',
+    baseFactor: 3.5,
+    baseRarity: 5,
+    tradeable: true,
+    category: 'manufactured' as const,
+    production: 'bronze_caster',
+    unlocksTech: null as TechnologyId | null,
+  },
 } as const;
 
 export type ResourceEnum = keyof typeof RESOURCES;

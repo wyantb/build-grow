@@ -28,7 +28,7 @@ import type { TechnologyEntry } from '../data/technologies.js';
 export { TICKS_PER_SECOND };
 
 /** Resource keys the engine tracks. */
-const RESOURCE_KEYS = ['wood', 'stone', 'food', 'gold', 'research', 'clay'] as const;
+const RESOURCE_KEYS = ['wood', 'stone', 'food', 'gold', 'research', 'clay', 'copper', 'tin', 'bronze'] as const;
 
 /**
  * The gold a rebirth costs.
@@ -1321,6 +1321,9 @@ class GameEngine {
       gold: tickRates.gold * ticksPerSecond,
       research: tickRates.research * ticksPerSecond,
       clay: tickRates.clay * ticksPerSecond,
+      copper: tickRates.copper * ticksPerSecond,
+      tin: tickRates.tin * ticksPerSecond,
+      bronze: tickRates.bronze * ticksPerSecond,
     };
   }
 
@@ -1396,7 +1399,7 @@ class GameEngine {
    * cannot leak into the rate.
    */
   getTickRates(): Resource {
-    const rates: Resource = { wood: 0, stone: 0, food: 0, gold: 0, research: 0, clay: 0 };
+    const rates: Resource = { wood: 0, stone: 0, food: 0, gold: 0, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0 };
 
     for (const job of Object.values(this.state.jobs)) {
       if (job.workers <= 0) {continue;}
@@ -1456,6 +1459,9 @@ class GameEngine {
       gold: tickRates.gold * ticksPerSecond,
       research: tickRates.research * ticksPerSecond,
       clay: tickRates.clay * ticksPerSecond,
+      copper: tickRates.copper * ticksPerSecond,
+      tin: tickRates.tin * ticksPerSecond,
+      bronze: tickRates.bronze * ticksPerSecond,
     };
   }
 

@@ -131,7 +131,7 @@ export const useGameState = () => {
     food: 0,
     gold: 0,
     research: 0,
-    clay: 0,
+    clay: 0, copper: 0, tin: 0, bronze: 0,
   });
 
   // Set resource rates from external source (game engine)
@@ -599,7 +599,7 @@ export const useGameState = () => {
     food: 0,
     gold: 0,
     research: 0,
-    clay: 0,
+    clay: 0, copper: 0, tin: 0, bronze: 0,
   });
 
   // The market's own per-second rates, with no job production mixed in.
@@ -609,7 +609,7 @@ export const useGameState = () => {
     food: 0,
     gold: 0,
     research: 0,
-    clay: 0,
+    clay: 0, copper: 0, tin: 0, bronze: 0,
   });
 
   // The units bought and sold per second, split by direction.

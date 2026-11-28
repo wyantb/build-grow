@@ -243,6 +243,9 @@ export const createInitialState = (): WorldState => {
       gold: 0,
       research: 0,
       clay: 0,
+      copper: 0,
+      tin: 0,
+      bronze: 0,
     },
     population: startingPopulation,
     jobs: Object.fromEntries(

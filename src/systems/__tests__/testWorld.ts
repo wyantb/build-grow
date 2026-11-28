@@ -39,7 +39,7 @@ export interface WorldOverrides {
   jobOrder?: string[];
 }
 
-const zeroResource = (): Resource => ({ wood: 0, stone: 0, food: 0, gold: 0, research: 0, clay: 0 });
+const zeroResource = (): Resource => ({ wood: 0, stone: 0, food: 0, gold: 0, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0 });
 
 /**
  * Build a world state for tests.
