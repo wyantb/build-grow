@@ -301,7 +301,7 @@ export const deserializePayload = (payload: SavePayload): WorldState => {
       id: catalogBuilding.id,
       name: catalogBuilding.name,
       description: catalogBuilding.description,
-      cost: { ...catalogBuilding.cost },
+      cost: fillResource(catalogBuilding.cost),
     };
   }
 

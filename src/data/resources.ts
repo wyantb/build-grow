@@ -193,7 +193,7 @@ export const MANUFACTURED_RESOURCES = (
   .map(([key]) => key);
 
 /** Metaphysical resources, such as research or faith */
-export const METAPHYSICAL_RESOURCES =
+export const METAPHYSICAL_RESOURCES = (
   Object.entries(RESOURCES) as [ResourceEnum, ResourceEntry][]
 )
   .filter(([, r]) => r.category === 'metaphysical')

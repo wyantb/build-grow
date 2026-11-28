@@ -9,6 +9,14 @@ import {
 import type { BuildingType, BuildingCategory } from '../../data/buildings.js';
 import type { Resource } from '../../types/worldState.js';
 import { timeToIncome, timeToAvailable, formatTime } from '../../utils/formatTimeToAfford.js';
+import type { ResourceEnum } from '../../data/resources.js';
+
+/** The resource keys that a building can cost, in tooltip display order. */
+const COST_RESOURCE_ORDER: ResourceEnum[] = [
+  'wood', 'stone', 'food',
+  'clay', 'copper', 'tin', 'bronze',
+  'paper', 'gold',
+];
 
 const BuildingGrid: Component = () => {
   const gameState = getGameState();
@@ -64,27 +72,21 @@ const BuildingGrid: Component = () => {
                               <div class="tooltip-description">{type().description}</div>
                               <div class="tooltip-divider" />
                               <div class="tooltip-costs">
-                                <Show when={scaledCost().wood > 0}>
-                                  <span class={`cost ${!affordable() && scaledCost().wood > gameState.getResources().wood ? 'cost-unaffordable' : ''}`}>
-                                    {scaledCost().wood} wood
-                                  </span>
-                                </Show>
-                                <Show when={scaledCost().stone > 0}>
-                                  <span class={`cost ${!affordable() && scaledCost().stone > gameState.getResources().stone ? 'cost-unaffordable' : ''}`}>
-                                    {scaledCost().stone} stone
-                                  </span>
-                                </Show>
-                                <Show when={scaledCost().food > 0}>
-                                  <span class={`cost ${!affordable() && scaledCost().food > gameState.getResources().food ? 'cost-unaffordable' : ''}`}>
-                                    {scaledCost().food} food
-                                  </span>
-                                </Show>
+                                <For each={COST_RESOURCE_ORDER.filter((key) => (scaledCost()[key] ?? 0) > 0)}>
+                                  {(key) => {
+                                    const value = scaledCost()[key] ?? 0;
+                                    const resource = gameState.getResources();
+                                    const affordableKey = resource[key] !== undefined ? (resource[key as keyof Resource] as number) >= value : true;
+                                    const unaffordable = !affordable() && !affordableKey;
+                                    const label = key === 'gold' ? 'g' : key;
 
-                                <Show when={scaledCost().gold > 0}>
-                                  <span class={`cost ${!affordable() && scaledCost().gold > gameState.getResources().gold ? 'cost-unaffordable' : ''}`}>
-                                    {scaledCost().gold}g
-                                  </span>
-                                </Show>
+                                    return (
+                                      <span class={`cost ${unaffordable ? 'cost-unaffordable' : ''}`}>
+                                        {value} {label}
+                                      </span>
+                                    );
+                                  }}
+                                </For>
                               </div>
                               <Show when={type().storageBonus}>
                                 {(bonus) => {

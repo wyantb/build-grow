@@ -19,7 +19,12 @@ describe('Caravanserai building', () => {
       throw new Error('The caravanserai is missing from the catalog.');
     }
 
-    expect(getScaledCost(type.cost, 0)).toEqual(type.cost);
+    // getScaledCost always returns a filled Resource, so at count 0 we get
+    // the base cost with all keys present (zeros filled in).
+    const zeroCost = getScaledCost(type.cost, 0);
+    expect(zeroCost.wood).toBe(500);
+    expect(zeroCost.stone).toBe(500);
+    expect(zeroCost.food).toBe(0);
     expect(getScaledCost(type.cost, 1).wood).toBe(Math.ceil(500 * COST_SCALE_FACTOR));
     expect(getScaledCost(type.cost, 1).stone).toBe(Math.ceil(500 * COST_SCALE_FACTOR));
     expect(getScaledCost(type.cost, 2).wood).toBe(Math.ceil(500 * COST_SCALE_FACTOR ** 2));

@@ -126,7 +126,7 @@ const ResourcePanel: Component = () => {
       <For each={RAW_MATERIAL_ROWS}>
         {(row) => {
           // already in STANDARD
-          if (row.key === "food") {
+          if (row.key === 'food') {
             return;
           }
           const techId = RESOURCES[row.key].unlocksTech;
