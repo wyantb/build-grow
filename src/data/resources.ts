@@ -18,6 +18,7 @@ export type ResourceCategory = 'rawMaterial' | 'manufactured' | 'metaphysical';
 export const RESOURCES = {
   /** The basic building material, harvested by lumberjacks. */
   wood: {
+    capped: true,
     name: 'Wood',
     description: 'The basic building material. Used for construction and upkeep.',
     baseFactor: 0.5,
@@ -29,6 +30,7 @@ export const RESOURCES = {
   },
   /** Mined from quarries; the other basic building material. */
   stone: {
+    capped: true,
     name: 'Stone',
     description: 'Mined for sturdy buildings and fortifications.',
     baseFactor: 0.75,
@@ -40,6 +42,7 @@ export const RESOURCES = {
   },
   /** Grown by farmers; consumed by every person. */
   food: {
+    capped: true,
     name: 'Food',
     description: 'Keeps your population fed. A shortage stalls growth.',
     baseFactor: 0.4,
@@ -51,6 +54,7 @@ export const RESOURCES = {
   },
   /** The medium of exchange; never traded on the market. */
   gold: {
+    capped: false,
     name: 'Gold',
     description: 'The medium of exchange. Spent and earned, never bought or sold.',
     baseFactor: 0,
@@ -62,6 +66,7 @@ export const RESOURCES = {
   },
   /** Accumulates from per-person research; used to unlock technologies. */
   research: {
+    capped: false,
     name: 'Research',
     description: 'Accumulates from everyday discoveries. Used to unlock technologies.',
     baseFactor: 0,
@@ -73,6 +78,7 @@ export const RESOURCES = {
   },
   /** Shaped by ceramists from stone; used for pottery and other wares. */
   clay: {
+    capped: true,
     name: 'Clay',
     description: 'Shaped into pottery and other useful wares.',
     baseFactor: 1.5,
@@ -84,6 +90,7 @@ export const RESOURCES = {
   },
   /** Mined by copper miners; a raw material for bronze. */
   copper: {
+    capped: true,
     name: 'Copper',
     description: 'A reddish metal mined from deep deposits. Used in alloys and tools.',
     baseFactor: 2.5,
@@ -95,6 +102,7 @@ export const RESOURCES = {
   },
   /** Mined by tin miners; a rarer raw material for bronze. */
   tin: {
+    capped: true,
     name: 'Tin',
     description: 'A soft, silver-white metal. Rare deposits make it prized.',
     baseFactor: 3.25,
@@ -106,6 +114,7 @@ export const RESOURCES = {
   },
   /** Cast from copper and tin; a strong alloy for tools and weapons. */
   bronze: {
+    capped: true,
     name: 'Bronze',
     description: 'A strong alloy of copper and tin. Superior to either metal alone.',
     baseFactor: 8.25,
@@ -117,6 +126,7 @@ export const RESOURCES = {
   },
   /** Pressed from wood pulp; used for writing and record-keeping. */
   paper: {
+    capped: true,
     name: 'Paper',
     description: 'Sheets pressed from processed wood pulp. The foundation of literacy.',
     baseFactor: 4.0,
@@ -140,8 +150,12 @@ export type ResourceEntry = (typeof RESOURCES)[ResourceEnum];
 /** Resources that have a storage cap (and a capped display in the UI). */
 export type CappedResource = 'wood' | 'stone' | 'food' | 'research' | 'clay' | 'copper' | 'tin' | 'bronze' | 'paper';
 
-/** Runtime array of capped resource keys, derived from the type above. */
-export const CAPPED_RESOURCES: CappedResource[] = ['wood', 'stone', 'food', 'research', 'clay', 'copper', 'tin', 'bronze', 'paper'];
+/** Runtime array of capped resource keys, derived from the RESOURCES catalog. */
+export const CAPPED_RESOURCES = (
+  Object.entries(RESOURCES) as [ResourceEnum, ResourceEntry][]
+)
+  .filter(([, r]) => r.capped)
+  .map(([key]) => key) as CappedResource[];
 
 export type Resource = { [K in ResourceEnum]: number };
 /** A resource record where omitted fields default to 0 at runtime. */
