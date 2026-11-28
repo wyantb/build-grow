@@ -37,9 +37,15 @@ export interface WorldOverrides {
    * Without this, the jobs are in the order the catalog holds them.
    */
   jobOrder?: string[];
+  /**
+   * Technologies that have been researched.
+   *
+   * Without this, the world starts with no technologies.
+   */
+  researchedTechs?: string[];
 }
 
-const zeroResource = (): Resource => ({ wood: 0, stone: 0, food: 0, gold: 0, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0 });
+const zeroResource = (): Resource => ({ wood: 0, stone: 0, food: 0, gold: 0, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0, paper: 0 });
 
 /**
  * Build a world state for tests.
@@ -58,6 +64,10 @@ export function createTestWorld(overrides: WorldOverrides = {}): WorldState {
 
   if (overrides.resources) {
     state.resources = { ...state.resources, ...overrides.resources };
+  }
+
+  if (overrides.researchedTechs) {
+    state.researchedTechnologies = [...overrides.researchedTechs];
   }
 
   for (const job of Object.values(state.jobs)) {

@@ -61,7 +61,7 @@ describe('serializeState', () => {
   it('keeps the values that change while the game runs', () => {
     const world = createTestWorld({
       population: 12,
-      resources: { wood: 300, stone: 100, food: 50, gold: 25, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0 },
+      resources: { wood: 300, stone: 100, food: 50, gold: 25, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0, paper: 0 },
       workers: { lumberjack: 3, settler: 4 },
       buildings: ['hut', 'farm'],
       marketBuys: { wood: 2 },
@@ -99,7 +99,7 @@ describe('deserializePayload', () => {
   it('rebuilds the world from a payload', () => {
     const world = createTestWorld({
       population: 12,
-      resources: { wood: 300, stone: 100, food: 50, gold: 25, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0 },
+      resources: { wood: 300, stone: 100, food: 50, gold: 25, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0, paper: 0 },
       workers: { lumberjack: 3 },
       buildings: ['hut', 'farm'],
       marketBuys: { wood: 2 },
@@ -108,7 +108,7 @@ describe('deserializePayload', () => {
     const restored = deserializePayload(serializeState(world));
 
     expect(restored.population).toBe(12);
-    expect(restored.resources).toEqual({ wood: 300, stone: 100, food: 50, gold: 25, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0 });
+    expect(restored.resources).toEqual({ wood: 300, stone: 100, food: 50, gold: 25, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0, paper: 0 });
     expect(restored.jobs['lumberjack']?.workers).toBe(3);
     expect(restored.buildingCounts).toEqual({ hut: 1, farm: 1 });
     expect(restored.market.buys.wood).toBe(2);
@@ -232,7 +232,7 @@ describe('save and load round trip', () => {
   it('keeps every part of the world through a round trip', async () => {
     const engine = new GameEngine(createTestWorld({
       population: 40,
-      resources: { wood: 1234, stone: 567, food: 890, gold: 321, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0 },
+      resources: { wood: 1234, stone: 567, food: 890, gold: 321, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0, paper: 0 },
       workers: { lumberjack: 5, quarrier: 3, farmer: 2, merchant: 1 },
       buildings: ['hut', 'hut', 'lumberjack', 'quarry', 'farm', 'market'],
       marketBuys: { wood: 4, stone: 1 },
@@ -252,7 +252,7 @@ describe('save and load round trip', () => {
     const restored = deserializePayload(decoded.envelope.state);
 
     expect(restored.population).toBe(40);
-    expect(restored.resources).toEqual({ wood: 1234, stone: 567, food: 890, gold: 321, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0 });
+    expect(restored.resources).toEqual({ wood: 1234, stone: 567, food: 890, gold: 321, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0, paper: 0 });
     expect(restored.jobs['lumberjack']?.workers).toBe(5);
     expect(restored.jobs['quarrier']?.workers).toBe(3);
     expect(restored.jobs['farmer']?.workers).toBe(2);

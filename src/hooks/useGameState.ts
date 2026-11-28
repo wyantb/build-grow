@@ -132,7 +132,7 @@ export const useGameState = () => {
     food: 0,
     gold: 0,
     research: 0,
-    clay: 0, copper: 0, tin: 0, bronze: 0,
+    clay: 0, copper: 0, tin: 0, bronze: 0, paper: 0,
   });
 
   // Set resource rates from external source (game engine)
@@ -600,7 +600,7 @@ export const useGameState = () => {
     food: 0,
     gold: 0,
     research: 0,
-    clay: 0, copper: 0, tin: 0, bronze: 0,
+    clay: 0, copper: 0, tin: 0, bronze: 0, paper: 0,
   });
 
   // The market's own per-second rates, with no job production mixed in.
@@ -610,7 +610,7 @@ export const useGameState = () => {
     food: 0,
     gold: 0,
     research: 0,
-    clay: 0, copper: 0, tin: 0, bronze: 0,
+    clay: 0, copper: 0, tin: 0, bronze: 0, paper: 0,
   });
 
   // The units bought and sold per second, split by direction.
@@ -702,6 +702,8 @@ export const useGameState = () => {
         }
 
         return state.cityCenter.storageBronze;
+      case 'paper':
+        return state.cityCenter.storageKnowledge;
     }
   };
 
@@ -758,6 +760,15 @@ export const useGameState = () => {
     } else if (resource === 'bronze') {
       if (!isTechnologyResearched('bronze_alloy')) {return [];}
       entries.push({ label: 'City Center', value: state.cityCenter.storageBronze });
+    } else if (resource === 'paper') {
+      entries.push({ label: 'City Center', value: state.cityCenter.storageKnowledge });
+      for (const type of BUILDING_TYPES) {
+        const bonus = type.storageBonus?.knowledge;
+        if (!bonus) {continue;}
+        const count = state.buildingCounts[type.id] ?? 0;
+        if (count === 0) {continue;}
+        entries.push({ label: type.name, value: count * bonus });
+      }
     }
 
     return entries;

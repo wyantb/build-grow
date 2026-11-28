@@ -28,7 +28,33 @@ import type { TechnologyEntry } from '../data/technologies.js';
 export { TICKS_PER_SECOND };
 
 /** Resource keys the engine tracks. */
-const RESOURCE_KEYS = ['wood', 'stone', 'food', 'gold', 'research', 'clay', 'copper', 'tin', 'bronze'] as const;
+const RESOURCE_KEYS = ['wood', 'stone', 'food', 'gold', 'research', 'clay', 'copper', 'tin', 'bronze', 'paper'] as const;
+
+/** Bronze consumed per brazier per tick (2x bronze_caster raw rate). */
+const BRAZIER_BRONZE_PER_TICK = 0.5;
+
+/** Research multiplier per librarian. */
+const LIBRARIAN_RESEARCH_MULTIPLIER = 0.05;
+
+/** Productivity boost per brazier for matching tool tech (10%). */
+const BRAZIER_PRODUCTIVITY_BOOST = 0.10;
+
+/** Which bronze tool tech boosts which job. */
+const BRONZE_TOOL_BOOSTS: Record<string, string[]> = {
+  bronze_hoe: ['farmer'],
+  bronze_axe: ['lumberjack'],
+  bronze_chisel: ['quarrier'],
+  bronze_pick: ['copper_miner', 'tin_miner'],
+};
+
+/** Reverse map: job id → array of tool tech ids that boost it. */
+const JOB_TOOL_TECH_MAP: Record<string, string[]> = {};
+for (const [tech, jobs] of Object.entries(BRONZE_TOOL_BOOSTS)) {
+  for (const job of jobs) {
+    JOB_TOOL_TECH_MAP[job] ??= [];
+    JOB_TOOL_TECH_MAP[job].push(tech);
+  }
+}
 
 /**
  * The gold a rebirth costs.
@@ -235,6 +261,10 @@ class GameEngine {
   private processResourceGeneration(): void {
     const jobs = this.state.jobs;
 
+    // Compute how many braziers the player has and which tool techs are unlocked.
+    const brazierCount = this.state.buildingCounts['brazier'] ?? 0;
+    const unlockedTechs = new Set(this.state.researchedTechnologies);
+
     // Production and consumption from each job
     for (const job of Object.values(jobs)) {
       if (job.workers <= 0) {continue;}
@@ -242,12 +272,17 @@ class GameEngine {
       // The stats of the people working the job decide how well they work.
       // A job with no stats of its own is neither helped nor hindered.
       const factor = this.getJobFactor(job);
+      const toolBoost = this.getJobToolBoost(job.id, brazierCount, unlockedTechs);
 
-      this.state.resources.wood += job.production.wood * job.workers * factor;
-      this.state.resources.stone += job.production.stone * job.workers * factor;
-      this.state.resources.food += job.production.food * job.workers * factor;
-      this.state.resources.gold += job.production.gold * job.workers * factor;
-      this.state.resources.clay += job.production.clay * job.workers * factor;
+      this.state.resources.wood += job.production.wood * job.workers * factor * toolBoost;
+      this.state.resources.stone += job.production.stone * job.workers * factor * toolBoost;
+      this.state.resources.food += job.production.food * job.workers * factor * toolBoost;
+      this.state.resources.gold += job.production.gold * job.workers * factor * toolBoost;
+      this.state.resources.clay += job.production.clay * job.workers * factor * toolBoost;
+      this.state.resources.copper += job.production.copper * job.workers * factor * toolBoost;
+      this.state.resources.tin += job.production.tin * job.workers * factor * toolBoost;
+      this.state.resources.bronze += job.production.bronze * job.workers * factor * toolBoost;
+      this.state.resources.paper += job.production.paper * job.workers * factor * toolBoost;
 
       // Job consumption
       this.state.resources.wood -= job.consumption.wood * job.workers;
@@ -255,6 +290,10 @@ class GameEngine {
       this.state.resources.food -= job.consumption.food * job.workers;
       this.state.resources.gold -= job.consumption.gold * job.workers;
       this.state.resources.clay -= job.consumption.clay * job.workers;
+      this.state.resources.copper -= job.consumption.copper * job.workers;
+      this.state.resources.tin -= job.consumption.tin * job.workers;
+      this.state.resources.bronze -= job.consumption.bronze * job.workers;
+      this.state.resources.paper -= job.consumption.paper * job.workers;
     }
 
     // Species-based consumption and research from the whole population.
@@ -281,6 +320,18 @@ class GameEngine {
       const chiefStats = this.getJobAverageStats(chiefJob);
       const chiefFactor = getJobFactor({ primary: 'wisdom', secondary: 'charisma' }, chiefStats);
       this.state.resources.research += naturalResearch * chiefJob.workers * chiefFactor;
+    }
+
+    // Librarians: each librarian adds 5% to the total research rate.
+    const librarianJob = this.state.jobs['librarian'];
+    if (librarianJob && librarianJob.workers > 0) {
+      const librarianBoost = librarianJob.workers * LIBRARIAN_RESEARCH_MULTIPLIER;
+      this.state.resources.research *= 1 + librarianBoost;
+    }
+
+    // Braziers consume bronze: each brazier burns BRAZIER_BRONZE_PER_TICK.
+    if (brazierCount > 0) {
+      this.state.resources.bronze -= BRAZIER_BRONZE_PER_TICK * brazierCount;
     }
 
     // Clamp resources to their storage caps.
@@ -311,6 +362,26 @@ class GameEngine {
     }
 
     return getJobFactor(jobStats, this.getJobAverageStats(job));
+  }
+
+  /**
+   * The bronze tool productivity boost for a job.
+   *
+   * Each brazier gives a BRAZIER_PRODUCTIVITY_BOOST to jobs matching an
+   * unlocked bronze tool tech. Multiple braziers stack linearly, multiple
+   * tool techs affecting the same job stack linearly.
+   */
+  private getJobToolBoost(
+    jobId: string,
+    brazierCount: number,
+    unlockedTechs: ReadonlySet<string>,
+  ): number {
+    if (brazierCount <= 0) {return 1;}
+
+    const matchingTechs = JOB_TOOL_TECH_MAP[jobId]?.filter((tech) => unlockedTechs.has(tech));
+    if (!matchingTechs || matchingTechs.length === 0) {return 1;}
+
+    return 1 + brazierCount * matchingTechs.length * BRAZIER_PRODUCTIVITY_BOOST;
   }
 
   // Apply the effects of a building that has just been paid for
@@ -426,10 +497,11 @@ class GameEngine {
    * Clay storage is only revealed once clay making is researched.
    * Each ceramist employed makes sheds 5% more spacious.
    */
-  getMaxStorage(resource: 'wood' | 'stone' | 'food' | 'research' | 'clay'): number {
+  getMaxStorage(resource: 'wood' | 'stone' | 'food' | 'research' | 'clay' | 'paper' | 'knowledge'): number {
     let woodStoneBonus = 0;
     let foodBonus = 0;
     let clayBonus = 0;
+    let knowledgeBonus = 0;
 
     for (const type of BUILDING_TYPES) {
       const bonus = type.storageBonus;
@@ -444,6 +516,9 @@ class GameEngine {
       }
       if (bonus.clay) {
         clayBonus += count * bonus.clay;
+      }
+      if (bonus.knowledge) {
+        knowledgeBonus += count * bonus.knowledge;
       }
     }
 
@@ -465,6 +540,10 @@ class GameEngine {
         }
 
         return this.state.cityCenter.storageClay + clayBonus * ceramistShedMultiplier;
+      case 'paper':
+        return this.state.cityCenter.storageKnowledge + knowledgeBonus;
+      case 'knowledge':
+        return this.state.cityCenter.storageKnowledge + knowledgeBonus;
     }
   }
 
@@ -1324,6 +1403,7 @@ class GameEngine {
       copper: tickRates.copper * ticksPerSecond,
       tin: tickRates.tin * ticksPerSecond,
       bronze: tickRates.bronze * ticksPerSecond,
+      paper: tickRates.paper * ticksPerSecond,
     };
   }
 
@@ -1399,18 +1479,28 @@ class GameEngine {
    * cannot leak into the rate.
    */
   getTickRates(): Resource {
-    const rates: Resource = { wood: 0, stone: 0, food: 0, gold: 0, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0 };
+    const rates: Resource = { wood: 0, stone: 0, food: 0, gold: 0, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0, paper: 0 };
+
+    // Compute how many braziers the player has and which tool techs are unlocked.
+    const brazierCount = this.state.buildingCounts['brazier'] ?? 0;
+    const unlockedTechs = new Set(this.state.researchedTechnologies);
 
     for (const job of Object.values(this.state.jobs)) {
       if (job.workers <= 0) {continue;}
 
-      // Production is scaled by the stats of the people working the job.
-      // Consumption is not: every worker eats the same.
+      // Production is scaled by the stats of the people working the job
+      // and by any bronze tool boosts from braziers.
       const factor = this.getJobFactor(job);
+      const toolBoost = this.getJobToolBoost(job.id, brazierCount, unlockedTechs);
 
       for (const key of RESOURCE_KEYS) {
-        rates[key] += (job.production[key] * factor - job.consumption[key]) * job.workers;
+        rates[key] += (job.production[key] * factor * toolBoost - job.consumption[key]) * job.workers;
       }
+    }
+
+    // Braziers consume bronze: each brazier burns BRAZIER_BRONZE_PER_TICK.
+    if (brazierCount > 0) {
+      rates.bronze -= BRAZIER_BRONZE_PER_TICK * brazierCount;
     }
 
     const marketRates = this.marketSystem.getTickRates();
@@ -1438,6 +1528,13 @@ class GameEngine {
       rates.research += rates.research * chiefJob.workers * chiefFactor;
     }
 
+    // Librarians: each librarian adds 5% to the total research rate.
+    const librarianJob = this.state.jobs['librarian'];
+    if (librarianJob && librarianJob.workers > 0) {
+      const librarianBoost = librarianJob.workers * LIBRARIAN_RESEARCH_MULTIPLIER;
+      rates.research *= 1 + librarianBoost;
+    }
+
     return rates;
   }
 
@@ -1462,6 +1559,7 @@ class GameEngine {
       copper: tickRates.copper * ticksPerSecond,
       tin: tickRates.tin * ticksPerSecond,
       bronze: tickRates.bronze * ticksPerSecond,
+      paper: tickRates.paper * ticksPerSecond,
     };
   }
 

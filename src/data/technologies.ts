@@ -42,6 +42,48 @@ export const TECHNOLOGIES = {
     researchCost: 120,
     prereqs: ['mining', 'clay_making'],
   },
+  paper_making: {
+    id: 'paper_making',
+    name: 'Paper Making',
+    description: 'Press wood pulp into sheets for writing and record-keeping.',
+    researchCost: 75,
+    prereqs: [],
+  },
+  writing: {
+    id: 'writing',
+    name: 'Writing',
+    description: 'Record knowledge on paper. Librarians multiply research output.',
+    researchCost: 150,
+    prereqs: ['paper_making'],
+  },
+  bronze_hoe: {
+    id: 'bronze_hoe',
+    name: 'Bronze Hoe',
+    description: 'Bronze-tipped hoes make farming more productive. Requires a brazier.',
+    researchCost: 250,
+    prereqs: ['writing', 'bronze_alloy'],
+  },
+  bronze_axe: {
+    id: 'bronze_axe',
+    name: 'Bronze Axe',
+    description: 'Bronze axes fell trees faster. Requires a brazier.',
+    researchCost: 250,
+    prereqs: ['writing', 'bronze_alloy'],
+  },
+  bronze_chisel: {
+    id: 'bronze_chisel',
+    name: 'Bronze Chisel',
+    description: 'Bronze chisels carve stone with ease. Requires a brazier.',
+    researchCost: 250,
+    prereqs: ['writing', 'bronze_alloy'],
+  },
+  bronze_pick: {
+    id: 'bronze_pick',
+    name: 'Bronze Pick',
+    description: 'Bronze picks mine copper and tin more efficiently. Requires a brazier.',
+    researchCost: 250,
+    prereqs: ['writing', 'bronze_alloy'],
+  },
 } as const;
 
 export type TechnologyId = keyof typeof TECHNOLOGIES;

@@ -14,7 +14,7 @@ const visibleJobs = (engine: GameEngine): string[] =>
   );
 
 // After normalization, defaultable jobs (settler, unemployed) are at the end.
-const normalizedDefaultOrder = ['lumberjack', 'quarrier', 'farmer', 'merchant', 'ceramist', 'chief', 'copper_miner', 'tin_miner', 'bronze_caster', 'settler', 'unemployed'];
+const normalizedDefaultOrder = ['lumberjack', 'quarrier', 'farmer', 'merchant', 'ceramist', 'chief', 'copper_miner', 'tin_miner', 'bronze_caster', 'paper_maker', 'librarian', 'settler', 'unemployed'];
 
 describe('the priority order of the jobs', () => {
   it('starts with the normalized catalog order', () => {
@@ -270,7 +270,7 @@ describe('the priority order through a save', () => {
   it('keeps the order through a round trip', () => {
     const engine = new GameEngine(createTestWorld({
       buildings: ['lumberjack', 'farm'],
-      jobOrder: ['farmer', 'lumberjack', 'quarrier', 'merchant', 'ceramist', 'chief', 'copper_miner', 'tin_miner', 'bronze_caster', 'settler', 'unemployed'],
+      jobOrder: ['farmer', 'lumberjack', 'quarrier', 'merchant', 'ceramist', 'chief', 'copper_miner', 'tin_miner', 'bronze_caster', 'paper_maker', 'librarian', 'settler', 'unemployed'],
     }));
 
     const payload = serializeState(engine.getState());
@@ -286,6 +286,8 @@ describe('the priority order through a save', () => {
       'copper_miner',
       'tin_miner',
       'bronze_caster',
+      'paper_maker',
+      'librarian',
       'settler',
       'unemployed',
     ]);

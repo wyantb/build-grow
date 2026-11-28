@@ -115,6 +115,17 @@ export const RESOURCES = {
     production: 'bronze_caster',
     unlocksTech: 'bronze_alloy' as TechnologyId,
   },
+  /** Pressed from wood pulp; used for writing and record-keeping. */
+  paper: {
+    name: 'Paper',
+    description: 'Sheets pressed from processed wood pulp. The foundation of literacy.',
+    baseFactor: 4.0,
+    baseRarity: 3,
+    tradeable: true,
+    category: 'manufactured' as const,
+    production: 'paper_maker',
+    unlocksTech: 'paper_making' as TechnologyId,
+  },
 } as const;
 
 export type ResourceEnum = keyof typeof RESOURCES;
@@ -127,7 +138,7 @@ export type ResourceEntry = (typeof RESOURCES)[ResourceEnum];
  * catalog automatically.
  */
 /** Resources that have a storage cap (and a capped display in the UI). */
-export type CappedResource = 'wood' | 'stone' | 'food' | 'research' | 'clay' | 'copper' | 'tin' | 'bronze';
+export type CappedResource = 'wood' | 'stone' | 'food' | 'research' | 'clay' | 'copper' | 'tin' | 'bronze' | 'paper';
 
 export type Resource = { [K in ResourceEnum]: number };
 /** A resource record where omitted fields default to 0 at runtime. */

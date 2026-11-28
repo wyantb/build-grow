@@ -134,6 +134,27 @@ export const JOBS: Record<string, JobCatalogEntry> = {
     production: { bronze: 0.25 },
     consumption: { copper: 0.2, tin: 0.1 },
   },
+  paper_maker: {
+    id: 'paper_maker',
+    name: 'Paper Maker',
+    description: 'Presses wood pulp into sheets of paper. Consumes wood, produces paper.',
+    capacity: 0, // set dynamically from buildings
+    canDefault: false,
+    buildingId: 'paper_mill',
+    // 0.1 paper/tick → 0.5/s (3:1 ratio like clay: 0.3 wood → 0.1 paper)
+    production: { paper: 0.1 },
+    consumption: { wood: 0.3 },
+  },
+  librarian: {
+    id: 'librarian',
+    name: 'Librarian',
+    description: 'Preserves and multiplies knowledge. Consumes paper, +100 knowledge storage each.',
+    capacity: 0, // set dynamically from buildings
+    canDefault: false,
+    buildingId: 'library',
+    production: {},
+    consumption: { paper: 0.2 },
+  },
 };
 
 type JobsDetails = typeof JOBS;
@@ -156,9 +177,14 @@ export const JOB_STATS: JobStatsCompleteMap = {
   farmer: { primary: 'constitution', secondary: 'wisdom' },
   settler: { primary: 'intelligence', secondary: 'charisma' },
   ceramist: { primary: 'intelligence', secondary: 'dexterity' },
+  copper_miner: { primary: 'strength', secondary: 'constitution' },
+  tin_miner: { primary: 'dexterity', secondary: 'constitution' },
+  bronze_caster: { primary: 'constitution', secondary: 'strength' },
+  paper_maker: { primary: 'dexterity', secondary: 'intelligence' },
   unemployed: null,
   merchant: null,
   chief: { primary: 'wisdom', secondary: 'charisma' },
+  librarian: null,
 };
 
 /**
