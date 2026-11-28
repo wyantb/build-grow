@@ -259,14 +259,12 @@ class GameEngine {
 
   // Process resource generation from jobs
   private processResourceGeneration(): void {
-    const jobs = this.state.jobs;
-
     // Compute how many braziers the player has and which tool techs are unlocked.
     const brazierCount = this.state.buildingCounts['brazier'] ?? 0;
     const unlockedTechs = new Set(this.state.researchedTechnologies);
 
     // Production and consumption from each job
-    for (const job of Object.values(jobs)) {
+    for (const job of Object.values(this.state.jobs)) {
       if (job.workers <= 0) {continue;}
 
       // The stats of the people working the job decide how well they work.
@@ -274,26 +272,9 @@ class GameEngine {
       const factor = this.getJobFactor(job);
       const toolBoost = this.getJobToolBoost(job.id, brazierCount, unlockedTechs);
 
-      this.state.resources.wood += job.production.wood * job.workers * factor * toolBoost;
-      this.state.resources.stone += job.production.stone * job.workers * factor * toolBoost;
-      this.state.resources.food += job.production.food * job.workers * factor * toolBoost;
-      this.state.resources.gold += job.production.gold * job.workers * factor * toolBoost;
-      this.state.resources.clay += job.production.clay * job.workers * factor * toolBoost;
-      this.state.resources.copper += job.production.copper * job.workers * factor * toolBoost;
-      this.state.resources.tin += job.production.tin * job.workers * factor * toolBoost;
-      this.state.resources.bronze += job.production.bronze * job.workers * factor * toolBoost;
-      this.state.resources.paper += job.production.paper * job.workers * factor * toolBoost;
-
-      // Job consumption
-      this.state.resources.wood -= job.consumption.wood * job.workers;
-      this.state.resources.stone -= job.consumption.stone * job.workers;
-      this.state.resources.food -= job.consumption.food * job.workers;
-      this.state.resources.gold -= job.consumption.gold * job.workers;
-      this.state.resources.clay -= job.consumption.clay * job.workers;
-      this.state.resources.copper -= job.consumption.copper * job.workers;
-      this.state.resources.tin -= job.consumption.tin * job.workers;
-      this.state.resources.bronze -= job.consumption.bronze * job.workers;
-      this.state.resources.paper -= job.consumption.paper * job.workers;
+      for (const key of RESOURCE_KEYS) {
+        this.state.resources[key] += (job.production[key] * factor * toolBoost - job.consumption[key]) * job.workers;
+      }
     }
 
     // Species-based consumption and research from the whole population.
