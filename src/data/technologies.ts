@@ -84,6 +84,13 @@ export const TECHNOLOGIES = {
     researchCost: 250,
     prereqs: ['writing', 'bronze_alloy'],
   },
+  farm_houses: {
+    id: 'farm_houses',
+    name: 'Farm Houses',
+    description: 'Add a house to every farm, providing housing for your people.',
+    researchCost: 300,
+    prereqs: ['bronze_alloy'],
+  },
 } as const;
 
 export type TechnologyId = keyof typeof TECHNOLOGIES;

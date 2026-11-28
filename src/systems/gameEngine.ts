@@ -459,14 +459,28 @@ class GameEngine {
   }
 
   /**
-   * The people the huts and the city center can hold.
+   * The people the huts, the city center, and any tech-gated housing can hold.
    *
    * Every hut counts, because a building is finished the moment it is paid
    * for. The city center provides its own housing from village creation.
+   * Buildings that declare a housingBonus add their per-copy amount when
+   * the relevant tech is researched.
    */
   getPopulationCapacity(): number {
-    return this.state.cityCenter.housing
+    let housing = this.state.cityCenter.housing
       + getPopulationCapacity(this.state.buildingCounts['hut'] ?? 0);
+
+    for (const type of BUILDING_TYPES) {
+      if (!type.housingBonus) {continue;}
+      const count = this.state.buildingCounts[type.id] ?? 0;
+      if (count === 0) {continue;}
+      if (type.housingRequiresTech && !this.isTechnologyResearched(type.housingRequiresTech)) {
+        continue;
+      }
+      housing += count * type.housingBonus;
+    }
+
+    return housing;
   }
 
   /**

@@ -628,13 +628,26 @@ export const useGameState = () => {
   const getPopulation = () => state.population;
 
   /**
-   * The people the huts and the city center can hold.
+   * The people the huts, the city center, and any tech-gated housing can hold.
    *
    * Read from the mirrored building counts so the figure stays reactive.
    */
-  const getPopulationCapacity = (): number =>
-    state.cityCenter.housing
-    + getCapacityFromHuts(state.buildingCounts['hut'] ?? 0);
+  const getPopulationCapacity = (): number => {
+    let housing = state.cityCenter.housing
+      + getCapacityFromHuts(state.buildingCounts['hut'] ?? 0);
+
+    for (const type of BUILDING_TYPES) {
+      if (!type.housingBonus) {continue;}
+      const count = state.buildingCounts[type.id] ?? 0;
+      if (count === 0) {continue;}
+      if (type.housingRequiresTech && !isTechnologyResearched(type.housingRequiresTech)) {
+        continue;
+      }
+      housing += count * type.housingBonus;
+    }
+
+    return housing;
+  };
 
   /**
    * The maximum amount of a resource the storage structures can hold.

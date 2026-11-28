@@ -29,6 +29,18 @@ export interface BuildingType {
     clay?: number;
     knowledge?: number;
   };
+  /**
+   * How much population housing this building provides per copy.
+   *
+   * Only applies when `housingRequiresTech` is researched (or when absent).
+   * The engine sums these across all copies to derive housing at runtime.
+   */
+  housingBonus?: number;
+  /**
+   * Technology that must be researched before this building's housingBonus
+   * takes effect. Absent means the housing is active from the start.
+   */
+  housingRequiresTech?: TechnologyId;
 }
 
 export const BUILDING_TYPES: BuildingType[] = [
@@ -73,6 +85,8 @@ export const BUILDING_TYPES: BuildingType[] = [
     description: 'Provides work for a farmer; increasing food production.',
     cost: { wood: 35, stone: 0, food: 0, gold: 0, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0, paper: 0 },
     category: 'Rural District',
+    housingBonus: 5,
+    housingRequiresTech: 'farm_houses',
   },
   {
     id: 'shed',
