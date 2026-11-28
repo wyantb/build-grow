@@ -31,7 +31,7 @@ const getJobTooltip = (
     return '';
   }
 
-  const jobStats: JobStats | undefined = JOB_STATS[jobId];
+  const jobStats: JobStats | undefined = JOB_STATS[jobId] || undefined;
   const hasWorkers = Object.values(species).some((c) => c > 0);
 
   if (!jobStats && jobId !== 'chief' && !hasWorkers) {

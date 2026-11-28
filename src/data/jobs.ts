@@ -9,21 +9,6 @@ import type { JobStats } from '../systems/stats.js';
 const ZERO: Resource = { wood: 0, stone: 0, food: 0, gold: 0, research: 0, clay: 0 };
 const DEFAULT_CONSUMPTION = { wood: 0, stone: 0, food: 0, gold: 0, research: 0, clay: 0 };
 
-/**
- * The stats each job leans on.
- *
- * The primary stat counts fully and the secondary stat counts half, so a
- * job's rate is the base rate times both factors. A job that is missing
- * here is neither helped nor hindered by any stat.
- */
-export const JOB_STATS: Record<string, JobStats> = {
-  lumberjack: { primary: 'strength', secondary: 'intelligence' },
-  quarrier: { primary: 'strength', secondary: 'constitution' },
-  farmer: { primary: 'constitution', secondary: 'wisdom' },
-  settler: { primary: 'intelligence', secondary: 'charisma' },
-  ceramist: { primary: 'intelligence', secondary: 'dexterity' },
-};
-
 export const JOBS: Record<string, Omit<Job, 'workers' | 'species'>> = {
   unemployed: {
     id: 'unemployed',
@@ -101,6 +86,29 @@ export const JOBS: Record<string, Omit<Job, 'workers' | 'species'>> = {
     production: ZERO,
     consumption: DEFAULT_CONSUMPTION,
   },
+};
+
+type JobsDetails = typeof JOBS;
+type JobBaseType = keyof JobsDetails;
+
+type JobStatsCompleteMap = {
+  [job in JobBaseType]: null | JobStats;
+};
+
+/**
+ * The stats each job leans on.
+ *
+ * The primary stat counts fully and the secondary stat counts half, so a
+ * job's rate is the base rate times both factors. A job that is missing
+ * here is neither helped nor hindered by any stat.
+ */
+export const JOB_STATS: JobStatsCompleteMap = {
+  lumberjack: { primary: 'strength', secondary: 'intelligence' },
+  quarrier: { primary: 'strength', secondary: 'constitution' },
+  farmer: { primary: 'constitution', secondary: 'wisdom' },
+  settler: { primary: 'intelligence', secondary: 'charisma' },
+  ceramist: { primary: 'intelligence', secondary: 'dexterity' },
+  unemployed: null,
 };
 
 // Building type id → job id mapping.
