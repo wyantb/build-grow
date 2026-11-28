@@ -233,8 +233,8 @@ describe('a job with the stats of the design', () => {
   });
 
   it('gives no job any stats when it has none of its own', () => {
-    expect(JOB_STATS['merchant']).toBeUndefined();
-    expect(JOB_STATS['unemployed']).toBeUndefined();
+    expect(JOB_STATS['merchant']).toBeNull();
+    expect(JOB_STATS['unemployed']).toBeNull();
   });
 
   it('scales a quarry with the stats of its own job', () => {

@@ -1,11 +1,13 @@
 /**
- * Resources that can be traded at the market.
+ * Market configuration derived from the resource catalog.
  *
  * Gold is deliberately absent: it is the medium of exchange, not a commodity.
  * Every tradable resource has a base factor, so a resource added later only
- * needs a factor to become tradable.
+ * needs to set tradeable: true in RESOURCES to become tradable.
  */
-export const MARKET_RESOURCES = ['wood', 'stone', 'food'] as const;
+import { RESOURCES, MARKET_RESOURCES as TRADABLE } from './resources.js';
+
+export const MARKET_RESOURCES = TRADABLE;
 
 export type MarketResource = (typeof MARKET_RESOURCES)[number];
 
@@ -15,11 +17,9 @@ export type MarketResource = (typeof MARKET_RESOURCES)[number];
  * The market pays `BUY_PRICE_MULTIPLIER` times this to sell to the player,
  * and takes `SELL_PRICE_MULTIPLIER` times this to buy from the player.
  */
-export const RESOURCE_BASE_FACTORS: Record<MarketResource, number> = {
-  wood: 0.5,
-  stone: 0.75,
-  food: 0.4,
-};
+export const RESOURCE_BASE_FACTORS: Record<MarketResource, number> = Object.fromEntries(
+  MARKET_RESOURCES.map((key) => [key, RESOURCES[key].baseFactor]),
+) as Record<MarketResource, number>;
 
 /** Price the player pays to buy one unit, as a multiple of the base factor. */
 export const BUY_PRICE_MULTIPLIER = 1.5;
@@ -62,21 +62,14 @@ export const UNITS_PER_TRADE_PER_TICK = 0.5;
 export const getTradeCapacity = (merchantCount: number, caravanseraiCount: number): number =>
   merchantCount * (TRADES_PER_MERCHANT + (caravanseraiCount * TRADES_PER_CARAVANSERAI));
 
-/** Display metadata for the market rows. */
-export const MARKET_RESOURCE_INFO: Record<MarketResource, { label: string; description: string }> = {
-  wood: {
-    label: 'Wood',
-    description: 'The basic building material. Traded for gold and bought back for construction.',
-  },
-  stone: {
-    label: 'Stone',
-    description: 'Mined for sturdy buildings and fortifications.',
-  },
-  food: {
-    label: 'Food',
-    description: 'Keeps your population fed. A shortage stalls growth.',
-  },
-};
+/** Display metadata for the market rows, derived from RESOURCES. */
+export const MARKET_RESOURCE_INFO: Record<MarketResource, { label: string; description: string }>
+  = Object.fromEntries(
+    MARKET_RESOURCES.map((key) => [key, {
+      label: RESOURCES[key].name,
+      description: RESOURCES[key].description,
+    }]),
+  ) as Record<MarketResource, { label: string; description: string }>;
 
 /** Price the player pays to buy one unit of `resource`. */
 export const getBuyPrice = (resource: MarketResource): number =>

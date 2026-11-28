@@ -3,18 +3,30 @@ import { DEFAULT_JOB_ORDER, JOBS } from '../data/jobs.js';
 import { MARKET_RESOURCES } from '../data/market.js';
 import { DEFAULT_SPECIES_ID, SPECIES, STARTING_SPECIES_IDS } from '../data/species.js';
 import { GAME_VERSION } from '../systems/gameVersion.js';
+import { RESOURCES } from '../data/resources.js';
+import type { ResourceEnum } from '../data/resources.js';
 
-// Define the basic resource schema
-export const ResourceSchema = z.object({
-  wood: z.number(),
-  stone: z.number(),
-  food: z.number(),
-  gold: z.number(),
-  research: z.number(),
-  clay: z.number(),
-});
+/**
+ * Build a Zod schema from the RESOURCES catalog.
+ *
+ * Every key in RESOURCES becomes a required number field, so adding a new
+ * resource to the catalog automatically makes it part of the save format.
+ */
+type ResourceShape = { [K in ResourceEnum]: z.ZodNumber };
 
-export type Resource = z.infer<typeof ResourceSchema>;
+function buildResourceSchema(): z.ZodObject<ResourceShape> {
+  const shape = {} as ResourceShape;
+  for (const key of Object.keys(RESOURCES) as ResourceEnum[]) {
+    shape[key] = z.number();
+  }
+
+  return z.object(shape);
+}
+
+export const ResourceSchema = buildResourceSchema();
+
+// Re-export Resource from the catalog so callers use a single type.
+export type { Resource } from '../data/resources.js';
 
 /**
  * The stats a creature has.

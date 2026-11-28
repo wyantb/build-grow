@@ -6,8 +6,7 @@
  * 100 is a percent away from the average in either direction.
  */
 
-/** Resource keys the engine tracks. */
-type Resource = { wood: number; stone: number; food: number; gold: number; research: number; clay: number };
+import type { Resource } from './resources.js';
 
 /** The stats a creature has. */
 export interface Stats {
