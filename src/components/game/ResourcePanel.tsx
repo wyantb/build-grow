@@ -4,7 +4,7 @@ import type { JSX } from '@solidjs/web';
 import { getGameState } from '../../hooks/useGameState.js';
 import { formatExact, formatNumber } from '../../utils/formatNumber.js';
 import Tooltip from '../ui/Tooltip.js';
-import { RESOURCES } from '../../data/resources.js';
+import { RESOURCES, RAW_MATERIAL_RESOURCES, MANUFACTURED_RESOURCES } from '../../data/resources.js';
 import type { ResourceEnum } from '../../data/resources.js';
 
 type CappedResource = 'wood' | 'stone' | 'food' | 'research' | 'clay';
@@ -27,20 +27,21 @@ const STANDARD_ROWS: ResourceRowDef[] = [
 ];
 
 /**
- * The production resources below the divider.
+ * Raw materials: harvested or gathered directly from the world.
+ * Derived from RESOURCES category.
  */
-const PRODUCTION_ROWS: ResourceRowDef[] = [
-  { key: 'wood', cappedKey: 'wood' },
-  { key: 'stone', cappedKey: 'stone' },
-];
+const RAW_MATERIAL_ROWS: ResourceRowDef[] = RAW_MATERIAL_RESOURCES.map(
+  (key) => ({ key, cappedKey: key as CappedResource }),
+);
 
 /**
- * Clay appears below another divider only once clay making is researched.
+ * Manufactured resources: crafted from raw materials.
+ * Derived from RESOURCES category. Clay appears only after clay making is
+ * researched; more manufactured resources will appear here later.
  */
-const CLAY_ROW: ResourceRowDef = {
-  key: 'clay',
-  cappedKey: 'clay',
-};
+const MANUFACTURED_ROWS: ResourceRowDef[] = MANUFACTURED_RESOURCES.map(
+  (key) => ({ key, cappedKey: key as CappedResource }),
+);
 
 const ResourceRow = (props: { row: ResourceRowDef; rates: () => { [K in ResourceEnum]: number } }) => {
   const gameState = getGameState();
@@ -101,8 +102,6 @@ const ResourcePanel: Component = () => {
 
   const rates = createMemo(() => gameState.getResourceRates());
 
-  const showClay = () => gameState.isTechnologyResearched('clay_making');
-
   return (
     <div class="resources-display">
       <div class="resource-header">
@@ -126,12 +125,20 @@ const ResourcePanel: Component = () => {
         {(row) => <ResourceRow row={row} rates={rates} />}
       </For>
       <div class="solid-resource-divider" />
-      <For each={PRODUCTION_ROWS}>
+      <For each={RAW_MATERIAL_ROWS}>
         {(row) => <ResourceRow row={row} rates={rates} />}
       </For>
-      <Show when={showClay()}>
+      <Show when={MANUFACTURED_ROWS.length > 0}>
         <div class="solid-resource-divider" />
-        <ResourceRow row={CLAY_ROW} rates={rates} />
+        <For each={MANUFACTURED_ROWS}>
+          {(row) => {
+            const isUnlocked = () => !row.key
+              || row.key === 'clay'
+              || gameState.isTechnologyResearched('clay_making');
+
+            return <Show when={isUnlocked()}><ResourceRow row={row} rates={rates} /></Show>;
+          }}
+        </For>
       </Show>
     </div>
   );

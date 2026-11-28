@@ -9,6 +9,9 @@
  * a higher baseFactor and baseRarity than the raw materials they come from.
  */
 
+/** Where a resource comes from. */
+export type ResourceCategory = 'rawMaterial' | 'manufactured' | 'metaphysical';
+
 /** All resources the engine tracks. */
 export const RESOURCES = {
   /** The basic building material, harvested by lumberjacks. */
@@ -18,6 +21,7 @@ export const RESOURCES = {
     baseFactor: 0.5,
     baseRarity: 1,
     tradeable: true,
+    category: 'rawMaterial' as const,
     production: 'lumberjack',
   },
   /** Mined from quarries; the other basic building material. */
@@ -27,6 +31,7 @@ export const RESOURCES = {
     baseFactor: 0.75,
     baseRarity: 1,
     tradeable: true,
+    category: 'rawMaterial' as const,
     production: 'quarrier',
   },
   /** Grown by farmers; consumed by every person. */
@@ -36,6 +41,7 @@ export const RESOURCES = {
     baseFactor: 0.4,
     baseRarity: 1,
     tradeable: true,
+    category: 'rawMaterial' as const,
     production: 'farmer',
   },
   /** The medium of exchange; never traded on the market. */
@@ -45,6 +51,7 @@ export const RESOURCES = {
     baseFactor: 0,
     baseRarity: 0,
     tradeable: false,
+    category: 'metaphysical' as const,
     production: null,
   },
   /** Accumulates from per-person research; used to unlock technologies. */
@@ -54,6 +61,7 @@ export const RESOURCES = {
     baseFactor: 0,
     baseRarity: 0,
     tradeable: false,
+    category: 'metaphysical' as const,
     production: null,
   },
   /** Shaped by ceramists from stone; used for pottery and other wares. */
@@ -63,6 +71,7 @@ export const RESOURCES = {
     baseFactor: 1.0,
     baseRarity: 2,
     tradeable: true,
+    category: 'manufactured' as const,
     production: 'ceramist',
   },
 } as const;
@@ -83,4 +92,18 @@ export const MARKET_RESOURCES = (
   Object.entries(RESOURCES) as [ResourceEnum, ResourceEntry][]
 )
   .filter(([, r]) => r.tradeable)
+  .map(([key]) => key);
+
+/** Raw materials: harvested or gathered directly from the world. */
+export const RAW_MATERIAL_RESOURCES = (
+  Object.entries(RESOURCES) as [ResourceEnum, ResourceEntry][]
+)
+  .filter(([, r]) => r.category === 'rawMaterial')
+  .map(([key]) => key);
+
+/** Manufactured resources: crafted from raw materials. */
+export const MANUFACTURED_RESOURCES = (
+  Object.entries(RESOURCES) as [ResourceEnum, ResourceEntry][]
+)
+  .filter(([, r]) => r.category === 'manufactured')
   .map(([key]) => key);
