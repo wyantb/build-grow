@@ -9,6 +9,8 @@
  * a higher baseFactor and baseRarity than the raw materials they come from.
  */
 
+import type { TechnologyId } from './technologies.js';
+
 /** Where a resource comes from. */
 export type ResourceCategory = 'rawMaterial' | 'manufactured' | 'metaphysical';
 
@@ -23,6 +25,7 @@ export const RESOURCES = {
     tradeable: true,
     category: 'rawMaterial' as const,
     production: 'lumberjack',
+    unlocksTech: null as TechnologyId | null,
   },
   /** Mined from quarries; the other basic building material. */
   stone: {
@@ -33,6 +36,7 @@ export const RESOURCES = {
     tradeable: true,
     category: 'rawMaterial' as const,
     production: 'quarrier',
+    unlocksTech: null as TechnologyId | null,
   },
   /** Grown by farmers; consumed by every person. */
   food: {
@@ -43,6 +47,7 @@ export const RESOURCES = {
     tradeable: true,
     category: 'rawMaterial' as const,
     production: 'farmer',
+    unlocksTech: null as TechnologyId | null,
   },
   /** The medium of exchange; never traded on the market. */
   gold: {
@@ -53,6 +58,7 @@ export const RESOURCES = {
     tradeable: false,
     category: 'metaphysical' as const,
     production: null,
+    unlocksTech: null as TechnologyId | null,
   },
   /** Accumulates from per-person research; used to unlock technologies. */
   research: {
@@ -63,6 +69,7 @@ export const RESOURCES = {
     tradeable: false,
     category: 'metaphysical' as const,
     production: null,
+    unlocksTech: null as TechnologyId | null,
   },
   /** Shaped by ceramists from stone; used for pottery and other wares. */
   clay: {
@@ -73,6 +80,7 @@ export const RESOURCES = {
     tradeable: true,
     category: 'manufactured' as const,
     production: 'ceramist',
+    unlocksTech: 'clay_making' as TechnologyId,
   },
 } as const;
 

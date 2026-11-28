@@ -1,6 +1,7 @@
 import { createSignal, For, Show } from 'solid-js';
 import { createRoot } from 'solid-js';
 import type { Component } from 'solid-js';
+import type { Resource } from '../../types/worldState.js';
 import { getGameState } from '../../hooks/useGameState.js';
 import Tooltip from '../ui/Tooltip.js';
 import { timeToIncome, timeToAvailable, formatTime } from '../../utils/formatTimeToAfford.js';
@@ -75,9 +76,11 @@ const ResearchPanel: Component = () => {
           const prereqsMet = () => canResearchTech(tech().id);
           const affordable = () => canAffordTech(tech().id);
 
+          const cost = (): Partial<Resource> => ({ research: tech().researchCost });
+
           const incomeTime = () => {
             const rates = gameState.getResourceRates();
-            const time = timeToIncome(tech().cost, rates);
+            const time = timeToIncome(cost(), rates);
 
             return time !== undefined ? formatTime(time) : null;
           };
@@ -86,7 +89,7 @@ const ResearchPanel: Component = () => {
             if (affordable()) {return 'now';}
             const rates = gameState.getResourceRates();
             const resources = gameState.getResources();
-            const time = timeToAvailable(tech().cost, rates, resources);
+            const time = timeToAvailable(cost(), rates, resources);
 
             return time !== undefined ? formatTime(time) : null;
           };
@@ -98,8 +101,8 @@ const ResearchPanel: Component = () => {
                   <div class="tooltip-description">{tech().description}</div>
                   <div class="tooltip-divider" />
                   <div class="tooltip-costs">
-                    <Show when={tech().cost.research && tech().cost.research > 0}>
-                      <span class="cost">{tech().cost.research} research</span>
+                    <Show when={tech().researchCost > 0}>
+                      <span class="cost">{tech().researchCost} research</span>
                     </Show>
                   </div>
                   <Show when={!isResearched() && incomeTime()}>

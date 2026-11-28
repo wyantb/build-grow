@@ -9,7 +9,7 @@ import type { Resource } from '../types/worldState.js';
  * Returns `Infinity` when a needed resource is not being produced.
  */
 export function timeToIncome(
-  cost: Resource,
+  cost: Partial<Resource>,
   rates: Resource,
 ): number | undefined {
   let maxTime = 0;
@@ -40,7 +40,7 @@ export function timeToIncome(
  * player doesn't have enough in stock.
  */
 export function timeToAvailable(
-  cost: Resource,
+  cost: Partial<Resource>,
   rates: Resource,
   resources: Resource,
 ): number | undefined {

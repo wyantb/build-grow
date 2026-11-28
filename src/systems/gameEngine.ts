@@ -23,7 +23,7 @@ import { getRebirthStatsPerSpecies, pickBirthSpecies } from './rebirth.js';
 import { TICKS_PER_SECOND } from './ticks.js';
 import { DEBUG } from '../utils/debug.js';
 import { TECHNOLOGIES, getTechnology } from '../data/technologies.js';
-import type { TechnologyType } from '../data/technologies.js';
+import type { TechnologyEntry } from '../data/technologies.js';
 
 export { TICKS_PER_SECOND };
 
@@ -1487,8 +1487,8 @@ class GameEngine {
   /**
    * The catalog of all technologies.
    */
-  getTechnologyCatalog(): TechnologyType[] {
-    return [...TECHNOLOGIES];
+  getTechnologyCatalog(): TechnologyEntry[] {
+    return Object.values(TECHNOLOGIES);
   }
 
   /**
@@ -1516,7 +1516,7 @@ class GameEngine {
     const tech = getTechnology(techId);
     if (!tech) {return false;}
 
-    return this.state.resources.research >= (tech.cost.research ?? 0);
+    return this.state.resources.research >= tech.researchCost;
   }
 
   /**
@@ -1531,7 +1531,7 @@ class GameEngine {
     if (!this.canResearch(techId)) {return false;}
     if (!this.canAffordResearch(techId)) {return false;}
 
-    this.state.resources.research -= tech.cost.research ?? 0;
+    this.state.resources.research -= tech.researchCost;
     this.state.researchedTechnologies.push(techId);
 
     // Unlock buildings this technology grants

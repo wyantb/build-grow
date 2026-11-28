@@ -132,11 +132,10 @@ const ResourcePanel: Component = () => {
         <div class="solid-resource-divider" />
         <For each={MANUFACTURED_ROWS}>
           {(row) => {
-            const isUnlocked = () => !row.key
-              || row.key === 'clay'
-              || gameState.isTechnologyResearched('clay_making');
+            const techId = RESOURCES[row.key].unlocksTech;
+            const isVisible = () => !techId || gameState.isTechnologyResearched(techId);
 
-            return <Show when={isUnlocked()}><ResourceRow row={row} rates={rates} /></Show>;
+            return <Show when={isVisible()}><ResourceRow row={row} rates={rates} /></Show>;
           }}
         </For>
       </Show>
