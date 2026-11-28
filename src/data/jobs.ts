@@ -1,4 +1,4 @@
-import type { Job, Resource } from '../types/worldState.js';
+import type { Job, ResourceOptional } from '../types/worldState.js';
 import type { JobStats } from '../systems/stats.js';
 
 // Per-tick production rates (engine runs at 5 ticks/sec)
@@ -6,8 +6,8 @@ import type { JobStats } from '../systems/stats.js';
 // Lumberjack: 5 wood/s → 1.0/tick
 // Quarrier: 4 stone/s → 0.8/tick
 
-const ZERO: Resource = { wood: 0, stone: 0, food: 0, gold: 0, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0 };
-const DEFAULT_CONSUMPTION = { wood: 0, stone: 0, food: 0, gold: 0, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0 };
+const ZERO: ResourceOptional = { wood: 0, stone: 0, food: 0, gold: 0, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0 };
+const DEFAULT_CONSUMPTION: ResourceOptional = { wood: 0, stone: 0, food: 0, gold: 0, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0 };
 
 export const JOBS: Record<string, Omit<Job, 'workers' | 'species'>> = {
   unemployed: {
@@ -16,7 +16,7 @@ export const JOBS: Record<string, Omit<Job, 'workers' | 'species'>> = {
     description: 'Workers with no role yet. From harvesting, they\'ll hopefully manage to feed themselves.',
     capacity: 0, // uncapped
     canDefault: true,
-    production: { wood: 0, stone: 0, food: 0.025, gold: 0, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0 },
+    production: { food: 0.025 },
     consumption: DEFAULT_CONSUMPTION,
   },
   settler: {

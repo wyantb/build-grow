@@ -26,7 +26,7 @@ function buildResourceSchema(): z.ZodObject<ResourceShape> {
 export const ResourceSchema = buildResourceSchema();
 
 // Re-export Resource from the catalog so callers use a single type.
-export type { Resource } from '../data/resources.js';
+export type { Resource, ResourceOptional } from '../data/resources.js';
 
 /**
  * The stats a creature has.
@@ -55,8 +55,8 @@ export const JobSchema = z.object({
   workers: z.number(),
   capacity: z.number(), // 0 = uncapped
   canDefault: z.boolean(),
-  production: ResourceSchema, // per tick
-  consumption: ResourceSchema, // per tick (e.g. food per worker)
+  production: ResourceOptional, // per tick
+  consumption: ResourceOptional, // per tick (e.g. food per worker)
   /**
    * Who works this job, by species id.
    *

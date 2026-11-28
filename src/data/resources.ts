@@ -75,7 +75,7 @@ export const RESOURCES = {
   clay: {
     name: 'Clay',
     description: 'Shaped into pottery and other useful wares.',
-    baseFactor: 1.0,
+    baseFactor: 1.5,
     baseRarity: 2,
     tradeable: true,
     category: 'manufactured' as const,
@@ -86,7 +86,7 @@ export const RESOURCES = {
   copper: {
     name: 'Copper',
     description: 'A reddish metal mined from deep deposits. Used in alloys and tools.',
-    baseFactor: 1.5,
+    baseFactor: 2.5,
     baseRarity: 3,
     tradeable: true,
     category: 'rawMaterial' as const,
@@ -97,7 +97,7 @@ export const RESOURCES = {
   tin: {
     name: 'Tin',
     description: 'A soft, silver-white metal. Rare deposits make it prized.',
-    baseFactor: 2.0,
+    baseFactor: 3.25,
     baseRarity: 4,
     tradeable: true,
     category: 'rawMaterial' as const,
@@ -108,7 +108,7 @@ export const RESOURCES = {
   bronze: {
     name: 'Bronze',
     description: 'A strong alloy of copper and tin. Superior to either metal alone.',
-    baseFactor: 3.5,
+    baseFactor: 8.25,
     baseRarity: 5,
     tradeable: true,
     category: 'manufactured' as const,
@@ -127,6 +127,7 @@ export type ResourceEntry = (typeof RESOURCES)[ResourceEnum];
  * catalog automatically.
  */
 export type Resource = { [K in ResourceEnum]: number };
+export type ResourceOptional = Record<ResourceEnum: number>;
 
 /** The tradable resources (those that can be bought or sold at market). */
 export const MARKET_RESOURCES = (
