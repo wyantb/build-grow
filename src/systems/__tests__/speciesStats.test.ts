@@ -10,7 +10,7 @@ import { createTestWorld } from './testWorld.js';
  * The base rate of a job, per worker, per tick.
  */
 const baseRate = (jobId: string, resource: keyof typeof JOBS[string]['production']): number =>
-  JOBS[jobId]!.production[resource];
+  JOBS[jobId]!.production[resource] ?? 0;
 
 /**
  * A set of stats where only the given ones differ from the average.

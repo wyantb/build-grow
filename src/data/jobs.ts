@@ -1,4 +1,4 @@
-import type { Job, ResourceOptional } from '../types/worldState.js';
+import type { Job, Resource, ResourceOptional } from '../types/worldState.js';
 import type { JobStats } from '../systems/stats.js';
 
 // Per-tick production rates (engine runs at 5 ticks/sec)
@@ -6,10 +6,15 @@ import type { JobStats } from '../systems/stats.js';
 // Lumberjack: 5 wood/s → 1.0/tick
 // Quarrier: 4 stone/s → 0.8/tick
 
-const ZERO: ResourceOptional = { wood: 0, stone: 0, food: 0, gold: 0, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0 };
-const DEFAULT_CONSUMPTION: ResourceOptional = { wood: 0, stone: 0, food: 0, gold: 0, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0 };
+const ZERO: Resource = { wood: 0, stone: 0, food: 0, gold: 0, research: 0, clay: 0, copper: 0, tin: 0, bronze: 0 };
+const DEFAULT_CONSUMPTION: ResourceOptional = {};
 
-export const JOBS: Record<string, Omit<Job, 'workers' | 'species'>> = {
+type JobCatalogEntry = Omit<Job, 'workers' | 'species' | 'production' | 'consumption'> & {
+  production: ResourceOptional;
+  consumption: ResourceOptional;
+};
+
+export const JOBS: Record<string, JobCatalogEntry> = {
   unemployed: {
     id: 'unemployed',
     name: 'Unemployed',

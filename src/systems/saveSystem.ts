@@ -7,6 +7,7 @@ import {
 } from '../types/saveFile.js';
 import type { SaveEnvelope, SavePayload } from '../types/saveFile.js';
 import { JOBS, normalizeJobOrder } from '../data/jobs.js';
+import { fillResource } from '../data/resources.js';
 import { getBuildingType } from '../data/buildings.js';
 import { getSpecies } from '../data/species.js';
 import type { Stats } from '../data/species.js';
@@ -260,8 +261,8 @@ export const deserializePayload = (payload: SavePayload): WorldState => {
     state.jobs[jobId] = {
       ...catalogJob,
       workers: saved.workers,
-      production: { ...catalogJob.production },
-      consumption: { ...catalogJob.consumption },
+      production: fillResource(catalogJob.production),
+      consumption: fillResource(catalogJob.consumption),
       species: { ...saved.species },
     };
   }

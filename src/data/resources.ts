@@ -127,7 +127,18 @@ export type ResourceEntry = (typeof RESOURCES)[ResourceEnum];
  * catalog automatically.
  */
 export type Resource = { [K in ResourceEnum]: number };
-export type ResourceOptional = Record<ResourceEnum: number>;
+/** A resource record where omitted fields default to 0 at runtime. */
+export type ResourceOptional = Partial<Record<ResourceEnum, number>>;
+
+/** Fill a partial resource object with 0 for every missing key. */
+export function fillResource(partial: ResourceOptional): Resource {
+  const result = {} as Resource;
+  for (const key of Object.keys(RESOURCES) as ResourceEnum[]) {
+    result[key] = partial[key] ?? 0;
+  }
+
+  return result;
+}
 
 /** The tradable resources (those that can be bought or sold at market). */
 export const MARKET_RESOURCES = (

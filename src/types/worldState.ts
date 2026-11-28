@@ -3,7 +3,7 @@ import { DEFAULT_JOB_ORDER, JOBS } from '../data/jobs.js';
 import { MARKET_RESOURCES } from '../data/market.js';
 import { DEFAULT_SPECIES_ID, SPECIES, STARTING_SPECIES_IDS } from '../data/species.js';
 import { GAME_VERSION } from '../systems/gameVersion.js';
-import { RESOURCES } from '../data/resources.js';
+import { RESOURCES, fillResource } from '../data/resources.js';
 import type { ResourceEnum } from '../data/resources.js';
 
 /**
@@ -55,8 +55,8 @@ export const JobSchema = z.object({
   workers: z.number(),
   capacity: z.number(), // 0 = uncapped
   canDefault: z.boolean(),
-  production: ResourceOptional, // per tick
-  consumption: ResourceOptional, // per tick (e.g. food per worker)
+  production: ResourceSchema, // per tick
+  consumption: ResourceSchema, // per tick (e.g. food per worker)
   /**
    * Who works this job, by species id.
    *
@@ -249,7 +249,16 @@ export const createInitialState = (): WorldState => {
     },
     population: startingPopulation,
     jobs: Object.fromEntries(
-      Object.entries(JOBS).map(([id, job]) => [id, { ...job, workers: 0, species: {} }]),
+      Object.entries(JOBS).map(([id, job]) => [
+        id,
+        {
+          ...job,
+          workers: 0,
+          species: {},
+          production: fillResource(job.production),
+          consumption: fillResource(job.consumption),
+        },
+      ]),
     ),
     jobOrder: [...DEFAULT_JOB_ORDER],
     buildings: {},
