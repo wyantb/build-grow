@@ -1,9 +1,9 @@
 /**
  * Technologies the player can research.
  *
- * Each technology has a research cost, optional prerequisites, and optional
- * buildings it unlocks. Cost is a single research value because research is
- * the only resource that can pay for technologies.
+ * Each technology has a research cost and optional prerequisites.
+ * Buildings declare which technologies they require via `requiresTechs`,
+ * so a technology never needs to know about buildings.
  */
 
 export const TECHNOLOGIES = {
@@ -13,7 +13,6 @@ export const TECHNOLOGIES = {
     description: 'We have learned to shape clay into useful objects.',
     researchCost: 40,
     prereqs: [] as string[],
-    unlocksBuildings: ['pottery_studio'] as string[],
   },
   grain_silo: {
     id: 'grain_silo',
@@ -21,7 +20,6 @@ export const TECHNOLOGIES = {
     description: 'Store food for your people.',
     researchCost: 80,
     prereqs: ['clay_making'],
-    unlocksBuildings: ['grain_silo'],
   },
   hierarchy: {
     id: 'hierarchy',
@@ -29,7 +27,6 @@ export const TECHNOLOGIES = {
     description: 'The chief helps keep us organized and harnesses ideas for the greater good.',
     researchCost: 50,
     prereqs: [],
-    unlocksBuildings: ['estate'],
   },
   mining: {
     id: 'mining',
@@ -37,7 +34,6 @@ export const TECHNOLOGIES = {
     description: 'Dig deeper into the earth to find valuable ores.',
     researchCost: 120,
     prereqs: [],
-    unlocksBuildings: [] as string[],
   },
   bronze_alloy: {
     id: 'bronze_alloy',
@@ -45,7 +41,6 @@ export const TECHNOLOGIES = {
     description: 'Combine copper and tin to create a stronger metal.',
     researchCost: 120,
     prereqs: ['mining', 'clay_making'],
-    unlocksBuildings: [] as string[],
   },
 } as const;
 

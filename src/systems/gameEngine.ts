@@ -267,10 +267,7 @@ class GameEngine {
       if (!speciesData) {continue;}
 
       // Every person of this species eats their base consumption per tick.
-      this.state.resources.food -= speciesData.baseConsumption.food * entry.count;
-      this.state.resources.wood -= speciesData.baseConsumption.wood * entry.count;
-      this.state.resources.stone -= speciesData.baseConsumption.stone * entry.count;
-      this.state.resources.gold -= speciesData.baseConsumption.gold * entry.count;
+      this.state.resources.food -= speciesData.foodConsumption * entry.count;
 
       // Every person of this species produces their base research per tick.
       this.state.resources.research += speciesData.baseResearch * entry.count;
@@ -1425,10 +1422,7 @@ class GameEngine {
       const speciesData = SPECIES.find((s) => s.id === speciesId);
       if (!speciesData) {continue;}
 
-      rates.food -= speciesData.baseConsumption.food * entry.count;
-      rates.wood -= speciesData.baseConsumption.wood * entry.count;
-      rates.stone -= speciesData.baseConsumption.stone * entry.count;
-      rates.gold -= speciesData.baseConsumption.gold * entry.count;
+      rates.food -= speciesData.foodConsumption * entry.count;
       rates.research += speciesData.baseResearch * entry.count;
     }
 
@@ -1534,10 +1528,13 @@ class GameEngine {
     this.state.resources.research -= tech.researchCost;
     this.state.researchedTechnologies.push(techId);
 
-    // Unlock buildings this technology grants
-    for (const buildingId of tech.unlocksBuildings) {
-      if (!this.state.unlockedBuildings.includes(buildingId)) {
-        this.state.unlockedBuildings.push(buildingId);
+    // Unlock any building whose tech requirements are now all met.
+    for (const building of BUILDING_TYPES) {
+      const reqs = building.requiresTechs ?? [];
+      if (reqs.length === 0) {continue;}
+      if (this.state.unlockedBuildings.includes(building.id)) {continue;}
+      if (reqs.every((t) => this.state.researchedTechnologies.includes(t))) {
+        this.state.unlockedBuildings.push(building.id);
       }
     }
 

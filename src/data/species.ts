@@ -6,9 +6,6 @@
  * 100 is a percent away from the average in either direction.
  */
 
-import type { Resource } from './resources.js';
-
-/** The stats a creature has. */
 export interface Stats {
   /** Physical power. Lifting, cutting and carrying. */
   strength: number;
@@ -68,7 +65,7 @@ export interface SpeciesType {
   /** The stats a member of this species starts with. */
   baseStats: Stats;
   /** Base food consumption per tick for each member of this species. */
-  baseConsumption: Resource;
+  foodConsumption: number;
   /** Base research production per tick for each member of this species. */
   baseResearch: number;
 }
@@ -107,7 +104,7 @@ export const SPECIES: SpeciesType[] = [
       charisma: 80,
       manaSensitivity: 5,
     },
-    baseConsumption: { wood: 0, stone: 0, food: 0.025, gold: 0, research: 0, clay: 0 },
+    foodConsumption: 0.025,
     baseResearch: 0.02,
   },
   {
@@ -123,7 +120,7 @@ export const SPECIES: SpeciesType[] = [
       charisma: 120,
       manaSensitivity: 100,
     },
-    baseConsumption: { wood: 0, stone: 0, food: 0.020, gold: 0, research: 0, clay: 0 },
+    foodConsumption: 0.020,
     baseResearch: 0.022,
   },
 ];

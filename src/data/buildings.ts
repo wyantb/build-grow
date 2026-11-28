@@ -1,4 +1,5 @@
 import type { Resource } from '../types/worldState.js';
+import type { TechnologyId } from './technologies.js';
 
 export type BuildingCategory = 'Residential Block' | 'Commercial District' | 'Rural District' | 'Storage';
 
@@ -9,6 +10,11 @@ export interface BuildingType {
   cost: Resource;
   /** Display category — groups buttons under section headings. */
   category: BuildingCategory;
+  /**
+   * Technologies that must be researched before this building is visible.
+   * An empty array means the building is visible from the start.
+   */
+  requiresTechs?: TechnologyId[];
   /**
    * How much storage this building adds per copy.
    *
@@ -80,6 +86,7 @@ export const BUILDING_TYPES: BuildingType[] = [
     name: 'Grain Silo',
     description: 'Stores food for your people.',
     cost: { wood: 40, stone: 20, food: 0, gold: 0, research: 0, clay: 0 },
+    requiresTechs: ['grain_silo'],
     storageBonus: { food: 500 },
     category: 'Storage',
   },
@@ -88,6 +95,7 @@ export const BUILDING_TYPES: BuildingType[] = [
     name: 'Pottery Studio',
     description: 'A workshop for shaping clay into useful wares.',
     cost: { wood: 30, stone: 80, food: 0, gold: 0, research: 0, clay: 0 },
+    requiresTechs: ['clay_making'],
     category: 'Commercial District',
   },
   {
@@ -95,6 +103,7 @@ export const BUILDING_TYPES: BuildingType[] = [
     name: 'Estate',
     description: 'A grand hall for the chief to govern and inspire.',
     cost: { wood: 150, stone: 150, food: 0, gold: 0, research: 0, clay: 0 },
+    requiresTechs: ['hierarchy'],
     category: 'Commercial District',
   },
 ];
