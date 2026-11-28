@@ -110,7 +110,7 @@ export const JOB_STATS: JobStatsCompleteMap = {
   ceramist: { primary: 'intelligence', secondary: 'dexterity' },
   unemployed: null,
   merchant: null,
-  chief: null,
+  chief: { primary: 'wisdom', secondary: 'charisma' },
 };
 
 // Building type id → job id mapping.
