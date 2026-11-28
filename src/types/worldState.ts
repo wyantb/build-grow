@@ -174,6 +174,12 @@ export const CityCenterSchema = z.object({
   storageResearch: z.number(),
   /** Base storage capacity for clay (revealed once clay making is researched). */
   storageClay: z.number(),
+  /** Base storage capacity for copper (revealed once mining is researched). */
+  storageCopper: z.number(),
+  /** Base storage capacity for tin (revealed once mining is researched). */
+  storageTin: z.number(),
+  /** Base storage capacity for bronze (revealed once bronze alloy is researched). */
+  storageBronze: z.number(),
 });
 
 export type CityCenterState = z.infer<typeof CityCenterSchema>;
@@ -299,6 +305,9 @@ export const createInitialState = (): WorldState => {
       storageFood: 500,
       storageResearch: 200,
       storageClay: 250,
+      storageCopper: 400,
+      storageTin: 350,
+      storageBronze: 150,
     },
     rebirthPool: {
       human: 5,

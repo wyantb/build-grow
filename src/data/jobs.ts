@@ -1,4 +1,5 @@
 import type { Job, ResourceOptional } from '../types/worldState.js';
+import type { BuildingId } from './buildings.js';
 import type { JobStats } from '../systems/stats.js';
 
 // Per-tick production rates (engine runs at 5 ticks/sec)
@@ -9,6 +10,8 @@ import type { JobStats } from '../systems/stats.js';
 const ZERO: ResourceOptional = {};
 
 type JobCatalogEntry = Omit<Job, 'workers' | 'species' | 'production' | 'consumption'> & {
+  /** The building that unlocks this job, or null for jobs that need no building. */
+  buildingId: BuildingId | null;
   production: ResourceOptional;
   consumption: ResourceOptional;
 };
@@ -20,6 +23,7 @@ export const JOBS: Record<string, JobCatalogEntry> = {
     description: 'Workers with no role yet. From harvesting, they\'ll hopefully manage to feed themselves.',
     capacity: 0, // uncapped
     canDefault: true,
+    buildingId: null,
     production: { food: 0.025 },
     consumption: ZERO,
   },
@@ -29,6 +33,7 @@ export const JOBS: Record<string, JobCatalogEntry> = {
     description: 'Generalist workers who gather basic resources. Outcompeted by specialized roles.',
     capacity: 0, // uncapped
     canDefault: true,
+    buildingId: null,
     // Per tick (5 ticks/sec): 0.5/5=0.1 wood, 0.2/5=0.04 stone, 0.1/5=0.02 food
     production: { wood: 0.1, stone: 0.04, food: 0.01 },
     consumption: ZERO,
@@ -39,6 +44,7 @@ export const JOBS: Record<string, JobCatalogEntry> = {
     description: 'Cuts wood from nearby forests.',
     capacity: 0, // set dynamically from buildings
     canDefault: false,
+    buildingId: 'lumberjack',
     // 5 wood/s → 1.0/tick
     production: { wood: 1.0 },
     consumption: ZERO,
@@ -49,6 +55,7 @@ export const JOBS: Record<string, JobCatalogEntry> = {
     description: 'Mines stone from quarries.',
     capacity: 0, // set dynamically from buildings
     canDefault: false,
+    buildingId: 'quarry',
     // 4 stone/s → 0.8/tick
     production: { stone: 0.8 },
     consumption: ZERO,
@@ -59,6 +66,7 @@ export const JOBS: Record<string, JobCatalogEntry> = {
     description: 'Grows food on farmland to feed the population.',
     capacity: 0, // set dynamically from buildings
     canDefault: false,
+    buildingId: 'farm',
     // 2.5 × old DEFAULT_CONSUMPTION (0.025) = 0.0625 food/tick
     production: { food: 0.08 },
     consumption: ZERO,
@@ -69,6 +77,7 @@ export const JOBS: Record<string, JobCatalogEntry> = {
     description: 'Trades goods at the market. Each merchant carries one buy and one sell trade per tick.',
     capacity: 0, // set dynamically from buildings
     canDefault: false,
+    buildingId: 'market',
     production: ZERO,
     consumption: ZERO,
   },
@@ -78,6 +87,7 @@ export const JOBS: Record<string, JobCatalogEntry> = {
     description: 'Shapes clay into useful wares. Each ceramist makes sheds 5% more spacious.',
     capacity: 0, // set dynamically from buildings
     canDefault: false,
+    buildingId: 'pottery_studio',
     production: { clay: 0.2 },
     consumption: { stone: 0.6 },
   },
@@ -87,6 +97,7 @@ export const JOBS: Record<string, JobCatalogEntry> = {
     description: 'Keeps the settlement organized and harnesses ideas for the greater good.',
     capacity: 0, // set dynamically from buildings
     canDefault: false,
+    buildingId: 'estate',
     production: ZERO,
     consumption: ZERO,
   },
@@ -96,6 +107,7 @@ export const JOBS: Record<string, JobCatalogEntry> = {
     description: 'Digs deep for copper ore. Converts stone into raw copper.',
     capacity: 0, // set dynamically from buildings
     canDefault: false,
+    buildingId: 'copper_mine',
     // 0.3 copper/tick → 1.5/s
     production: { copper: 0.3 },
     consumption: { stone: 0.4 },
@@ -106,6 +118,7 @@ export const JOBS: Record<string, JobCatalogEntry> = {
     description: 'Extracts rare tin from sparse deposits.',
     capacity: 0, // set dynamically from buildings
     canDefault: false,
+    buildingId: 'tin_mine',
     // 0.15 tin/tick → 0.75/s (rarer, slower)
     production: { tin: 0.15 },
     consumption: { stone: 0.3 },
@@ -116,6 +129,7 @@ export const JOBS: Record<string, JobCatalogEntry> = {
     description: 'Smelts copper and tin into bronze. Consumes 0.2 copper + 0.1 tin, produces 0.25 bronze per tick.',
     capacity: 0, // set dynamically from buildings
     canDefault: false,
+    buildingId: 'copper_kiln',
     // 0.25 bronze/tick → 1.25/s
     production: { bronze: 0.25 },
     consumption: { copper: 0.2, tin: 0.1 },
@@ -147,27 +161,23 @@ export const JOB_STATS: JobStatsCompleteMap = {
   chief: { primary: 'wisdom', secondary: 'charisma' },
 };
 
-// Building type id → job id mapping.
-// Each completed building of a given type adds 1 capacity to its job.
-export const BUILDING_JOB_MAP: Record<string, string> = {
-  lumberjack: 'lumberjack',
-  quarry: 'quarrier',
-  farm: 'farmer',
-  market: 'merchant',
-  pottery_studio: 'ceramist',
-  estate: 'chief',
-  copper_mine: 'copper_miner',
-  tin_mine: 'tin_miner',
-  copper_kiln: 'bronze_caster',
-};
+/**
+ * Building type id → job id mapping, derived from the job catalog.
+ *
+ * Each completed building of a given type adds 1 capacity to its job.
+ */
+export const BUILDING_JOB_MAP: Record<BuildingId, string> = Object.fromEntries(
+  Object.entries(JOBS)
+    .filter(([, job]) => job.buildingId !== null)
+    .map(([jobId, job]) => [job.buildingId!, jobId]),
+) as Record<BuildingId, string>;
 
-// The same mapping the other way around, so a job can be traced back to the
-// building that makes it available.
-const BUILDING_FOR_JOB: Record<string, string> = {};
-
-for (const [buildingId, jobId] of Object.entries(BUILDING_JOB_MAP)) {
-  BUILDING_FOR_JOB[jobId] = buildingId;
-}
+/** The reverse mapping: job id → building type id. */
+export const BUILDING_FOR_JOB: Record<string, BuildingId> = Object.fromEntries(
+  Object.entries(JOBS)
+    .filter(([, job]) => job.buildingId !== null)
+    .map(([jobId, job]) => [jobId, job.buildingId!]),
+) as Record<string, BuildingId>;
 
 /**
  * The order the jobs are in when a world starts.

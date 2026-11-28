@@ -5,9 +5,7 @@ import { getGameState } from '../../hooks/useGameState.js';
 import { formatExact, formatNumber } from '../../utils/formatNumber.js';
 import Tooltip from '../ui/Tooltip.js';
 import { RESOURCES, RAW_MATERIAL_RESOURCES, MANUFACTURED_RESOURCES } from '../../data/resources.js';
-import type { ResourceEnum } from '../../data/resources.js';
-
-type CappedResource = 'wood' | 'stone' | 'food' | 'research' | 'clay';
+import type { ResourceEnum, CappedResource } from '../../data/resources.js';
 
 type ResourceRowDef = {
   key: ResourceEnum;
@@ -126,7 +124,12 @@ const ResourcePanel: Component = () => {
       </For>
       <div class="solid-resource-divider" />
       <For each={RAW_MATERIAL_ROWS}>
-        {(row) => <ResourceRow row={row} rates={rates} />}
+        {(row) => {
+          const techId = RESOURCES[row.key].unlocksTech;
+          const isVisible = () => !techId || gameState.isTechnologyResearched(techId);
+
+          return <Show when={isVisible()}><ResourceRow row={row} rates={rates} /></Show>;
+        }}
       </For>
       <Show when={MANUFACTURED_ROWS.length > 0}>
         <div class="solid-resource-divider" />

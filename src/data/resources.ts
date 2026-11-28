@@ -91,7 +91,7 @@ export const RESOURCES = {
     tradeable: true,
     category: 'rawMaterial' as const,
     production: 'copper_miner',
-    unlocksTech: null as TechnologyId | null,
+    unlocksTech: 'mining' as TechnologyId,
   },
   /** Mined by tin miners; a rarer raw material for bronze. */
   tin: {
@@ -102,7 +102,7 @@ export const RESOURCES = {
     tradeable: true,
     category: 'rawMaterial' as const,
     production: 'tin_miner',
-    unlocksTech: null as TechnologyId | null,
+    unlocksTech: 'mining' as TechnologyId,
   },
   /** Cast from copper and tin; a strong alloy for tools and weapons. */
   bronze: {
@@ -113,7 +113,7 @@ export const RESOURCES = {
     tradeable: true,
     category: 'manufactured' as const,
     production: 'bronze_caster',
-    unlocksTech: null as TechnologyId | null,
+    unlocksTech: 'bronze_alloy' as TechnologyId,
   },
 } as const;
 
@@ -126,6 +126,9 @@ export type ResourceEntry = (typeof RESOURCES)[ResourceEnum];
  * Every key in RESOURCES maps to a number, so this stays in sync with the
  * catalog automatically.
  */
+/** Resources that have a storage cap (and a capped display in the UI). */
+export type CappedResource = 'wood' | 'stone' | 'food' | 'research' | 'clay' | 'copper' | 'tin' | 'bronze';
+
 export type Resource = { [K in ResourceEnum]: number };
 /** A resource record where omitted fields default to 0 at runtime. */
 export type ResourceOptional = Partial<Record<ResourceEnum, number>>;

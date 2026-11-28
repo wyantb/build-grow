@@ -1,6 +1,7 @@
 import { createSignal, createMemo } from 'solid-js';
 import { createStore } from 'solid-js';
 import type { WorldState, Resource, Stats } from '../types/worldState.js';
+import type { CappedResource } from '../data/resources.js';
 import { createInitialState } from '../types/worldState.js';
 import { BUILDING_TYPES, getBuildingType } from '../data/buildings.js';
 import type { BuildingType } from '../data/buildings.js';
@@ -644,7 +645,7 @@ export const useGameState = () => {
    * Clay storage is only revealed once clay making is researched.
    * Each ceramist employed makes sheds 5% more spacious.
    */
-  const getMaxStorage = (resource: 'wood' | 'stone' | 'food' | 'research' | 'clay'): number => {
+  const getMaxStorage = (resource: CappedResource): number => {
     let woodStoneBonus = 0;
     let foodBonus = 0;
     let clayBonus = 0;
@@ -683,6 +684,24 @@ export const useGameState = () => {
         }
 
         return state.cityCenter.storageClay + clayBonus * ceramistShedMultiplier;
+      case 'copper':
+        if (!isTechnologyResearched('mining')) {
+          return 0;
+        }
+
+        return state.cityCenter.storageCopper;
+      case 'tin':
+        if (!isTechnologyResearched('mining')) {
+          return 0;
+        }
+
+        return state.cityCenter.storageTin;
+      case 'bronze':
+        if (!isTechnologyResearched('bronze_alloy')) {
+          return 0;
+        }
+
+        return state.cityCenter.storageBronze;
     }
   };
 
@@ -694,7 +713,7 @@ export const useGameState = () => {
    * non-zero count).
    */
   const getStorageBreakdown = (
-    resource: 'wood' | 'stone' | 'food' | 'research' | 'clay',
+    resource: CappedResource,
   ): Array<{ label: string; value: number }> => {
     const entries: Array<{ label: string; value: number }> = [];
 
@@ -730,6 +749,15 @@ export const useGameState = () => {
         if (count === 0) {continue;}
         entries.push({ label: type.name, value: count * bonus * ceramistShedMultiplier });
       }
+    } else if (resource === 'copper') {
+      if (!isTechnologyResearched('mining')) {return [];}
+      entries.push({ label: 'City Center', value: state.cityCenter.storageCopper });
+    } else if (resource === 'tin') {
+      if (!isTechnologyResearched('mining')) {return [];}
+      entries.push({ label: 'City Center', value: state.cityCenter.storageTin });
+    } else if (resource === 'bronze') {
+      if (!isTechnologyResearched('bronze_alloy')) {return [];}
+      entries.push({ label: 'City Center', value: state.cityCenter.storageBronze });
     }
 
     return entries;

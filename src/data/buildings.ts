@@ -1,7 +1,7 @@
 import type { Resource } from '../types/worldState.js';
 import type { TechnologyId } from './technologies.js';
 
-export type BuildingCategory = 'Residential Block' | 'Commercial District' | 'Rural District' | 'Storage';
+export type BuildingCategory = 'Residential Block' | 'Commercial District' | 'Rural District' | 'Factory District' | 'Storage';
 
 export interface BuildingType {
   id: string;
@@ -128,19 +128,23 @@ export const BUILDING_TYPES: BuildingType[] = [
     description: 'A furnace for smelting copper and tin into bronze.',
     cost: { wood: 80, stone: 150, food: 0, gold: 0, research: 0, clay: 60, copper: 0, tin: 0, bronze: 0 },
     requiresTechs: ['bronze_alloy'],
-    category: 'Rural District',
+    category: 'Factory District',
   },
 ];
 
-const buildingTypesById = new Map(BUILDING_TYPES.map((type) => [type.id, type]));
+/** The id of any building in the catalog. */
+export type BuildingId = typeof BUILDING_TYPES[number]['id'];
+
+const buildingTypesById = new Map<string, BuildingType>(BUILDING_TYPES.map((type) => [type.id, type]));
 
 export const getBuildingType = (id: string): BuildingType | undefined => buildingTypesById.get(id);
 
 /** The category headings in display order. */
 export const BUILDING_CATEGORY_ORDER: BuildingCategory[] = [
   'Residential Block',
-  'Commercial District',
   'Rural District',
+  'Factory District',
+  'Commercial District',
   'Storage',
 ];
 
