@@ -523,6 +523,14 @@ body.light-mode .resource-divider {
   border-bottom: 2px solid #ccc;
 }
 
+.solid-resource-divider {
+  border-bottom: 1px solid #555;
+}
+
+body.light-mode .solid-resource-divider {
+  border-bottom: 1px solid #ccc;
+}
+
 .header-name, .resource-name {
   font-weight: bold;
   flex: 1;

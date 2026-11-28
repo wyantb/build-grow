@@ -125,12 +125,12 @@ const ResourcePanel: Component = () => {
       <For each={STANDARD_ROWS}>
         {(row) => <ResourceRow row={row} rates={rates} />}
       </For>
-      <div class="resource-divider" />
+      <div class="solid-resource-divider" />
       <For each={PRODUCTION_ROWS}>
         {(row) => <ResourceRow row={row} rates={rates} />}
       </For>
       <Show when={showClay()}>
-        <div class="resource-divider" />
+        <div class="solid-resource-divider" />
         <ResourceRow row={CLAY_ROW} rates={rates} />
       </Show>
     </div>
